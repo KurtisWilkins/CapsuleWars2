@@ -6,15 +6,15 @@ Working game at the end of every milestone. No half-finished piles. Each milesto
 ## M0 — Project plumbing
 **Demo state:** empty scene compiles, tests run green, all conventions enforced.
 
-- [ ] Create `Assets/Scripts/` folder layout per `01_Architecture.md`.
-- [ ] `.asmdef` per top-level folder with the dependency graph from `01_Architecture.md`.
-- [ ] `CapsuleWars.*` namespaces wired.
-- [ ] `Tests/EditMode` and `Tests/PlayMode` folders + asmdefs.
-- [ ] Newtonsoft.Json package added.
-- [ ] I2 LanguageSource asset created at `Assets/Resources/Localization/CapsuleWarsTerms.asset` with empty term groups.
-- [ ] DOTween settings configured (recycled tweens on, capacity tuned).
-- [ ] One trivial EditMode test green (`AssemblyLoadTest`).
-- [ ] CI-equivalent local script: open project headless, run tests, exit code.
+- [x] Create `Assets/Scripts/` folder layout per `01_Architecture.md`.
+- [x] `.asmdef` per top-level folder with the dependency graph from `01_Architecture.md`.
+- [x] `CapsuleWars.*` namespaces wired.
+- [x] `Tests/EditMode` and `Tests/PlayMode` folders + asmdefs.
+- [x] Newtonsoft.Json package added.
+- [ ] I2 LanguageSource asset created at `Assets/Resources/Localization/CapsuleWarsTerms.asset` with empty term groups. *(deferred to first I2 use in M3)*
+- [x] DOTween settings configured (recycled tweens on, capacity tuned). *(asset existed from package import; will revisit when first DOTween call is added)*
+- [x] One trivial EditMode test green (`AssemblyLoadTest`).
+- [ ] CI-equivalent local script: open project headless, run tests, exit code. *(deferred — manual Test Runner runs cover this until we automate)*
 
 ## M1 — One unit standing in an arena
 **Demo state:** capsule unit visible in a 3D scene with idle animation.

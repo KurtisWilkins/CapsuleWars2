@@ -19,12 +19,14 @@ Working game at the end of every milestone. No half-finished piles. Each milesto
 ## M1 — One unit standing in an arena
 **Demo state:** capsule unit visible in a 3D scene with idle animation.
 
-- [ ] `BodyPart_SO`, `Palette_SO` definitions.
-- [ ] `UnitCustomization` — applies parts and palette to a 3D capsule.
-- [ ] One sample `UnitDefinition_SO` with 1 body, 2 hands, 2 feet, 1 palette.
-- [ ] Animator with ExplosiveLLC unarmed sub-state machine; `WeaponType` parameter.
-- [ ] Idle + Walk states wired.
-- [ ] Test arena scene `Test_M1_Idle.unity` with one unit visible.
+- [x] `BodyPart_SO`, `Palette_SO` definitions.
+- [x] `UnitCustomization` — applies parts and palette to a 3D capsule.
+- [x] One sample `UnitDefinition_SO` with 1 body, 2 hands, 2 feet, 1 palette.
+- [x] Animator with ExplosiveLLC unarmed sub-state machine; `WeaponType` parameter. *(Using ExplosiveLLC's stock controller for now — humanoid skeleton hidden, our floating-limb meshes mounted on bones. Parameter-name conformance to `03_AnimationController.md` deferred to M2 when code first drives animation.)*
+- [x] Idle + Walk states wired. *(Reachable via ExplosiveLLC controller.)*
+- [x] Test arena scene `Test_M1_Idle.unity` with one unit visible.
+
+**Rig approach decided:** Option A (humanoid rig under the hood). ExplosiveLLC humanoid skeleton drives floating limb mesh transforms. Body capsule and limb meshes are visually disconnected; the rig is hidden.
 
 ## M2 — Two units fight
 **Demo state:** two capsule units approach each other, attack, one is downed.

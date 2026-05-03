@@ -7,14 +7,29 @@ A unit is a unique entity with swappable parts, a class, an ability set, equipme
 ```
 Capsule body
 ├── Face decals (eyes + mouth — painted texture or decal projector)
-├── LeftHand   (independent mesh slot)
-├── RightHand  (independent mesh slot)
+├── LeftHand   (independent mesh slot — can hold off-hand weapon, shield, focus, or none)
+├── RightHand  (independent mesh slot — primary weapon hand)
 ├── LeftFoot   (independent mesh slot)
 ├── RightFoot  (independent mesh slot)
-├── Head prop  (optional — hat, horns, halo)
-└── Weapon     (optional — drives Animator sub-state machine)
+└── Head prop  (optional — hat, horns, halo)
 ```
 Left/right are independent — asymmetric mixing is allowed once both options are unlocked.
+
+### Weapon configurations
+The equipped weapon drives the Animator sub-state machine via `WeaponClass_SO.weaponTypeId`. Three valid configurations:
+
+| Configuration | RightHand | LeftHand | Animator sub-SM |
+|---|---|---|---|
+| **One-handed + shield** | 1H weapon | Shield | `1H_<weapon>_Shield` (e.g. `1H_Sword_Shield`) |
+| **One-handed (no shield / off-hand item)** | 1H weapon | empty / focus | `1H_<weapon>` |
+| **Two-handed** | 2H weapon (occupies both slots) | (locked by 2H weapon) | `2H_<weapon>` |
+| **Dual-wield** | 1H weapon | 1H weapon | `1H_<rightWeapon>` (right hand drives) |
+| **Unarmed** | empty | empty | `Unarmed` |
+
+`WeaponClass_SO.handedness` enum: `OneHanded`, `TwoHanded`, `Dual`, `Shield`, `OffHand`. Equipment validation:
+- A `TwoHanded` weapon in RightHand auto-clears LeftHand and locks the slot.
+- A `Shield` in LeftHand requires a `OneHanded` weapon (or empty) in RightHand.
+- Dual-wield requires both hands to hold `OneHanded` weapons of compatible classes.
 
 ## Identity
 Every unit carries:
@@ -28,11 +43,10 @@ Every unit carries:
 ## Stat block
 | Field | Notes |
 |---|---|
-| `Atk` | physical attack |
-| `AtkElem` | elemental attack (uses element chart) |
+| `Atk` | attack — used for both physical and elemental damage; element multiplier from `ElementChart_SO` is applied at hit time |
 | `HP` | max hit points |
 | `Def` | physical defense |
-| `DefElem` | elemental defense |
+| `DefElem` | elemental defense (resists elemental damage after element multiplier) |
 | `Speed` | move + cooldown rate |
 | `Accuracy` | hit chance |
 | `Resistance` | status effect resist |

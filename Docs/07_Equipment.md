@@ -23,7 +23,7 @@ Equipment_SO (definition)
 ├── Rarity_SO rarity
 ├── Mesh visualMesh
 ├── Material[] materials
-├── int Atk, AtkElem, HP, Def, DefElem, Speed, Accuracy, CritRate, CritDmg, Resistance, Mass
+├── int Atk, HP, Def, DefElem, Speed, Accuracy, CritRate, CritDmg, Resistance, Mass
 ├── ElementType_SO elementAffinity   // optional
 ├── WeaponClass_SO weaponClass        // only if slot == hand
 └── Ability_SO[] grantedAbilities     // optional

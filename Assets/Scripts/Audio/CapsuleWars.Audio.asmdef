@@ -1,0 +1,17 @@
+{
+    "name": "CapsuleWars.Audio",
+    "rootNamespace": "CapsuleWars.Audio",
+    "references": [
+        "CapsuleWars.Core",
+        "CapsuleWars.Combat"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

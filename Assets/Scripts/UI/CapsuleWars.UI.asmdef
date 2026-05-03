@@ -1,0 +1,24 @@
+{
+    "name": "CapsuleWars.UI",
+    "rootNamespace": "CapsuleWars.UI",
+    "references": [
+        "CapsuleWars.Core",
+        "CapsuleWars.Data",
+        "CapsuleWars.Units",
+        "CapsuleWars.Abilities",
+        "CapsuleWars.Combat",
+        "CapsuleWars.Run",
+        "CapsuleWars.Legacy",
+        "CapsuleWars.Persistence",
+        "CapsuleWars.Audio"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

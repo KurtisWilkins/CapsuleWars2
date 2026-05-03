@@ -1,0 +1,19 @@
+{
+    "name": "CapsuleWars.Combat",
+    "rootNamespace": "CapsuleWars.Combat",
+    "references": [
+        "CapsuleWars.Core",
+        "CapsuleWars.Data",
+        "CapsuleWars.Units",
+        "CapsuleWars.Abilities"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

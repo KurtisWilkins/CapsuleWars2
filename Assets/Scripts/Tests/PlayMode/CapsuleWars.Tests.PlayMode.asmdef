@@ -1,0 +1,31 @@
+{
+    "name": "CapsuleWars.Tests.PlayMode",
+    "rootNamespace": "CapsuleWars.Tests.PlayMode",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "CapsuleWars.Core",
+        "CapsuleWars.Data",
+        "CapsuleWars.Units",
+        "CapsuleWars.Abilities",
+        "CapsuleWars.Combat",
+        "CapsuleWars.Run",
+        "CapsuleWars.Legacy",
+        "CapsuleWars.Persistence",
+        "CapsuleWars.UI",
+        "CapsuleWars.Audio"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

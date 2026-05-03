@@ -1,0 +1,19 @@
+{
+    "name": "CapsuleWars.Legacy",
+    "rootNamespace": "CapsuleWars.Legacy",
+    "references": [
+        "CapsuleWars.Core",
+        "CapsuleWars.Data",
+        "CapsuleWars.Units",
+        "CapsuleWars.Persistence"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

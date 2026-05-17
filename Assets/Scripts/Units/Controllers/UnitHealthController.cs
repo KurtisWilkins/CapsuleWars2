@@ -15,9 +15,12 @@ namespace CapsuleWars.Units.Controllers
         public event Action<DownedEvent> OnDowned;
         public event Action<int> OnHealthChanged;
 
-        public int CurrentHp { get; private set; }
+        // [field: SerializeField] exposes the backing field in the inspector
+        // so HP is visible during Play mode without flipping to Debug view.
+        // Awake overwrites the serialized value with status.MaxHp at runtime.
+        [field: SerializeField] public int CurrentHp { get; private set; }
         public int MaxHp => status != null ? status.MaxHp : 0;
-        public bool IsDowned { get; private set; }
+        [field: SerializeField] public bool IsDowned { get; private set; }
 
         private UnitStatusController status;
         private UnitRoot root;

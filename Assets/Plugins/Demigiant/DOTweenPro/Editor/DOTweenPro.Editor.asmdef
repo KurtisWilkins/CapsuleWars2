@@ -1,10 +1,15 @@
 {
-    "name": "DOTween",
+    "name": "DOTweenPro.Editor",
     "rootNamespace": "",
     "references": [
+        "DOTween",
+        "DOTween.Editor",
+        "DOTweenPro",
         "UnityEngine.UI"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

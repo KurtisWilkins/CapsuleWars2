@@ -1,7 +1,8 @@
 {
-    "name": "DOTween",
+    "name": "DOTweenPro",
     "rootNamespace": "",
     "references": [
+        "DOTween",
         "UnityEngine.UI"
     ],
     "includePlatforms": [],

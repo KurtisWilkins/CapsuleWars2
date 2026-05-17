@@ -4,7 +4,6 @@ using System.Text;
 using CapsuleWars.Combat.Stats;
 using CapsuleWars.Combat.State;
 using CapsuleWars.Core;
-using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -13,15 +12,16 @@ namespace CapsuleWars.UI
 {
     /// <summary>
     /// Listens to <see cref="BattleStateManager.OnBattleEnded"/> and shows a
-    /// Victory/Defeat banner with a top-5 leaderboard. Uses TextMeshPro,
-    /// bundled with com.unity.ugui in Unity 6.
+    /// Victory/Defeat banner with a top-5 leaderboard. Uses legacy UI Text
+    /// for M3 to avoid TMP asmdef resolution issues; M10 polish revisits TMP
+    /// (better rendering, font atlasing) once the rest of the UI stack lands.
     /// </summary>
     public class BattleEndScreen : MonoBehaviour
     {
         [SerializeField] private GameObject panelRoot;
-        [SerializeField] private TMP_Text titleText;
-        [SerializeField] private TMP_Text subtitleText;
-        [SerializeField] private TMP_Text leaderboardText;
+        [SerializeField] private Text titleText;
+        [SerializeField] private Text subtitleText;
+        [SerializeField] private Text leaderboardText;
         [SerializeField] private Button restartButton;
         [SerializeField] private BattleStateManager stateManager;
 

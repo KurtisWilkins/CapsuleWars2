@@ -10,8 +10,7 @@
         "CapsuleWars.Run",
         "CapsuleWars.Legacy",
         "CapsuleWars.Persistence",
-        "CapsuleWars.Audio",
-        "Unity.TextMeshPro"
+        "CapsuleWars.Audio"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

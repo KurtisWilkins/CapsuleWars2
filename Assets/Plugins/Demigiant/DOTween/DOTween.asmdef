@@ -1,13 +1,11 @@
 {
-    "name": "CapsuleWars.Units",
-    "rootNamespace": "CapsuleWars.Units",
-    "references": [
-        "CapsuleWars.Core",
-        "CapsuleWars.Data",
-        "DOTween"
-    ],
+    "name": "DOTween",
+    "rootNamespace": "",
+    "references": [],
     "includePlatforms": [],
-    "excludePlatforms": [],
+    "excludePlatforms": [
+        "Editor"
+    ],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],

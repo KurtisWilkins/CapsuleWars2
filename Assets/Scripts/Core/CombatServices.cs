@@ -2,13 +2,15 @@ namespace CapsuleWars.Core
 {
     /// <summary>
     /// Static service locator for combat-time singletons.
-    /// BattleContext sets <see cref="Registry"/> in Awake; Units.* reads it
-    /// without referencing the Combat assembly. The static is a deliberate
-    /// stepping stone for M2 — proper DI (BattleContext injected at spawn)
-    /// is planned for M3 when we introduce the BattleSpawner.
+    /// BattleStateManager / BattleContext set these properties in Awake;
+    /// other assemblies read them without taking a direct dependency on
+    /// the Combat assembly. The static surface is a deliberate stepping
+    /// stone — proper DI (context injected at spawn) is planned post-M4.
     /// </summary>
     public static class CombatServices
     {
         public static ICombatRegistry Registry { get; set; }
+        public static BattlePhase Phase { get; set; } = BattlePhase.PreBattle;
     }
 }
+

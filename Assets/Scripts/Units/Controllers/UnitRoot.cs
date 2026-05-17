@@ -13,6 +13,14 @@ namespace CapsuleWars.Units.Controllers
     [DisallowMultipleComponent]
     public class UnitRoot : MonoBehaviour, IUnitRef
     {
+        [Tooltip("Stable identifier for this unit instance. Used by BattleRosterState " +
+                 "to carry the downed flag between battles. M2+: hand-set per prefab; " +
+                 "M8 will switch to the legacy unit's persistent Guid.")]
+        [SerializeField] private string unitId;
+
+        [Tooltip("Display name shown in UI (leaderboards, tooltips). Falls back to GameObject name.")]
+        [SerializeField] private string displayName;
+
         [SerializeField] private Team team = Team.Player;
 
         [Header("Controllers")]
@@ -22,6 +30,8 @@ namespace CapsuleWars.Units.Controllers
         [SerializeField] private UnitAttackController attack;
         [SerializeField] private UnitAnimationController animation;
 
+        public string UnitId => string.IsNullOrEmpty(unitId) ? gameObject.name : unitId;
+        public string DisplayName => string.IsNullOrEmpty(displayName) ? UnitId : displayName;
         public Team Team => team;
         public UnitStatusController Status => status;
         public UnitHealthController Health => health;
@@ -61,3 +71,4 @@ namespace CapsuleWars.Units.Controllers
         }
     }
 }
+

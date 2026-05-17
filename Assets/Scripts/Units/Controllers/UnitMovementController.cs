@@ -59,6 +59,14 @@ namespace CapsuleWars.Units.Controllers
 
         private void Update()
         {
+            // Gate by battle phase: PreBattle = idle, Resolved = frozen.
+            if (CombatServices.Phase != BattlePhase.Active)
+            {
+                if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
+                root?.Animation?.SetSpeed(0f);
+                return;
+            }
+
             if (root == null || root.Health == null || root.Health.IsDowned)
             {
                 StopMoving();

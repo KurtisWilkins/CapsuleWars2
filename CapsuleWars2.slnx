@@ -1,6 +1,13 @@
 ﻿<Solution>
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="CapsuleWars.Combat.csproj" />
+  <Project Path="CapsuleWars.Units.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
-  <Project Path="Assembly-CSharp-firstpass.csproj" />
-  <Project Path="Assembly-CSharp-Editor-firstpass.csproj" />
+  <Project Path="DOTween.Modules.csproj" />
+  <Project Path="CapsuleWars.Tests.EditMode.csproj" />
+  <Project Path="CapsuleWars.Core.csproj" />
+  <Project Path="CapsuleWars.Data.csproj" />
+  <Project Path="DOTweenPro.EditorScripts.csproj" />
+  <Project Path="DOTweenPro.Scripts.csproj" />
+  <Project Path="CapsuleWars.UI.csproj" />
 </Solution>

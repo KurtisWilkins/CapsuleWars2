@@ -31,13 +31,17 @@ Working game at the end of every milestone. No half-finished piles. Each milesto
 ## M2 — Two units fight
 **Demo state:** two capsule units approach each other, attack, one is downed.
 
-- [ ] `UnitHealthController` with `OnHealthChanged`, `OnDowned` events.
-- [ ] `UnitMovementController` on NavMesh.
-- [ ] `UnitAttackController` with cooldown + attack animation trigger.
-- [ ] `UnitAnimationController` with sub-SM routing.
-- [ ] One `WeaponClass_SO` (1H Sword) wired to its sub-SM.
-- [ ] Damage event flows; KO state visible (downed pose).
-- [ ] EditMode test: damage math without scene load.
+- [x] `UnitHealthController` with `OnHealthChanged`, `OnDowned` events.
+- [x] `UnitMovementController` on NavMesh.
+- [x] `UnitAttackController` with cooldown + attack animation trigger.
+- [x] `UnitAnimationController` with sub-SM routing.
+- [x] One `WeaponClass_SO` (1H Sword) wired to its sub-SM.
+- [x] Damage event flows; KO state visible (downed pose).
+- [x] EditMode test: damage math without scene load.
+
+**Known cosmetic items deferred to polish:**
+- Units may dip below the floor for one frame at battle start until `NavMeshAgent.baseOffset` is tuned per rig. Fix is per-prefab inspector tweak.
+- No reactive retargeting yet (a unit being attacked from behind doesn't turn to face attacker). Lands with the broader AI pass in M4+.
 
 ## M3 — Battle scene
 **Demo state:** play a battle from a "start" button to a "victory/defeat" screen, with stats.

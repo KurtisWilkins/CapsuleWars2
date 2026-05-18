@@ -28,7 +28,9 @@ namespace CapsuleWars.Units.Controllers
         [SerializeField] private UnitHealthController health;
         [SerializeField] private UnitMovementController movement;
         [SerializeField] private UnitAttackController attack;
-        [SerializeField] private UnitAnimationController animation;
+        // 'new' suppresses CS0108: this field intentionally shadows the
+        // deprecated Component.animation property.
+        [SerializeField] private new UnitAnimationController animation;
 
         public string UnitId => string.IsNullOrEmpty(unitId) ? gameObject.name : unitId;
         public string DisplayName => string.IsNullOrEmpty(displayName) ? UnitId : displayName;

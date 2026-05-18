@@ -74,12 +74,20 @@ namespace CapsuleWars.Units.Controllers
                 return;
             }
 
-            // Status effects can immobilize: Stunned/Frozen halt and play
-            // the Animator's Stunned state (Speed = 1f per Docs/03).
+            // Status effects can immobilize: Stunned/Frozen halt and idle.
+            // Doc convention is Animator Speed=1 → Stunned state, but
+            // until you author that state we fall back to Speed=0 (idle pose).
+            // Once a Stunned state exists in your AnimatorController, swap
+            // the SetSpeed(0f) call below to SetSpeed(1f).
             if (root.Status != null && (root.Status.CannotMove || root.Status.CannotAct))
             {
-                if (agent.isOnNavMesh) agent.isStopped = true;
-                root.Animation?.SetSpeed(1f);
+                if (agent.isOnNavMesh)
+                {
+                    agent.isStopped = true;
+                    agent.ResetPath();
+                    agent.velocity = Vector3.zero;
+                }
+                root.Animation?.SetSpeed(0f);
                 return;
             }
 

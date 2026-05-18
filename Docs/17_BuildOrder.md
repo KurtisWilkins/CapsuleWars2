@@ -46,14 +46,17 @@ Working game at the end of every milestone. No half-finished piles. Each milesto
 ## M3 — Battle scene
 **Demo state:** play a battle from a "start" button to a "victory/defeat" screen, with stats.
 
-- [ ] `BattleStateManager` (PreBattle / Active / Resolved).
-- [ ] `BattleContext` injected into spawner + controllers.
-- [ ] Win/loss check + 90s sudden-death timer.
-- [ ] `-50% HP next battle` rule (driven by `Downed` flag carried into next `BattleContext`).
-- [ ] `BattleEventBus` with all events from `11_StatsTracking.md`.
-- [ ] `BattleStatsAggregator` writes per-battle counters.
-- [ ] End-of-battle leaderboard UI (top damage / top kills) — text-only is fine.
-- [ ] PlayMode test: scripted 1v1 battle resolves deterministically with a seeded RNG.
+- [x] `BattleStateManager` (PreBattle / Active / Resolved).
+- [x] `BattleContext` injected into spawner + controllers.
+- [x] Win/loss check + 90s sudden-death timer.
+- [x] `-50% HP next battle` rule (driven by `Downed` flag carried into next `BattleContext`).
+- [x] `BattleEventBus` with all events from `11_StatsTracking.md`.
+- [x] `BattleStatsAggregator` writes per-battle counters.
+- [x] End-of-battle leaderboard UI (top damage / top kills) — text-only is fine.
+- [ ] PlayMode test: scripted 1v1 battle resolves deterministically with a seeded RNG. *(deferred — manual playthroughs cover this in M3; will revisit when test infra matures)*
+
+**Known cosmetic items deferred to polish:**
+- 1-frame mesh clip at spawn even after scale-from-zero. Probable cause: `NavMeshSurface` runtime bake or rig settle order. Acceptable for M4 development; revisit in M10 polish.
 
 ## M4 — Abilities
 **Demo state:** units with abilities cast them mid-battle; visible effects.

@@ -19,7 +19,6 @@ namespace CapsuleWars.Abilities
 
         public override void Apply(AbilityCastContext ctx, IReadOnlyList<IUnitRef> targets)
         {
-            Debug.Log($"[Status] ApplyStatusEffect.Apply: status={(statusEffect != null ? statusEffect.StatusId : "<null>")}, targets={targets.Count}, source={ctx.Source?.GameObject?.name}");
             if (statusEffect == null) return;
 
             for (int i = 0; i < targets.Count; i++)

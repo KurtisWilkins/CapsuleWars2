@@ -36,7 +36,8 @@ namespace CapsuleWars.Units.Controllers
         // Active status effects
         // -----------------------------------------------------------------
 
-        private readonly List<ActiveStatusEffect> active = new();
+        [Tooltip("Active status effects on this unit. Read-only at runtime — apply via ApplyStatus().")]
+        [SerializeField] private List<ActiveStatusEffect> active = new();
         public IReadOnlyList<ActiveStatusEffect> ActiveEffects => active;
 
         public event Action<StatusEffect_SO> OnStatusApplied;
@@ -53,6 +54,8 @@ namespace CapsuleWars.Units.Controllers
         public void ApplyStatus(StatusEffect_SO effect, IUnitRef source)
         {
             if (effect == null) return;
+
+            Debug.Log($"[Status] ApplyStatus called on {gameObject.name}: effect={effect.StatusId}, source={source?.GameObject?.name}", this);
 
             if (effect.Resistance == ResistanceCheck.RollOnApply)
             {
@@ -246,10 +249,11 @@ namespace CapsuleWars.Units.Controllers
     /// Runtime state for one applied status effect. Tracks duration and
     /// DoT/HoT tick accumulator.
     /// </summary>
+    [System.Serializable]
     public class ActiveStatusEffect
     {
-        public StatusEffect_SO Effect { get; }
-        public IUnitRef Source { get; }
+        public StatusEffect_SO Effect;
+        [System.NonSerialized] public IUnitRef Source;
         public float RemainingDuration;
         public float TickAccum;
 

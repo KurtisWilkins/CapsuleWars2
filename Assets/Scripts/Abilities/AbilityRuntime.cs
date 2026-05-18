@@ -33,6 +33,7 @@ namespace CapsuleWars.Abilities
             var ctx = new AbilityCastContext(Source, Ability);
             if (!Ability.Trigger.ShouldFire(ctx, this, time)) return false;
 
+            UnityEngine.Debug.Log($"[Ability] Casting {Ability.AbilityId} from {Source?.GameObject?.name}");
             Cast(ctx);
             LastCastTime = time;
             return true;

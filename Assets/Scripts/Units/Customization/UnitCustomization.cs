@@ -23,8 +23,13 @@ namespace CapsuleWars.Units.Customization
         [Tooltip("One mount per visual slot on the prefab. Add only the slots this unit exposes.")]
         [SerializeField] private List<SlotMount> mounts = new();
 
-        private void Start()
+        private void Awake()
         {
+            // Apply in Awake (not Start) so meshes are present before the
+            // first render. Late assignment caused visible 1-frame artifacts:
+            // empty slot MeshFilters at frame 0, then bones positioned by the
+            // first Animator tick at locations the missing meshes would have
+            // anchored, then meshes pop in at frame 1.
             if (definition != null) Apply(definition);
         }
 

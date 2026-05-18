@@ -13,7 +13,7 @@ namespace CapsuleWars.Abilities
     {
         public Ability_SO Ability { get; }
         public IUnitRef Source { get; }
-        public bool IsLocked { get; internal set; }
+        public bool IsLocked { get; set; }
         public float LastCastTime { get; private set; } = float.MinValue;
 
         private readonly List<IUnitRef> candidatesBuffer = new();

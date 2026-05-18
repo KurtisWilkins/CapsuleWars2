@@ -55,7 +55,14 @@ namespace CapsuleWars.Units.Controllers
         {
             if (effect == null) return;
 
-            Debug.Log($"[Status] ApplyStatus called on {gameObject.name}: effect={effect.StatusId}, source={source?.GameObject?.name}", this);
+            Debug.Log(
+                $"[Status] ApplyStatus called on {gameObject.name}: effect={effect.StatusId}, " +
+                $"source={source?.GameObject?.name}, " +
+                $"preventsAction={effect.PreventsAction}, " +
+                $"preventsMovement={effect.PreventsMovement}, " +
+                $"preventsAbilities={effect.PreventsAbilities}, " +
+                $"duration={effect.DefaultDuration}",
+                this);
 
             if (effect.Resistance == ResistanceCheck.RollOnApply)
             {

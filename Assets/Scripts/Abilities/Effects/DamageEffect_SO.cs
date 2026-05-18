@@ -6,14 +6,15 @@ using UnityEngine;
 namespace CapsuleWars.Abilities
 {
     /// <summary>
-    /// Deals flat damage to each target. M4 simplification — does not yet
-    /// scale by attacker Atk, defender Def, crit, or element multipliers.
-    /// Those layer in starting M5 (elements) and M6 (equipment + synergies).
+    /// Deals damage to each target. M5: applies element multiplier from
+    /// CombatServices.ElementChart based on attacker/defender primary
+    /// elements. Crit, defender Def, and equipment scaling layer in
+    /// starting M6.
     /// </summary>
     [CreateAssetMenu(fileName = "DamageEffect", menuName = "CapsuleWars/Abilities/Effects/Damage", order = 60)]
     public class DamageEffect_SO : AbilityEffectStrategy
     {
-        [Tooltip("Flat damage applied to each target.")]
+        [Tooltip("Flat damage applied to each target before element multiplier.")]
         [SerializeField, Min(1)] private int basePower = 25;
 
         [Tooltip("If true, the attacker's Atk stat is added on top of basePower.")]
@@ -21,15 +22,18 @@ namespace CapsuleWars.Abilities
 
         public override void Apply(AbilityCastContext ctx, IReadOnlyList<IUnitRef> targets)
         {
+            UnitRoot sourceRoot = null;
             int extra = 0;
-            if (addAttackerAtk && ctx.Source != null)
+            if (ctx.Source != null && ctx.Source.GameObject != null)
             {
-                var sourceRoot = ctx.Source.GameObject != null
-                    ? ctx.Source.GameObject.GetComponentInParent<UnitRoot>()
-                    : null;
-                if (sourceRoot != null && sourceRoot.Status != null) extra = sourceRoot.Status.Atk;
+                sourceRoot = ctx.Source.GameObject.GetComponentInParent<UnitRoot>();
+                if (addAttackerAtk && sourceRoot != null && sourceRoot.Status != null)
+                    extra = sourceRoot.Status.Atk;
             }
-            int total = basePower + extra;
+            int baseTotal = basePower + extra;
+
+            var chart = CombatServices.ElementChart;
+            var atkEl = sourceRoot != null && sourceRoot.Status != null ? sourceRoot.Status.PrimaryElement : null;
 
             for (int i = 0; i < targets.Count; i++)
             {
@@ -37,7 +41,16 @@ namespace CapsuleWars.Abilities
                 if (t == null || t.IsDowned) continue;
                 var root = t.GameObject != null ? t.GameObject.GetComponentInParent<UnitRoot>() : null;
                 if (root == null || root.Health == null) continue;
-                root.Health.TakeDamage(total, ctx.Source);
+
+                int damage = baseTotal;
+                var defEl = root.Status != null ? root.Status.PrimaryElement : null;
+                if (chart != null && atkEl != null && defEl != null)
+                {
+                    float mult = chart.GetMultiplier(atkEl.Family, defEl.Family);
+                    damage = Mathf.Max(1, Mathf.RoundToInt(damage * mult));
+                }
+
+                root.Health.TakeDamage(damage, ctx.Source);
             }
         }
     }

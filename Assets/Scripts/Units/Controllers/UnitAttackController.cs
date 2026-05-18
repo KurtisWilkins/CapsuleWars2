@@ -40,6 +40,7 @@ namespace CapsuleWars.Units.Controllers
         public bool TryAttack(IUnitRef target)
         {
             if (root == null || root.Health == null || root.Health.IsDowned) return false;
+            if (root.Status != null && root.Status.CannotAct) return false;
             if (weaponClass == null || target == null || target.IsDowned) return false;
             if (Time.time - lastAttackTime < weaponClass.AttackCooldown) return false;
 
@@ -70,6 +71,17 @@ namespace CapsuleWars.Units.Controllers
 
             int raw = root.Status.Atk - targetRoot.Status.Def;
             int damage = Math.Max(1, raw);
+
+            // Element multiplier (M5): family-level matchup via the shared chart.
+            var chart = CombatServices.ElementChart;
+            var atkEl = root.Status.PrimaryElement;
+            var defEl = targetRoot.Status.PrimaryElement;
+            if (chart != null && atkEl != null && defEl != null)
+            {
+                float mult = chart.GetMultiplier(atkEl.Family, defEl.Family);
+                damage = Math.Max(1, (int)Math.Round(damage * mult));
+            }
+
             targetRoot.Health.TakeDamage(damage, root);
         }
     }

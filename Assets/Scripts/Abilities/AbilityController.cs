@@ -42,6 +42,7 @@ namespace CapsuleWars.Abilities
         {
             if (CombatServices.Phase != BattlePhase.Active) return;
             if (root == null || root.Health == null || root.Health.IsDowned) return;
+            if (root.Status != null && root.Status.CannotUseAbilities) return;
 
             float now = Time.time;
             for (int i = 0; i < runtimes.Count; i++)

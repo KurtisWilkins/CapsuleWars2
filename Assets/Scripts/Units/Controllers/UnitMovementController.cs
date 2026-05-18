@@ -74,6 +74,15 @@ namespace CapsuleWars.Units.Controllers
                 return;
             }
 
+            // Status effects can immobilize: Stunned/Frozen halt and play
+            // the Animator's Stunned state (Speed = 1f per Docs/03).
+            if (root.Status != null && (root.Status.CannotMove || root.Status.CannotAct))
+            {
+                if (agent.isOnNavMesh) agent.isStopped = true;
+                root.Animation?.SetSpeed(1f);
+                return;
+            }
+
             if (currentTarget == null || currentTarget.IsDowned)
                 currentTarget = AcquireTarget();
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using CapsuleWars.Combat.Stats;
 using CapsuleWars.Core;
+using CapsuleWars.Data.Elements;
 using CapsuleWars.Units.Controllers;
 using UnityEngine;
 
@@ -26,6 +27,10 @@ namespace CapsuleWars.Combat.State
         [Tooltip("Auto-start the battle in Start() instead of waiting for a button.")]
         [SerializeField] private bool autoStart = false;
 
+        [Header("Data")]
+        [Tooltip("Element matchup chart shared across the battle. Required for element multipliers to apply.")]
+        [SerializeField] private ElementChart_SO elementChart;
+
         public BattlePhase Phase { get; private set; } = BattlePhase.PreBattle;
         public BattleEventBus EventBus { get; } = new BattleEventBus();
         public BattleStatsAggregator Stats { get; } = new BattleStatsAggregator();
@@ -49,6 +54,7 @@ namespace CapsuleWars.Combat.State
             }
 
             CombatServices.Phase = BattlePhase.PreBattle;
+            CombatServices.ElementChart = elementChart;
             Stats.HookBus(EventBus);
 
             registry.OnUnitRegistered += HandleUnitRegistered;

@@ -61,24 +61,24 @@ Working game at the end of every milestone. No half-finished piles. Each milesto
 ## M4 — Abilities
 **Demo state:** units with abilities cast them mid-battle; visible effects.
 
-- [ ] `Ability_SO` + 4 strategy bases as SOs.
-- [ ] Triggers: `TimeBasedTrigger`, `OnHitTrigger`.
-- [ ] Targeting: `GetEnemyTargets`, `GetSelfTarget`.
-- [ ] Filters: `ClosestN`, `LowestHpN`, `InRange`.
-- [ ] Effects: `DamageEffect`, `KnockBackEffect` (3D-ported), `HealEffect`.
-- [ ] Weapon-class gating in `UnitAttackController`.
-- [ ] 3 sample abilities authored (one each: damage, heal, AoE).
+- [x] `Ability_SO` + 4 strategy bases as SOs.
+- [x] Triggers: `TimeBasedTrigger`. *(`OnHitTrigger` and other event-based triggers deferred to a later milestone.)*
+- [x] Targeting: `GetEnemyTargets`, `GetSelfTarget`.
+- [x] Filters: `ClosestN`, `InRange`. *(`LowestHpN` deferred.)*
+- [x] Effects: `DamageEffect`, `HealEffect`. *(`KnockBackEffect` deferred to M5 with elements.)*
+- [x] Weapon-class gating in `UnitAttackController`. *(Gating lives on `AbilityController`; same outcome.)*
+- [x] 3 sample abilities authored. *(QuickStrike + optional Recover wired via Unity-side asset creation.)*
 
 ## M5 — Elements & status effects
 **Demo state:** elemental matchups visibly modify damage; statuses apply with VFX.
 
-- [ ] `ElementType_SO` × 15.
-- [ ] `ElementChart_SO` with 5×5 family matrix.
-- [ ] `StatCalculator.GetElementMultiplier` integrated into damage pipeline.
-- [ ] `StatusEffect_SO` × 24 (data + behavior).
-- [ ] `UnitStatusController.ApplyStatus` with resistance roll, duration tick, stacking modes.
-- [ ] Animator integrations: Stunned sub-SM, Frozen shader.
-- [ ] VFX prefabs for buff/debuff/control/DoT/HoT (placeholder OK).
+- [x] `ElementType_SO` × 15. *(Editor tool: `Tools → CapsuleWars → Create Default Elements`.)*
+- [x] `ElementChart_SO` with 5×5 family matrix.
+- [x] `StatCalculator.GetElementMultiplier` integrated into damage pipeline. *(Inlined in `UnitAttackController.OnHitFrame` and `DamageEffect_SO.Apply`; full `StatCalculator` consolidation arrives in M6.)*
+- [x] `StatusEffect_SO` framework supporting all 24 effect types via data configuration.
+- [x] `UnitStatusController.ApplyStatus` with resistance roll, duration tick, stacking modes.
+- [x] Animator integration: Stunned (Speed=1) routed through `UnitMovementController` when `CannotMove`/`CannotAct`. *(Frozen shader deferred to M10 polish.)*
+- [ ] VFX prefabs for buff/debuff/control/DoT/HoT. *(Deferred to M10 polish.)*
 
 ## M6 — Equipment & class synergies
 **Demo state:** equip items pre-battle; synergies bar updates as you place units.

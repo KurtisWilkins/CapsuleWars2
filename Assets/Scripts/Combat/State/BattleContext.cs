@@ -11,7 +11,13 @@ namespace CapsuleWars.Combat.State
     /// In M3 BattleStateManager owns the phase; BattleContext is just the
     /// registry. Post-M4 this collapses into a single BattleSpawner-managed
     /// object.
+    ///
+    /// [DefaultExecutionOrder(-100)] forces this component's Awake ahead
+    /// of all default-order scripts so units calling
+    /// CombatServices.Registry in their OnEnable always see a non-null
+    /// registry, regardless of scene-load timing quirks.
     /// </summary>
+    [DefaultExecutionOrder(-100)]
     [DisallowMultipleComponent]
     public class BattleContext : MonoBehaviour, ICombatRegistry
     {

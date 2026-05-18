@@ -57,6 +57,17 @@ namespace CapsuleWars.Combat.State
 
         private void Start()
         {
+            // Belt-and-suspenders: if any UnitRoot was activated before
+            // BattleContext.Awake set CombatServices.Registry (race on
+            // initial scene load), its OnEnable will have no-op'd.
+            // Sweep the scene once and re-register; Registry.Register
+            // is idempotent.
+            var allRoots = FindObjectsByType<UnitRoot>(FindObjectsSortMode.None);
+            for (int i = 0; i < allRoots.Length; i++)
+            {
+                if (allRoots[i] != null) registry.Register(allRoots[i]);
+            }
+
             // Apply -50% rule for units coming back from a previous downed state.
             foreach (var unit in registry.Units) ApplyDownedCarryForward(unit);
 

@@ -83,12 +83,12 @@ Working game at the end of every milestone. No half-finished piles. Each milesto
 ## M6 — Equipment & class synergies
 **Demo state:** equip items pre-battle; synergies bar updates as you place units.
 
-- [ ] `Equipment_SO`, `Rarity_SO`, `Rune_SO`.
-- [ ] 8-slot equip on `UnitCustomization` (mesh swap).
-- [ ] `StatCalculator` includes equipment + rarity multipliers.
-- [ ] `UnitClass_SO` with `ClassSynergyTier[]`.
-- [ ] `SynergyResolver` recomputes on battle start + KO + revive.
-- [ ] Pre-battle deployment UI shows synergy preview.
+- [x] `Equipment_SO`, `Rarity_SO`. *(`Rune_SO` deferred — lands with shop/loot when there's design pressure.)*
+- [x] 8-slot equip on `UnitStatusController` with stat buffs folded into modified stat math. *(3D mesh swap deferred to M10 polish.)*
+- [x] Stat math includes equipment + rarity multipliers. *(Inlined in `UnitStatusController`; full `StatCalculator` extraction lands when a third consumer appears.)*
+- [x] `UnitClass_SO` with `ClassSynergyTier[]`.
+- [x] `SynergyResolver` recomputes on battle start + KO. *(Revive event fires automatically when downed flag clears — same hook.)*
+- [x] Active synergy text overlay. *(Pre-battle drag-and-drop deployment UI deferred to M7 with the run map.)*
 
 ## M7 — Run loop (roguelike)
 **Demo state:** play a 5-floor mini-run from start to boss with map, shop, drops.

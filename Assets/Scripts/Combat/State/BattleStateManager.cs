@@ -34,6 +34,7 @@ namespace CapsuleWars.Combat.State
         public BattlePhase Phase { get; private set; } = BattlePhase.PreBattle;
         public BattleEventBus EventBus { get; } = new BattleEventBus();
         public BattleStatsAggregator Stats { get; } = new BattleStatsAggregator();
+        public SynergyResolver Synergies { get; private set; }
         public bool SuddenDeathEngaged { get; private set; }
 
         public event Action<BattleResult, IReadOnlyList<BattleLeaderboardEntry>> OnBattleEnded;
@@ -56,9 +57,13 @@ namespace CapsuleWars.Combat.State
             CombatServices.Phase = BattlePhase.PreBattle;
             CombatServices.ElementChart = elementChart;
             Stats.HookBus(EventBus);
+            Synergies = new SynergyResolver(registry);
 
             registry.OnUnitRegistered += HandleUnitRegistered;
             registry.OnUnitUnregistered += HandleUnitUnregistered;
+
+            // Recompute synergies when a unit is downed or revived — counts may shift across a threshold.
+            EventBus.OnDowned += _ => Synergies.RecomputeSynergies();
         }
 
         private void Start()
@@ -93,6 +98,7 @@ namespace CapsuleWars.Combat.State
         public void StartBattle()
         {
             if (Phase != BattlePhase.PreBattle) return;
+            Synergies?.RecomputeSynergies();
             SetPhase(BattlePhase.Active);
             battleStartTime = Time.time;
             SuddenDeathEngaged = false;

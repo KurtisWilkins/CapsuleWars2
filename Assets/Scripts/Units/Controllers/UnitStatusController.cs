@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using CapsuleWars.Core;
+using CapsuleWars.Data.Classes;
 using CapsuleWars.Data.Elements;
+using CapsuleWars.Data.Equipment;
 using CapsuleWars.Data.StatusEffects;
 using UnityEngine;
 
@@ -9,9 +11,9 @@ namespace CapsuleWars.Units.Controllers
 {
     /// <summary>
     /// Owns a unit's stat block and its active status effects.
-    /// Modified stat getters fold in stat-buff modifiers from active
-    /// effects each call. M6 will layer in equipment + class synergies
-    /// on top; the public surface stays the same.
+    /// Modified stat getters fold in stat-buff modifiers from three
+    /// sources: active status effects, equipped items (× rarity
+    /// multiplier), and class synergy buffs pushed in by SynergyResolver.
     /// </summary>
     public class UnitStatusController : MonoBehaviour
     {
@@ -27,6 +29,18 @@ namespace CapsuleWars.Units.Controllers
 
         public ElementType_SO PrimaryElement => primaryElement;
 
+        [Header("Class")]
+        [Tooltip("Unit class. Drives class synergy bonuses when N+ same-class units are deployed on the team.")]
+        [SerializeField] private UnitClass_SO unitClass;
+
+        public UnitClass_SO UnitClass => unitClass;
+
+        [Header("Equipment")]
+        [Tooltip("Equipped items by slot. Stat buffs are folded into modified stats with rarity multiplier applied.")]
+        [SerializeField] private List<EquippedItem> equipment = new();
+
+        public IReadOnlyList<EquippedItem> Equipment => equipment;
+
         public int MaxHp => GetModifiedStat(StatType.MaxHp, baseMaxHp);
         public int Atk => GetModifiedStat(StatType.Atk, baseAtk);
         public int Def => GetModifiedStat(StatType.Def, baseDef);
@@ -39,6 +53,10 @@ namespace CapsuleWars.Units.Controllers
         [Tooltip("Active status effects on this unit. Read-only at runtime — apply via ApplyStatus().")]
         [SerializeField] private List<ActiveStatusEffect> active = new();
         public IReadOnlyList<ActiveStatusEffect> ActiveEffects => active;
+
+        // Synergy buffs pushed in by SynergyResolver each recompute. Not serialized.
+        [NonSerialized] private List<StatBuff> synergyBuffs = new();
+        public IReadOnlyList<StatBuff> SynergyBuffs => synergyBuffs;
 
         public event Action<StatusEffect_SO> OnStatusApplied;
         public event Action<StatusEffect_SO> OnStatusExpired;
@@ -57,12 +75,9 @@ namespace CapsuleWars.Units.Controllers
 
             if (effect.Resistance == ResistanceCheck.RollOnApply)
             {
-                // Placeholder roll: M5 uses a coin-flip until accuracy stats
-                // are wired into the StatCalculator in M6.
                 if (UnityEngine.Random.value < 0.0f) return;
             }
 
-            // Stacking
             switch (effect.StackBehavior)
             {
                 case StackBehavior.Refresh:
@@ -87,7 +102,6 @@ namespace CapsuleWars.Units.Controllers
                     break;
                 }
                 case StackBehavior.Independent:
-                    // Always add a new instance, no merging.
                     break;
             }
 
@@ -118,6 +132,27 @@ namespace CapsuleWars.Units.Controllers
             }
         }
 
+        /// <summary>Called by SynergyResolver to push the unit's current synergy buffs.</summary>
+        public void SetSynergyBuffs(IList<StatBuff> buffs)
+        {
+            synergyBuffs.Clear();
+            if (buffs != null) synergyBuffs.AddRange(buffs);
+        }
+
+        public void Equip(EquipmentSlot slot, Equipment_SO item)
+        {
+            UnequipSlot(slot);
+            equipment.Add(new EquippedItem { slot = slot, item = item });
+        }
+
+        public void UnequipSlot(EquipmentSlot slot)
+        {
+            for (int i = equipment.Count - 1; i >= 0; i--)
+            {
+                if (equipment[i].slot == slot) equipment.RemoveAt(i);
+            }
+        }
+
         // -----------------------------------------------------------------
         // Tick
         // -----------------------------------------------------------------
@@ -141,7 +176,6 @@ namespace CapsuleWars.Units.Controllers
             {
                 var e = active[i];
 
-                // DoT / HoT
                 if (e.Effect.TickAmount != 0)
                 {
                     e.TickAccum += dt;
@@ -152,7 +186,6 @@ namespace CapsuleWars.Units.Controllers
                     }
                 }
 
-                // Duration (skip if -1 = permanent)
                 if (e.Effect.DefaultDuration > 0f)
                 {
                     e.RemainingDuration -= dt;
@@ -176,12 +209,10 @@ namespace CapsuleWars.Units.Controllers
             }
             if (amount < 0)
             {
-                // DoT — damage
                 health.TakeDamage(-amount, e.Source);
             }
             else if (amount > 0)
             {
-                // HoT — heal
                 int newHp = Mathf.Min(MaxHp, health.CurrentHp + amount);
                 float ratio = (float)newHp / Mathf.Max(1, MaxHp);
                 health.RestoreToPercent(ratio);
@@ -189,7 +220,7 @@ namespace CapsuleWars.Units.Controllers
         }
 
         // -----------------------------------------------------------------
-        // Stat math
+        // Stat math — folds in status effects, equipment (× rarity), and synergy buffs.
         // -----------------------------------------------------------------
 
         private int GetModifiedStat(StatType type, int baseValue)
@@ -210,17 +241,40 @@ namespace CapsuleWars.Units.Controllers
         {
             flatMod = 0f;
             percentMod = 0f;
+
+            // Status effects
             for (int i = 0; i < active.Count; i++)
             {
-                var buffs = active[i].Effect.StatBuffs;
-                if (buffs == null) continue;
-                for (int j = 0; j < buffs.Count; j++)
-                {
-                    var b = buffs[j];
-                    if (b.stat != type) continue;
-                    if (b.modType == StatBuffModType.Flat) flatMod += b.amount;
-                    else percentMod += b.amount;
-                }
+                SumBuffs(active[i].Effect.StatBuffs, type, ref flatMod, ref percentMod, 1f);
+            }
+
+            // Equipment (rarity multiplier scales the buff amounts)
+            for (int i = 0; i < equipment.Count; i++)
+            {
+                var item = equipment[i].item;
+                if (item == null) continue;
+                SumBuffs(item.StatBuffs, type, ref flatMod, ref percentMod, item.RarityMultiplier);
+            }
+
+            // Class synergy buffs (pushed in by SynergyResolver)
+            for (int i = 0; i < synergyBuffs.Count; i++)
+            {
+                var b = synergyBuffs[i];
+                if (b.stat != type) continue;
+                if (b.modType == StatBuffModType.Flat) flatMod += b.amount;
+                else percentMod += b.amount;
+            }
+        }
+
+        private static void SumBuffs(IReadOnlyList<StatBuff> buffs, StatType type, ref float flatMod, ref float percentMod, float scale)
+        {
+            if (buffs == null) return;
+            for (int j = 0; j < buffs.Count; j++)
+            {
+                var b = buffs[j];
+                if (b.stat != type) continue;
+                if (b.modType == StatBuffModType.Flat) flatMod += b.amount * scale;
+                else percentMod += b.amount * scale;
             }
         }
 
@@ -243,15 +297,23 @@ namespace CapsuleWars.Units.Controllers
         }
     }
 
+    /// <summary>One slot → equipment assignment, serializable for the inspector.</summary>
+    [Serializable]
+    public struct EquippedItem
+    {
+        public EquipmentSlot slot;
+        public Equipment_SO item;
+    }
+
     /// <summary>
     /// Runtime state for one applied status effect. Tracks duration and
     /// DoT/HoT tick accumulator.
     /// </summary>
-    [System.Serializable]
+    [Serializable]
     public class ActiveStatusEffect
     {
         public StatusEffect_SO Effect;
-        [System.NonSerialized] public IUnitRef Source;
+        [NonSerialized] public IUnitRef Source;
         public float RemainingDuration;
         public float TickAccum;
 

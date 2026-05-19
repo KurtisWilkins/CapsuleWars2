@@ -93,15 +93,14 @@ Working game at the end of every milestone. No half-finished piles. Each milesto
 ## M7 — Run loop (roguelike)
 **Demo state:** play a 5-floor mini-run from start to boss with map, shop, drops.
 
-- [ ] `MapGenerator` — node graph with all 7 node types.
-- [ ] Map UI screen with branching paths.
-- [ ] Combat / Elite / Treasure node implementations.
-- [ ] Shop node: 4 equipment + 1 unit slot expansion + heal.
-- [ ] Event node: 3 sample events with stat outcomes.
-- [ ] Rest node: heal % across roster.
-- [ ] Boss node: hand-authored fight.
-- [ ] `RunStateDTO` save/resume on every node transition.
-- [ ] Run summary screen on win/loss.
+- [x] `MapGenerator` — linear node sequence with all 7 node types representable. *(Branching graph UI deferred to M8.)*
+- [x] Map UI (linear list + Enter Node button — `RunHud`). *(Branching map graph visualization deferred.)*
+- [x] Combat / Elite / Boss nodes reuse the existing battle scene; navigation via `BattleNodeReturn`.
+- [x] Shop node: configurable up to 3 equipment slots with gold gating + Continue. *(Unit slot expansion and heal items deferred to M9.)*
+- [x] Event / Rest / Treasure nodes: shared `EventPanel` with gold reward. *(Per-type unique content deferred.)*
+- [x] Boss node: same battle scene with `RunBattleSetup` applying a stat multiplier to enemies. *(Hand-authored boss prefab deferred.)*
+- [ ] `RunStateDTO` save/resume. *(In-memory `RunSession` static for M7; JSON persistence lands in M8.)*
+- [x] Run end screen on win/loss (`RunEndPanel`).
 
 ## M8 — Legacy mode
 **Demo state:** save a roster, draft into a new run, finish, see lifetime stats grow.

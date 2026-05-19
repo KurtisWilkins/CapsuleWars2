@@ -75,8 +75,10 @@ namespace CapsuleWars.UI
                 {
                     var tier = kv.Key.GetActiveTier(kv.Value);
                     string status = tier != null ? $"Tier {tier.threshold}+" : "(below threshold)";
-                    string name = !string.IsNullOrEmpty(kv.Key.NameTermKey) ? kv.Key.NameTermKey : kv.Key.name;
-                    sb.AppendLine($"  {name}: {kv.Value} {status}");
+                    // Use the SO asset name for display until I2 Localization is wired in
+                    // (deferred from M0 — proper LocalizationManager.GetTranslation call lands
+                    // when I2 asmdef + LanguageSource are set up, likely M10 polish).
+                    sb.AppendLine($"  {kv.Key.name}: {kv.Value} {status}");
                 }
             }
             text.text = sb.ToString();

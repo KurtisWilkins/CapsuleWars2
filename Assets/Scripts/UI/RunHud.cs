@@ -15,6 +15,8 @@ namespace CapsuleWars.UI
         [SerializeField] private Text nodeTypeText;
         [SerializeField] private Button enterNodeButton;
 
+        private RunController controller;
+
         private void OnEnable()
         {
             if (enterNodeButton != null)
@@ -22,7 +24,14 @@ namespace CapsuleWars.UI
                 enterNodeButton.onClick.RemoveAllListeners();
                 enterNodeButton.onClick.AddListener(EnterCurrentNode);
             }
+            controller = FindAnyObjectByType<RunController>();
+            if (controller != null) controller.OnStateRefreshed += Refresh;
             Refresh();
+        }
+
+        private void OnDisable()
+        {
+            if (controller != null) controller.OnStateRefreshed -= Refresh;
         }
 
         public void Refresh()

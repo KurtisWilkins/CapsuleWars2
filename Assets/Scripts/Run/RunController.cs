@@ -1,3 +1,4 @@
+using System;
 using CapsuleWars.Run.Map;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -9,9 +10,14 @@ namespace CapsuleWars.Run
     /// (creates a new run if none exists), routes node entry to the right
     /// handler (load battle scene, show shop panel, show event panel, etc.),
     /// and shows the run-end panel when the run completes or is lost.
+    ///
+    /// UI components (RunHud etc.) subscribe to <see cref="OnStateRefreshed"/>
+    /// instead of being referenced directly — keeps Run independent of UI.
     /// </summary>
     public class RunController : MonoBehaviour
     {
+        public event Action OnStateRefreshed;
+
         [Tooltip("Scene to load for Combat/Elite/Boss nodes.")]
         [SerializeField] private string battleSceneName = "Test_M3_Battle";
 
@@ -106,8 +112,7 @@ namespace CapsuleWars.Run
 
         private void RefreshUi()
         {
-            var hud = FindAnyObjectByType<UI.RunHud>();
-            if (hud != null) hud.Refresh();
+            OnStateRefreshed?.Invoke();
         }
     }
 }

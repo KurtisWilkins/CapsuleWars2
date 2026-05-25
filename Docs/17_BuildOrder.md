@@ -105,14 +105,14 @@ Working game at the end of every milestone. No half-finished piles. Each milesto
 ## M8 — Legacy mode
 **Demo state:** save a roster, draft into a new run, finish, see lifetime stats grow.
 
-- [ ] `LegacyProfileDTO` + Newtonsoft serialization.
-- [ ] Legacy roster screen (grid view, filters).
-- [ ] Draft-into-run flow.
-- [ ] Level-resets-to-1 enforced at run start.
-- [ ] `LegacyStatWriter` merges per-run → lifetime at run end.
-- [ ] End-of-run recruit prompt for surviving roguelike-only units.
-- [ ] Roster cap with release prompt.
-- [ ] Per-unit detail screen with lifetime stats.
+- [x] `LegacyProfileDTO` + Newtonsoft serialization. *(Atomic save via tmp+rename to `Application.persistentDataPath/legacy.json`.)*
+- [ ] Legacy roster screen (grid view, filters). *(M8 ships a text-list `LegacyRosterPanel`; full grid + filters deferred to M10 polish.)*
+- [ ] Draft-into-run flow. *(Deferred — needs a spawn-unit-from-DTO factory. M8 matches scene units to legacy entries by `UnitRoot.unitId`; user manually maintains the link.)*
+- [ ] Level-resets-to-1 enforced at run start. *(N/A until XP/leveling lands.)*
+- [x] Battle stats merge into lifetime totals at battle end via `LegacyService`.
+- [ ] End-of-run recruit prompt. *(Deferred — needs unit-from-DTO factory and roguelike-only unit pool.)*
+- [ ] Roster cap with release prompt. *(Deferred — no cap enforcement yet.)*
+- [x] Manual promote-unit-to-legacy button (`LegacyPromoteButton`).
 
 ## M9 — Customization unlocks
 **Demo state:** earn unlock points from a run, spend them in customization screen, see new options in random gen.

@@ -5,6 +5,7 @@
         "CapsuleWars.Core",
         "CapsuleWars.Data",
         "CapsuleWars.Units",
+        "CapsuleWars.Combat",
         "CapsuleWars.Persistence"
     ],
     "includePlatforms": [],

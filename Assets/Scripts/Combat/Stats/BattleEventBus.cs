@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using CapsuleWars.Core;
 using CapsuleWars.Units.Controllers;
 using UnityEngine;
@@ -10,8 +11,8 @@ namespace CapsuleWars.Combat.Stats
     /// registration time and re-fires them as battle-scoped events for
     /// consumers (stats aggregator, UI, audio, VFX) that don't want to
     /// hook each unit individually.
-    /// Per-unit events (UnitHealthController.OnDamageTaken etc.) still fire
-    /// — the bus is an additional fan-out hub, not a replacement.
+    /// HookUnit/UnhookUnit are idempotent — safe to call multiple times
+    /// per unit during initialization sweeps.
     /// </summary>
     public class BattleEventBus
     {
@@ -22,9 +23,13 @@ namespace CapsuleWars.Combat.Stats
         public event Action OnBattleStart;
         public event Action<BattleResult> OnBattleEnd;
 
+        private readonly HashSet<IUnitRef> hooked = new HashSet<IUnitRef>();
+
         public void HookUnit(IUnitRef unit)
         {
             if (unit == null || unit.GameObject == null) return;
+            if (!hooked.Add(unit)) return; // already hooked
+
             var health = unit.GameObject.GetComponentInParent<UnitHealthController>();
             if (health == null) return;
 
@@ -35,6 +40,8 @@ namespace CapsuleWars.Combat.Stats
         public void UnhookUnit(IUnitRef unit)
         {
             if (unit == null || unit.GameObject == null) return;
+            if (!hooked.Remove(unit)) return;
+
             var health = unit.GameObject.GetComponentInParent<UnitHealthController>();
             if (health == null) return;
 

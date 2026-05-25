@@ -79,6 +79,17 @@ namespace CapsuleWars.Combat.State
                 if (allRoots[i] != null) registry.Register(allRoots[i]);
             }
 
+            // Force-invoke our registration handler for every unit currently
+            // in the registry. Units that registered before BSM.Awake
+            // subscribed to OnUnitRegistered would otherwise miss the
+            // aggregator + event-bus wiring. HandleUnitRegistered is safe
+            // to call multiple times — RegisterUnit + HookUnit are idempotent.
+            var units = registry.Units;
+            for (int i = 0; i < units.Count; i++)
+            {
+                HandleUnitRegistered(units[i]);
+            }
+
             // Apply -50% rule for units coming back from a previous downed state.
             foreach (var unit in registry.Units) ApplyDownedCarryForward(unit);
 

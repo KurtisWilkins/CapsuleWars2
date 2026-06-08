@@ -53,3 +53,14 @@ crashlytics-build.properties
 
 .DS_Store
 Thumbs.db
+
+# --- Project-specific ignores ---
+
+# Secrets (never commit, anywhere in the tree)
+SecretsConfig.json
+
+# Unity crash-recovery scenes
+/[Aa]ssets/_Recovery/
+
+# Local-only MCP editor tooling (kept out of source control)
+/Packages/com.coplaydev.unity-mcp/

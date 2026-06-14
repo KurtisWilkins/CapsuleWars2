@@ -20,6 +20,13 @@ namespace CapsuleWars.Units.Customization
         [Tooltip("Default unit definition applied in Start. Optional — can be applied later via code.")]
         [SerializeField] private UnitDefinition_SO definition;
 
+        /// <summary>
+        /// The definition currently applied to this unit — the inspector
+        /// default, or whatever was last passed to <see cref="Apply"/>.
+        /// Read by UnitFactory.FromUnit to capture the unit's visual identity.
+        /// </summary>
+        public UnitDefinition_SO Definition => definition;
+
         [Tooltip("One mount per visual slot on the prefab. Add only the slots this unit exposes.")]
         [SerializeField] private List<SlotMount> mounts = new();
 
@@ -40,6 +47,10 @@ namespace CapsuleWars.Units.Customization
         public void Apply(UnitDefinition_SO def)
         {
             if (def == null) return;
+
+            // Track the applied definition so it can be read back (e.g. by
+            // UnitFactory.FromUnit) and re-applied after an equip/customization change.
+            definition = def;
 
             // Reset all mounts first so unassigned slots end up empty.
             foreach (var mount in mounts) mount.Clear();

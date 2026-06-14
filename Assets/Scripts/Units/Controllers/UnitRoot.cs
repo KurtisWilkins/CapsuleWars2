@@ -46,6 +46,17 @@ namespace CapsuleWars.Units.Controllers
         Team IUnitRef.Team => team;
         bool IUnitRef.IsDowned => health != null && health.IsDowned;
 
+        /// <summary>
+        /// Set the unit's persistent identity. Used by UnitFactory when
+        /// configuring a spawned unit from a <c>UnitDTO</c>. Empty values fall
+        /// back to the GameObject name via <see cref="UnitId"/>/<see cref="DisplayName"/>.
+        /// </summary>
+        public void SetIdentity(string id, string display)
+        {
+            unitId = id;
+            displayName = display;
+        }
+
         private void Awake()
         {
             // Auto-fill missing references for convenience.

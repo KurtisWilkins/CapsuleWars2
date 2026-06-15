@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using CapsuleWars.Persistence.Dto;
 using CapsuleWars.Run.Map;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -32,20 +34,39 @@ namespace CapsuleWars.Run
         [SerializeField] private GameObject shopPanel;
         [SerializeField] private GameObject eventPanel;
         [SerializeField] private GameObject runEndPanel;
+        [Tooltip("Run-start draft screen. If wired, a fresh run shows this before the map. Optional.")]
+        [SerializeField] private GameObject draftPanel;
 
         public RunState State => RunSession.Current;
 
-        private void Awake()
-        {
-            if (RunSession.Current == null)
-            {
-                var map = MapGenerator.Generate(defaultFloors);
-                RunSession.StartNew(new RunState(map, startingGold));
-            }
-        }
-
         private void Start()
         {
+            // Returning to the map mid-run (e.g. after a battle): just show it.
+            if (RunSession.Current != null)
+            {
+                ShowPanel(mapPanel);
+                RefreshUi();
+                return;
+            }
+
+            // Fresh entry: draft first if a draft panel is wired; otherwise start
+            // immediately with no drafted party (battle uses scene-placed units).
+            if (draftPanel != null) ShowPanel(draftPanel);
+            else StartRunWithParty(null);
+        }
+
+        /// <summary>
+        /// Begin a new run with the given drafted party (may be null/empty, in
+        /// which case the battle scene falls back to its scene-placed players).
+        /// Called by the draft screen.
+        /// </summary>
+        public void StartRunWithParty(IEnumerable<UnitDTO> party)
+        {
+            var map = MapGenerator.Generate(defaultFloors);
+            var state = new RunState(map, startingGold);
+            state.SetParty(party);
+            RunSession.StartNew(state);
+            ShowPanel(mapPanel);
             RefreshUi();
         }
 
@@ -91,10 +112,10 @@ namespace CapsuleWars.Run
 
         public void StartNewRun()
         {
-            var map = MapGenerator.Generate(defaultFloors);
-            RunSession.StartNew(new RunState(map, startingGold));
-            ShowPanel(mapPanel);
-            RefreshUi();
+            // Route a brand-new run back through the draft when one is wired.
+            RunSession.Clear();
+            if (draftPanel != null) ShowPanel(draftPanel);
+            else StartRunWithParty(null);
         }
 
         private void ShowRunEnd()
@@ -108,6 +129,7 @@ namespace CapsuleWars.Run
             if (shopPanel != null) shopPanel.SetActive(panel == shopPanel);
             if (eventPanel != null) eventPanel.SetActive(panel == eventPanel);
             if (runEndPanel != null) runEndPanel.SetActive(panel == runEndPanel);
+            if (draftPanel != null) draftPanel.SetActive(panel == draftPanel);
         }
 
         private void RefreshUi()

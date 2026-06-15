@@ -1,5 +1,6 @@
 using CapsuleWars.Persistence;
 using CapsuleWars.Persistence.Dto;
+using CapsuleWars.Units.Controllers;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -44,10 +45,27 @@ namespace CapsuleWars.UI
             if (profile == null) return;
             if (profile.FindById(id) != null) return; // already promoted
 
-            profile.Units.Add(new LegacyUnitDTO(id, displayName));
+            // Capture the live unit's UnitDefinition (visuals) so the draft-into-run
+            // flow can reconstruct it later. Falls back to null (identity-only) when
+            // no matching scene unit is found.
+            string definitionId = null;
+            var root = FindUnitRootById(id);
+            if (root != null) definitionId = UnitFactory.FromUnit(root)?.UnitDefinitionId;
+
+            profile.Units.Add(new LegacyUnitDTO(id, displayName, definitionId));
             LegacyStore.Save();
 
             if (rosterPanel != null) rosterPanel.Refresh();
+        }
+
+        private static UnitRoot FindUnitRootById(string id)
+        {
+            var roots = Object.FindObjectsByType<UnitRoot>(FindObjectsSortMode.None);
+            for (int i = 0; i < roots.Length; i++)
+            {
+                if (roots[i] != null && roots[i].UnitId == id) return roots[i];
+            }
+            return null;
         }
     }
 }

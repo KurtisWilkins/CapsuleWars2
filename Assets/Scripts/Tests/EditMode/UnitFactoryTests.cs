@@ -178,5 +178,83 @@ namespace CapsuleWars.Tests.EditMode
 
             Object.DestroyImmediate(def);
         }
+
+        // ----- Spawn (instantiating path) -----
+
+        [Test]
+        public void Spawn_InstantiatesNewUnit_AndConfiguresFromDto()
+        {
+            var def = MakeDefinition("knight_09");
+            var db = new UnitDefinitionDatabase(new[] { def });
+            var prefab = new GameObject("PrefabUnit");
+            prefab.AddComponent<UnitRoot>();
+            prefab.AddComponent<UnitCustomization>();
+            var prefabRoot = prefab.GetComponent<UnitRoot>();
+            var dto = new UnitDTO("u10", "Lancelot", "knight_09");
+
+            var spawned = UnitFactory.Spawn(dto, prefabRoot, db, Vector3.zero, Quaternion.identity);
+
+            Assert.IsNotNull(spawned);
+            Assert.AreNotSame(prefabRoot, spawned);             // a new instance, not the prefab
+            Assert.AreEqual("u10", spawned.UnitId);
+            Assert.AreEqual("Lancelot", spawned.DisplayName);
+            Assert.AreSame(def, spawned.GetComponent<UnitCustomization>().Definition);
+
+            Object.DestroyImmediate(spawned.gameObject);
+            Object.DestroyImmediate(prefab);
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void Spawn_NullPrefab_LogsAndReturnsNull()
+        {
+            LogAssert.Expect(LogType.Warning, new Regex("null prefab"));
+            var result = UnitFactory.Spawn(
+                new UnitDTO("x", "y", null), null, new UnitDefinitionDatabase(),
+                Vector3.zero, Quaternion.identity);
+            Assert.IsNull(result);
+        }
+
+        // ----- Legacy -> party DTO mapping -----
+
+        [Test]
+        public void FromLegacy_MapsIdNameAndDefinitionId()
+        {
+            var legacy = new LegacyUnitDTO("leg1", "Boudica", "warrior_05");
+            var dto = UnitDTO.FromLegacy(legacy);
+
+            Assert.AreEqual("leg1", dto.Id);
+            Assert.AreEqual("Boudica", dto.DisplayName);
+            Assert.AreEqual("warrior_05", dto.UnitDefinitionId);
+        }
+
+        [Test]
+        public void FromLegacy_Null_ReturnsNull()
+        {
+            Assert.IsNull(UnitDTO.FromLegacy(null));
+        }
+
+        // ----- Definition catalog -> database -----
+
+        [Test]
+        public void Catalog_BuildDatabase_ResolvesItsDefinitions()
+        {
+            var a = MakeDefinition("cat_a");
+            var b = MakeDefinition("cat_b");
+            var catalog = ScriptableObject.CreateInstance<UnitDefinitionCatalog_SO>();
+            typeof(UnitDefinitionCatalog_SO)
+                .GetField("definitions", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(catalog, new System.Collections.Generic.List<UnitDefinition_SO> { a, b });
+
+            var db = catalog.BuildDatabase();
+
+            Assert.AreSame(a, db.GetUnitDefinition("cat_a"));
+            Assert.AreSame(b, db.GetUnitDefinition("cat_b"));
+            Assert.IsNull(db.GetUnitDefinition("missing"));
+
+            Object.DestroyImmediate(catalog);
+            Object.DestroyImmediate(a);
+            Object.DestroyImmediate(b);
+        }
     }
 }

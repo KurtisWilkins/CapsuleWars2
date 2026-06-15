@@ -81,5 +81,28 @@ namespace CapsuleWars.Persistence
 
             return unit;
         }
+
+        /// <summary>
+        /// Instantiate <paramref name="prefab"/> and configure the new instance
+        /// from <paramref name="dto"/> via <see cref="FromDTO"/> — the
+        /// instantiating counterpart of the doc's spawn-from-DTO path. Returns
+        /// the spawned <see cref="UnitRoot"/>, or null if <paramref name="prefab"/>
+        /// is null. Team assignment, registration with the battle registry, and
+        /// any post-spawn wiring stay the caller's job (e.g. the run's battle
+        /// party spawner) — this method only creates and configures the instance.
+        /// </summary>
+        public static UnitRoot Spawn(UnitDTO dto, UnitRoot prefab, IUnitDefinitionDatabase database,
+                                     Vector3 position, Quaternion rotation, Transform parent = null)
+        {
+            if (prefab == null)
+            {
+                Debug.LogWarning("UnitFactory.Spawn: null prefab; nothing spawned.");
+                return null;
+            }
+
+            var unit = Object.Instantiate(prefab, position, rotation, parent);
+            FromDTO(dto, unit, database);
+            return unit;
+        }
     }
 }

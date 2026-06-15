@@ -43,6 +43,18 @@ namespace CapsuleWars.Persistence.Dto
             UnitDefinitionId = unitDefinitionId;
         }
 
+        /// <summary>
+        /// Build the run-time identity DTO for a drafted legacy unit. Carries the
+        /// legacy unit's Id (so battle stats flow back to the right profile via
+        /// LegacyService) and its UnitDefinitionId (so visuals can be rebuilt).
+        /// Returns null for a null legacy unit.
+        /// </summary>
+        public static UnitDTO FromLegacy(LegacyUnitDTO legacy)
+        {
+            if (legacy == null) return null;
+            return new UnitDTO(legacy.Id, legacy.DisplayName, legacy.UnitDefinitionId);
+        }
+
         // Value equality over all serialized fields — lets round-trip tests
         // assert a DTO -> Unit -> DTO cycle reproduces the original. Reference
         // equality (e.g. the null checks in UnitFactory) is intentionally left

@@ -70,7 +70,15 @@ namespace CapsuleWars.Run
             for (int i = 0; i < roots.Length; i++)
             {
                 var r = roots[i];
-                if (r != null && r.Team == Team.Player) Destroy(r.gameObject);
+                if (r != null && r.Team == Team.Player)
+                {
+                    // Deactivate BEFORE destroying: Destroy() is deferred to end of
+                    // frame, so BattleStateManager.Start's FindObjectsByType sweep
+                    // (which excludes inactive) would otherwise register a unit that's
+                    // about to be destroyed, leaving a dangling ref in the registry.
+                    r.gameObject.SetActive(false);
+                    Destroy(r.gameObject);
+                }
             }
         }
 

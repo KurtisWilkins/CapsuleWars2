@@ -37,7 +37,11 @@ namespace CapsuleWars.Combat.Stats
             for (int i = 0; i < units.Count; i++)
             {
                 var u = units[i];
-                if (u == null) continue;
+                // IUnitRef is an interface, so '== null' is a plain reference check
+                // that does NOT catch a destroyed UnityEngine.Object. Test the
+                // underlying object too, before touching u.GameObject (which throws
+                // on a destroyed unit).
+                if (u == null || (u is UnityEngine.Object obj && obj == null)) continue;
                 var root = u.GameObject != null ? u.GameObject.GetComponentInParent<UnitRoot>() : null;
                 if (root == null || root.Status == null) continue;
 
@@ -57,7 +61,7 @@ namespace CapsuleWars.Combat.Stats
             for (int i = 0; i < units.Count; i++)
             {
                 var u = units[i];
-                if (u == null || u.IsDowned) continue;
+                if (u == null || (u is UnityEngine.Object o && o == null) || u.IsDowned) continue;
                 var root = u.GameObject != null ? u.GameObject.GetComponentInParent<UnitRoot>() : null;
                 if (root == null || root.Status == null) continue;
                 var cls = root.Status.UnitClass;

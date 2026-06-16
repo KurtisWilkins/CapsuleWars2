@@ -92,7 +92,9 @@ namespace CapsuleWars.Combat.Stats
 
         private static string GetUnitId(IUnitRef u)
         {
-            if (u == null || u.GameObject == null) return null;
+            if (u == null) return null;
+            // Fakes/tests may have no backing GameObject; fall back to ToString().
+            if (u.GameObject == null) return u.ToString();
             var root = u.GameObject.GetComponentInParent<UnitRoot>();
             return root != null ? root.UnitId : u.GameObject.name;
         }

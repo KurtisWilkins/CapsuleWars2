@@ -15,21 +15,43 @@ namespace CapsuleWars.Units.Controllers
         public event Action<DownedEvent> OnDowned;
         public event Action<int> OnHealthChanged;
 
-        // [field: SerializeField] exposes the backing field in the inspector
-        // so HP is visible during Play mode without flipping to Debug view.
-        // Awake overwrites the serialized value with status.MaxHp at runtime.
-        [field: SerializeField] public int CurrentHp { get; private set; }
-        public int MaxHp => status != null ? status.MaxHp : 0;
+        // [SerializeField] keeps HP visible in the inspector during Play mode.
+        // Initialization is lazy (see EnsureInitialized) so the controller
+        // reports correct HP even when Awake hasn't run — e.g. EditMode tests
+        // that AddComponent in edit mode, where Unity does not invoke Awake.
+        [SerializeField] private int currentHp;
+        private bool initialized;
+
+        public int CurrentHp
+        {
+            get { EnsureInitialized(); return currentHp; }
+            private set { currentHp = value; }
+        }
+
+        public int MaxHp
+        {
+            get { EnsureInitialized(); return status != null ? status.MaxHp : 0; }
+        }
+
         [field: SerializeField] public bool IsDowned { get; private set; }
 
         private UnitStatusController status;
         private UnitRoot root;
 
-        private void Awake()
+        private void Awake() => EnsureInitialized();
+
+        /// <summary>
+        /// Resolve sibling controllers and seed CurrentHp from MaxHp exactly
+        /// once. Safe to call from Awake or lazily from any accessor; the
+        /// guard makes it idempotent so it never resets HP mid-battle.
+        /// </summary>
+        private void EnsureInitialized()
         {
-            status = GetComponentInParent<UnitStatusController>();
-            root = GetComponentInParent<UnitRoot>();
-            if (status != null) CurrentHp = status.MaxHp;
+            if (initialized) return;
+            initialized = true;
+            if (status == null) status = GetComponentInParent<UnitStatusController>();
+            if (root == null) root = GetComponentInParent<UnitRoot>();
+            if (status != null) currentHp = status.MaxHp;
         }
 
         /// <summary>
@@ -38,6 +60,7 @@ namespace CapsuleWars.Units.Controllers
         /// </summary>
         public void TakeDamage(int amount, IUnitRef source)
         {
+            EnsureInitialized();
             if (IsDowned) return;
             int actual = Math.Max(1, amount);
             CurrentHp = Math.Max(0, CurrentHp - actual);
@@ -60,6 +83,7 @@ namespace CapsuleWars.Units.Controllers
         /// </summary>
         public void RestoreToPercent(float percent)
         {
+            EnsureInitialized();
             if (status == null) return;
             float p = Mathf.Clamp01(percent);
             CurrentHp = Mathf.Max(1, Mathf.RoundToInt(status.MaxHp * p));

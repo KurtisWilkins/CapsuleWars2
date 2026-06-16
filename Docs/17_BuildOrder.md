@@ -107,11 +107,11 @@ Working game at the end of every milestone. No half-finished piles. Each milesto
 
 - [x] `LegacyProfileDTO` + Newtonsoft serialization. *(Atomic save via tmp+rename to `Application.persistentDataPath/legacy.json`.)*
 - [ ] Legacy roster screen (grid view, filters). *(M8 ships a text-list `LegacyRosterPanel`; full grid + filters deferred to M10 polish.)*
-- [ ] Draft-into-run flow. *(Deferred — needs a spawn-unit-from-DTO factory. M8 matches scene units to legacy entries by `UnitRoot.unitId`; user manually maintains the link.)*
+- [x] Draft-into-run flow. *(Done: `UnitFactory.Spawn` + `BattlePartySpawner` spawn the drafted party into the battle scene; `DraftPanel` drafts from the legacy roster at run start; party carried in `RunState.Party`. Branch `claude/unit-factory`, pending visual QA.)*
 - [ ] Level-resets-to-1 enforced at run start. *(N/A until XP/leveling lands.)*
 - [x] Battle stats merge into lifetime totals at battle end via `LegacyService`.
-- [ ] End-of-run recruit prompt. *(Deferred — needs unit-from-DTO factory and roguelike-only unit pool.)*
-- [ ] Roster cap with release prompt. *(Deferred — no cap enforcement yet.)*
+- [x] End-of-run recruit prompt. *(`RecruitPanel` at run-end win promotes surviving roguelike-only units into the roster. Recruit pool fed by a STUB drop (`RoguelikeRecruitGenerator`) on non-boss wins — replaced by M9's real in-run random generator.)*
+- [x] Roster cap with release prompt. *(`LegacyProfileDTO.RosterCap` default 100, enforced in `TryAdd`; `RecruitPanel` release sub-mode frees a slot when the roster is full.)*
 - [x] Manual promote-unit-to-legacy button (`LegacyPromoteButton`).
 
 ## M9 — Customization unlocks

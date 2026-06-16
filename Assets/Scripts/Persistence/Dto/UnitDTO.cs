@@ -1,23 +1,34 @@
 using System;
+using System.Collections.Generic;
+using CapsuleWars.Core;
 
 namespace CapsuleWars.Persistence.Dto
 {
+    /// <summary>One serialized slot→part assignment (by stable part id).</summary>
+    [Serializable]
+    public class UnitPartDTO
+    {
+        public PartSlot slot;
+        public string partId;
+
+        public UnitPartDTO() { }
+        public UnitPartDTO(PartSlot slot, string partId) { this.slot = slot; this.partId = partId; }
+    }
+
     /// <summary>
     /// Serialized form of a unit (Docs/02_UnitSystem.md, Docs/14_Persistence.md).
-    /// Holds identity plus a by-ID reference to the unit's
-    /// <c>UnitDefinition_SO</c> (visuals: parts, palette, default name) — no
-    /// Unity object references, per the SO-reference-by-ID rule. Convert with
+    /// Holds identity plus visuals by stable id — either a whole-unit
+    /// <c>UnitDefinition_SO</c> reference (<see cref="UnitDefinitionId"/>) OR an
+    /// explicit per-slot part list (<see cref="Parts"/>) + <see cref="PaletteId"/>
+    /// for generated/customized units. No Unity object references. Convert with
     /// <c>UnitFactory</c>.
     ///
-    /// SCOPE NOTE: this is the M8-keystone slice. The following doc-specified
-    /// fields are intentionally deferred, because the runtime/data layer can't
-    /// yet source them and adding dead fields would be misleading:
-    ///   - class, element(s), equipment, abilities by ID — the referenced SOs
-    ///     have no stable IDs yet (only UnitDefinition_SO does).
-    ///   - level / evolutionTier — no runtime home exists (no level field on
-    ///     any controller yet).
-    /// Add these alongside the SO-ID + level work, bumping <see cref="SaveVersion"/>
-    /// and writing a migration when the schema changes.
+    /// Adding <see cref="Parts"/>/<see cref="PaletteId"/> is backward compatible
+    /// (absent in pre-M9 saves → empty → fall back to the definition's visuals),
+    /// so <see cref="SaveVersion"/> stays at 1 (no migration needed).
+    ///
+    /// STILL DEFERRED (no runtime home yet): class/element/equipment/ability ids,
+    /// level / evolutionTier.
     /// </summary>
     [Serializable]
     public class UnitDTO : IEquatable<UnitDTO>
@@ -31,8 +42,17 @@ namespace CapsuleWars.Persistence.Dto
         /// <summary>Display name (may be a player rename); falls back to the definition's name when empty.</summary>
         public string DisplayName;
 
-        /// <summary>ID of the unit's <c>UnitDefinition_SO</c> (resolved via the unit-definition database).</summary>
+        /// <summary>ID of the unit's <c>UnitDefinition_SO</c> (resolved via the unit-definition database). Used when <see cref="Parts"/> is empty.</summary>
         public string UnitDefinitionId;
+
+        /// <summary>
+        /// Explicit per-slot parts for a generated/customized unit. When non-empty,
+        /// these take precedence over <see cref="UnitDefinitionId"/> for visuals.
+        /// </summary>
+        public List<UnitPartDTO> Parts = new List<UnitPartDTO>();
+
+        /// <summary>Stable <c>Palette_SO</c> id for a generated/customized unit (optional).</summary>
+        public string PaletteId;
 
         public UnitDTO() { }
 

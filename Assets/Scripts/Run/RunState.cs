@@ -88,5 +88,57 @@ namespace CapsuleWars.Run
             if (node != null) node.Visited = true;
             CurrentFloor++;
         }
+
+        // -----------------------------------------------------------------
+        // Persistence mapping (lives here, in Run, so it can see both the
+        // RunMap/NodeType runtime types and the Persistence DTOs — keeping the
+        // Persistence assembly free of any reference to Run).
+        // -----------------------------------------------------------------
+
+        /// <summary>Flatten this run into its serializable DTO.</summary>
+        public RunStateDTO ToDTO()
+        {
+            var dto = new RunStateDTO
+            {
+                CurrentFloor = CurrentFloor,
+                Gold = Gold,
+                IsLost = IsLost,
+                IsBossEncounter = IsBossEncounter,
+                RewardsGranted = RewardsGranted,
+            };
+
+            if (Map != null)
+                foreach (var n in Map.Nodes)
+                    if (n != null)
+                        dto.Nodes.Add(new MapNodeDTO(n.Index, (int)n.Type, n.DisplayLabel, n.Visited));
+
+            foreach (var u in party) if (u != null) dto.Party.Add(u);
+            foreach (var u in recruits) if (u != null) dto.Recruits.Add(u);
+            return dto;
+        }
+
+        /// <summary>Rebuild a run from its DTO. Returns null for a null DTO.</summary>
+        public static RunState FromDTO(RunStateDTO dto)
+        {
+            if (dto == null) return null;
+
+            var nodes = new List<MapNode>();
+            if (dto.Nodes != null)
+                foreach (var n in dto.Nodes)
+                    if (n != null)
+                        nodes.Add(new MapNode(n.Index, (NodeType)n.Type, n.DisplayLabel) { Visited = n.Visited });
+
+            var state = new RunState(new RunMap(nodes), dto.Gold)
+            {
+                IsLost = dto.IsLost,
+                IsBossEncounter = dto.IsBossEncounter,
+                RewardsGranted = dto.RewardsGranted,
+            };
+            state.CurrentFloor = dto.CurrentFloor;   // private set — accessible within the class
+            if (dto.Party != null) state.SetParty(dto.Party);
+            if (dto.Recruits != null)
+                foreach (var u in dto.Recruits) state.AddRecruit(u);
+            return state;
+        }
     }
 }

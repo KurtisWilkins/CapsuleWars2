@@ -15,6 +15,17 @@ namespace CapsuleWars.Persistence.Dto
         public UnitPartDTO(PartSlot slot, string partId) { this.slot = slot; this.partId = partId; }
     }
 
+    /// <summary>One serialized slot→equipment assignment (by stable equipment id).</summary>
+    [Serializable]
+    public class UnitEquipmentDTO
+    {
+        public EquipmentSlot slot;
+        public string equipmentId;
+
+        public UnitEquipmentDTO() { }
+        public UnitEquipmentDTO(EquipmentSlot slot, string equipmentId) { this.slot = slot; this.equipmentId = equipmentId; }
+    }
+
     /// <summary>
     /// Serialized form of a unit (Docs/02_UnitSystem.md, Docs/14_Persistence.md).
     /// Holds identity plus visuals by stable id — either a whole-unit
@@ -53,6 +64,15 @@ namespace CapsuleWars.Persistence.Dto
 
         /// <summary>Stable <c>Palette_SO</c> id for a generated/customized unit (optional).</summary>
         public string PaletteId;
+
+        /// <summary>
+        /// Equipped items by slot, as stable equipment ids (run-scoped loot).
+        /// Resolved to <c>Equipment_SO</c> via an <c>IEquipmentDatabase</c> at
+        /// spawn time (<c>UnitFactory</c>). Empty for unequipped units. Backward
+        /// compatible: absent in pre-equipment saves → empty, so
+        /// <see cref="SaveVersion"/> stays at 1 (no migration needed).
+        /// </summary>
+        public List<UnitEquipmentDTO> Equipment = new List<UnitEquipmentDTO>();
 
         public UnitDTO() { }
 

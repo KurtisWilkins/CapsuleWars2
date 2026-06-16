@@ -52,6 +52,15 @@ namespace CapsuleWars.Run
                 return;
             }
 
+            // Resume a persisted run across app restarts (run-scoped party +
+            // equipment survive via RunStore). Only when no in-memory run exists.
+            if (RunSession.TryLoad())
+            {
+                ShowPanel(mapPanel);
+                RefreshUi();
+                return;
+            }
+
             // Fresh entry: draft first if a draft panel is wired; otherwise start
             // immediately with no drafted party (battle uses scene-placed units).
             if (draftPanel != null) ShowPanel(draftPanel);
@@ -108,6 +117,7 @@ namespace CapsuleWars.Run
         {
             if (State == null) return;
             State.AdvanceNode();
+            RunSession.Save();
             ShowPanel(mapPanel);
             if (State.IsComplete) ShowRunEnd();
             else RefreshUi();

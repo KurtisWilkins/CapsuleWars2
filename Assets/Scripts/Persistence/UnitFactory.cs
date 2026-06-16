@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CapsuleWars.Data.Equipment;
 using CapsuleWars.Data.Units;
 using CapsuleWars.Persistence.Dto;
 using CapsuleWars.Units.Controllers;
@@ -48,6 +49,15 @@ namespace CapsuleWars.Persistence
             if (unit.TryGetComponent<UnitCustomization>(out var custom) && custom.Definition != null)
                 dto.UnitDefinitionId = custom.Definition.UnitId;
 
+            // Capture equipped items by slot + stable id (run-scoped loot).
+            if (unit.TryGetComponent<UnitStatusController>(out var status))
+            {
+                var equipped = status.Equipment;
+                for (int i = 0; i < equipped.Count; i++)
+                    if (equipped[i].item != null)
+                        dto.Equipment.Add(new UnitEquipmentDTO(equipped[i].slot, equipped[i].item.EquipmentId));
+            }
+
             return dto;
         }
 
@@ -61,11 +71,15 @@ namespace CapsuleWars.Persistence
         /// unknown, identity is still applied and visuals are left unchanged.
         /// </summary>
         public static UnitRoot FromDTO(UnitDTO dto, UnitRoot unit, IUnitDefinitionDatabase database,
-                                       IPartDatabase partDatabase = null)
+                                       IPartDatabase partDatabase = null, IEquipmentDatabase equipmentDatabase = null)
         {
             if (dto == null || unit == null) return unit;
 
             unit.SetIdentity(dto.Id, dto.DisplayName);
+
+            // Equipment applies regardless of which visual path runs below, so it
+            // must come before the early returns in the parts/definition logic.
+            ApplyEquipment(dto, unit, equipmentDatabase);
 
             // Explicit parts (generated/customized units) take precedence over a
             // whole-unit definition. Resolve each part id and apply directly.
@@ -111,7 +125,7 @@ namespace CapsuleWars.Persistence
         /// </summary>
         public static UnitRoot Spawn(UnitDTO dto, UnitRoot prefab, IUnitDefinitionDatabase database,
                                      Vector3 position, Quaternion rotation, Transform parent = null,
-                                     IPartDatabase partDatabase = null)
+                                     IPartDatabase partDatabase = null, IEquipmentDatabase equipmentDatabase = null)
         {
             if (prefab == null)
             {
@@ -120,8 +134,26 @@ namespace CapsuleWars.Persistence
             }
 
             var unit = Object.Instantiate(prefab, position, rotation, parent);
-            FromDTO(dto, unit, database, partDatabase);
+            FromDTO(dto, unit, database, partDatabase, equipmentDatabase);
             return unit;
+        }
+
+        /// <summary>
+        /// Resolve and equip each item id on the unit's
+        /// <see cref="UnitStatusController"/>. No-op when there's no equipment
+        /// database, no equipment on the DTO, or no status controller. Unknown
+        /// ids are skipped (the database returns null).
+        /// </summary>
+        private static void ApplyEquipment(UnitDTO dto, UnitRoot unit, IEquipmentDatabase equipmentDatabase)
+        {
+            if (equipmentDatabase == null || dto.Equipment == null || dto.Equipment.Count == 0) return;
+            if (!unit.TryGetComponent<UnitStatusController>(out var status)) return;
+
+            for (int i = 0; i < dto.Equipment.Count; i++)
+            {
+                var item = equipmentDatabase.GetEquipment(dto.Equipment[i].equipmentId);
+                if (item != null) status.Equip(dto.Equipment[i].slot, item);
+            }
         }
     }
 }

@@ -23,6 +23,13 @@ namespace CapsuleWars.Persistence.Dto
         /// </summary>
         public int RosterCap = 100;
 
+        /// <summary>
+        /// Account-wide meta-progression (unlock points + owned customization
+        /// options). The initializer is the backward-compatible default: old
+        /// saves without this key load a fresh profile. See Docs/13_LegacyMode.md.
+        /// </summary>
+        public PlayerProfileDTO PlayerProfile = new PlayerProfileDTO();
+
         public List<LegacyUnitDTO> Units = new List<LegacyUnitDTO>();
 
         public LegacyProfileDTO()

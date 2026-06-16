@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CapsuleWars.Persistence;
 using CapsuleWars.Persistence.Dto;
 using CapsuleWars.Run.Map;
 using UnityEngine;
@@ -122,6 +123,8 @@ namespace CapsuleWars.Run
 
         private void ShowRunEnd()
         {
+            AwardUnlockPoints();
+
             // On a win with pending roguelike-only recruits, offer recruitment
             // first; the recruit panel calls FinishRecruiting() to continue.
             var s = RunSession.Current;
@@ -138,6 +141,26 @@ namespace CapsuleWars.Run
         public void FinishRecruiting()
         {
             ShowPanel(runEndPanel);
+        }
+
+        /// <summary>
+        /// Award meta-progression unlock points for a finished run, exactly once
+        /// (Docs/12_RoguelikeRun.md §82). Points scale with floors reached, plus a
+        /// completion bonus on a win.
+        /// </summary>
+        private void AwardUnlockPoints()
+        {
+            var s = RunSession.Current;
+            if (s == null || s.RewardsGranted) return;
+            if (!s.IsComplete && !s.IsLost) return;   // run not actually finished
+
+            int pts = UnlockRewards.PointsForRun(s.CurrentFloor, s.IsComplete && !s.IsLost);
+            if (pts > 0)
+            {
+                LegacyStore.Current.PlayerProfile.AddPoints(pts);
+                LegacyStore.Save();
+            }
+            s.RewardsGranted = true;
         }
 
         private void ShowPanel(GameObject panel)

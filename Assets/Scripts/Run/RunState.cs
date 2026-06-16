@@ -17,6 +17,9 @@ namespace CapsuleWars.Run
         public bool IsLost { get; set; }
         public bool IsBossEncounter { get; set; }
 
+        /// <summary>Set once unlock points have been awarded for this run, so the run-end flow grants them exactly once.</summary>
+        public bool RewardsGranted { get; set; }
+
         /// <summary>
         /// The player's drafted party for this run, as serializable identity DTOs.
         /// Set at run start by the draft flow; read in the battle scene by

@@ -42,5 +42,16 @@ namespace CapsuleWars.Persistence.Dto
             UnitDefinitionId = unitDefinitionId;
             CreatedUtc = DateTime.UtcNow.ToString("o");
         }
+
+        /// <summary>
+        /// Build a fresh legacy entry from a run-time unit identity (e.g. a
+        /// roguelike-only unit being recruited at run end). Lifetime stats start
+        /// empty. Returns null for a null source.
+        /// </summary>
+        public static LegacyUnitDTO FromUnit(UnitDTO unit)
+        {
+            if (unit == null) return null;
+            return new LegacyUnitDTO(unit.Id, unit.DisplayName, unit.UnitDefinitionId);
+        }
     }
 }

@@ -43,6 +43,25 @@ namespace CapsuleWars.Run
                 if (u != null) party.Add(u);
         }
 
+        /// <summary>
+        /// Roguelike-only units picked up during the run (combat/elite drops).
+        /// Offered for legacy recruitment at run end on a win (Docs/13_LegacyMode.md).
+        /// Discarded on a loss. Distinct from <see cref="Party"/> (the drafted
+        /// legacy units).
+        /// </summary>
+        private readonly List<UnitDTO> recruits = new();
+        public IReadOnlyList<UnitDTO> Recruits => recruits;
+
+        public void AddRecruit(UnitDTO unit)
+        {
+            if (unit != null) recruits.Add(unit);
+        }
+
+        public void RemoveRecruit(UnitDTO unit)
+        {
+            if (unit != null) recruits.Remove(unit);
+        }
+
         public MapNode CurrentNode => Map?.Get(CurrentFloor);
         public bool IsComplete => Map != null && CurrentFloor >= Map.Count;
         public bool IsBossFloor => CurrentNode != null && CurrentNode.Type == NodeType.Boss;

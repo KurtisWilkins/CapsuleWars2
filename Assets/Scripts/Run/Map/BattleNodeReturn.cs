@@ -44,6 +44,13 @@ namespace CapsuleWars.Run.Map
             if (result.PlayerWon)
             {
                 state.AddGold(state.IsBossEncounter ? goldOnBossWin : goldOnCombatWin);
+
+                // Roguelike-only unit drop on non-boss wins (Combat/Elite), added
+                // to the run's recruit pool and offered for legacy promotion at
+                // run end. STUB generator — M9 replaces it with the real roll.
+                if (!state.IsBossEncounter)
+                    state.AddRecruit(RoguelikeRecruitGenerator.Generate(state.CurrentFloor, state.Recruits.Count));
+
                 state.AdvanceNode();
             }
             else

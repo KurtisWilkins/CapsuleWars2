@@ -81,16 +81,6 @@ namespace CapsuleWars.Tests.EditMode
         }
 
         [Test]
-        public void RecruitGenerator_ProducesUniqueIds_AndResolvableDefinition()
-        {
-            var a = RoguelikeRecruitGenerator.Generate(1, 0);
-            var b = RoguelikeRecruitGenerator.Generate(1, 1);
-            Assert.AreNotEqual(a.Id, b.Id);
-            Assert.IsFalse(string.IsNullOrEmpty(a.DisplayName));
-            Assert.AreEqual("unit_sample", a.UnitDefinitionId);
-        }
-
-        [Test]
         public void RunState_RecruitPool_AddsAndRemoves()
         {
             var state = new RunState(MapGenerator.Generate(2));

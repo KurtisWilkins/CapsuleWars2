@@ -64,3 +64,6 @@ SecretsConfig.json
 
 # Local-only MCP editor tooling (kept out of source control)
 /Packages/com.coplaydev.unity-mcp/
+
+# Editor screenshots (local only)
+/[Aa]ssets/Screenshots/

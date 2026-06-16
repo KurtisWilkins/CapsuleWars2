@@ -117,11 +117,11 @@ Working game at the end of every milestone. No half-finished piles. Each milesto
 ## M9 — Customization unlocks
 **Demo state:** earn unlock points from a run, spend them in customization screen, see new options in random gen.
 
-- [ ] `PlayerProfileDTO.unlockPoints` + earn/spend.
-- [ ] Customization screen UI.
-- [ ] Unlock-aware `UnitCustomization` (only shows unlocked parts).
-- [ ] Random unit generator (`12_RoguelikeRun.md`) draws from unlocked pool.
-- [ ] Asymmetric mixing UI controls.
+- [x] `PlayerProfileDTO.unlockPoints` + earn/spend. *(PlayerProfileDTO on LegacyProfileDTO; UnlockRewards + RunController award points on run completion; CustomizationUnlocks.TryUnlockPart spends them.)*
+- [x] Customization screen UI. *(`CustomizationPanel` in the map scene + a Customize button: lists catalog parts with cost/owned, spends points to unlock; starters seeded on open.)*
+- [x] Unlock-aware `UnitCustomization`. *(CustomizationUnlocks.UnlockedPartsForSlot gates the picker + generator to owned parts; UnitCustomization.ApplyParts builds visuals from per-slot part ids.)*
+- [x] Random unit generator (`12_RoguelikeRun.md`) draws from unlocked pool. *(`RandomUnitGenerator` (seeded) + the parts apply/persist pipeline. PENDING: wire BattleNodeReturn -> RandomUnitGenerator so the in-run recruit pool is fed live, replacing the M8 RoguelikeRecruitGenerator stub.)*
+- [ ] Asymmetric mixing UI controls. *(Deferred — a per-unit left/right appearance editor; the unlock store + generator are in, the mixing editor UI is not.)*
 
 ## M10 — Polish & MVP candidate
 **Demo state:** shippable single-player loop.

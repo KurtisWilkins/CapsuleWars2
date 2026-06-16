@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace CapsuleWars.Persistence.Dto
 {
@@ -28,6 +29,17 @@ namespace CapsuleWars.Persistence.Dto
         /// </summary>
         public string UnitDefinitionId;
 
+        /// <summary>
+        /// Explicit per-slot parts for a generated/customized unit (mirrors
+        /// <see cref="UnitDTO.Parts"/>), so a recruited roguelike-only unit keeps
+        /// its exact look across runs. Empty for definition-based units.
+        /// Backward compatible: absent in older saves -> empty.
+        /// </summary>
+        public List<UnitPartDTO> Parts = new List<UnitPartDTO>();
+
+        /// <summary>Stable <c>Palette_SO</c> id for a generated/customized unit (optional).</summary>
+        public string PaletteId;
+
         /// <summary>ISO 8601 timestamp of when this unit was first promoted to legacy.</summary>
         public string CreatedUtc;
 
@@ -51,7 +63,14 @@ namespace CapsuleWars.Persistence.Dto
         public static LegacyUnitDTO FromUnit(UnitDTO unit)
         {
             if (unit == null) return null;
-            return new LegacyUnitDTO(unit.Id, unit.DisplayName, unit.UnitDefinitionId);
+            var legacy = new LegacyUnitDTO(unit.Id, unit.DisplayName, unit.UnitDefinitionId)
+            {
+                PaletteId = unit.PaletteId,
+            };
+            if (unit.Parts != null)
+                foreach (var p in unit.Parts)
+                    if (p != null) legacy.Parts.Add(new UnitPartDTO(p.slot, p.partId));
+            return legacy;
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using CapsuleWars.Data.Units;
 using CapsuleWars.Persistence.Dto;
 using CapsuleWars.Units.Controllers;
@@ -59,11 +60,28 @@ namespace CapsuleWars.Persistence
         /// dto or unit is null). If the database is null or the definition ID is
         /// unknown, identity is still applied and visuals are left unchanged.
         /// </summary>
-        public static UnitRoot FromDTO(UnitDTO dto, UnitRoot unit, IUnitDefinitionDatabase database)
+        public static UnitRoot FromDTO(UnitDTO dto, UnitRoot unit, IUnitDefinitionDatabase database,
+                                       IPartDatabase partDatabase = null)
         {
             if (dto == null || unit == null) return unit;
 
             unit.SetIdentity(dto.Id, dto.DisplayName);
+
+            // Explicit parts (generated/customized units) take precedence over a
+            // whole-unit definition. Resolve each part id and apply directly.
+            if (dto.Parts != null && dto.Parts.Count > 0 && partDatabase != null
+                && unit.TryGetComponent<UnitCustomization>(out var partCustom))
+            {
+                var assignments = new List<PartAssignment>(dto.Parts.Count);
+                for (int i = 0; i < dto.Parts.Count; i++)
+                {
+                    var bp = partDatabase.GetPart(dto.Parts[i].partId);
+                    if (bp != null) assignments.Add(new PartAssignment { slot = dto.Parts[i].slot, part = bp });
+                }
+                var palette = string.IsNullOrEmpty(dto.PaletteId) ? null : partDatabase.GetPalette(dto.PaletteId);
+                partCustom.ApplyParts(assignments, palette);
+                return unit;
+            }
 
             if (database == null || string.IsNullOrEmpty(dto.UnitDefinitionId)) return unit;
 
@@ -92,7 +110,8 @@ namespace CapsuleWars.Persistence
         /// party spawner) — this method only creates and configures the instance.
         /// </summary>
         public static UnitRoot Spawn(UnitDTO dto, UnitRoot prefab, IUnitDefinitionDatabase database,
-                                     Vector3 position, Quaternion rotation, Transform parent = null)
+                                     Vector3 position, Quaternion rotation, Transform parent = null,
+                                     IPartDatabase partDatabase = null)
         {
             if (prefab == null)
             {
@@ -101,7 +120,7 @@ namespace CapsuleWars.Persistence
             }
 
             var unit = Object.Instantiate(prefab, position, rotation, parent);
-            FromDTO(dto, unit, database);
+            FromDTO(dto, unit, database, partDatabase);
             return unit;
         }
     }

@@ -51,15 +51,25 @@ namespace CapsuleWars.Units.Customization
             // Track the applied definition so it can be read back (e.g. by
             // UnitFactory.FromUnit) and re-applied after an equip/customization change.
             definition = def;
+            ApplyParts(def.Parts, def.Palette);
+        }
 
+        /// <summary>
+        /// Apply an explicit set of slot→part assignments + palette to the mounts
+        /// (for generated/customized units built from a UnitDTO's part ids, rather
+        /// than a whole-unit definition). Unassigned slots are cleared.
+        /// </summary>
+        public void ApplyParts(IReadOnlyList<PartAssignment> parts, Palette_SO palette)
+        {
             // Reset all mounts first so unassigned slots end up empty.
             foreach (var mount in mounts) mount.Clear();
+            if (parts == null) return;
 
-            foreach (var assignment in def.Parts)
+            for (int i = 0; i < parts.Count; i++)
             {
-                var mount = FindMount(assignment.slot);
+                var mount = FindMount(parts[i].slot);
                 if (mount == null) continue;
-                mount.Apply(assignment.part, def.Palette);
+                mount.Apply(parts[i].part, palette);
             }
         }
 

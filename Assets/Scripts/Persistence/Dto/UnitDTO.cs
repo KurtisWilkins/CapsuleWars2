@@ -72,7 +72,14 @@ namespace CapsuleWars.Persistence.Dto
         public static UnitDTO FromLegacy(LegacyUnitDTO legacy)
         {
             if (legacy == null) return null;
-            return new UnitDTO(legacy.Id, legacy.DisplayName, legacy.UnitDefinitionId);
+            var dto = new UnitDTO(legacy.Id, legacy.DisplayName, legacy.UnitDefinitionId)
+            {
+                PaletteId = legacy.PaletteId,
+            };
+            if (legacy.Parts != null)
+                foreach (var p in legacy.Parts)
+                    if (p != null) dto.Parts.Add(new UnitPartDTO(p.slot, p.partId));
+            return dto;
         }
 
         // Value equality over all serialized fields — lets round-trip tests

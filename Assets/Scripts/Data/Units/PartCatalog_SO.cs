@@ -13,7 +13,7 @@ namespace CapsuleWars.Data.Units
     /// Persistence where both the catalog and the save profile are visible.
     /// </summary>
     [CreateAssetMenu(fileName = "PartCatalog", menuName = "CapsuleWars/Part Catalog", order = 4)]
-    public class PartCatalog_SO : ScriptableObject
+    public class PartCatalog_SO : ScriptableObject, IPartDatabase
     {
         [System.Serializable]
         public class PartEntry
@@ -37,6 +37,24 @@ namespace CapsuleWars.Data.Units
 
         public IReadOnlyList<PartEntry> Parts => parts;
         public IReadOnlyList<PaletteEntry> Palettes => palettes;
+
+        // --- IPartDatabase ---
+
+        public BodyPart_SO GetPart(string partId)
+        {
+            if (string.IsNullOrEmpty(partId)) return null;
+            for (int i = 0; i < parts.Count; i++)
+                if (parts[i]?.part != null && parts[i].part.PartId == partId) return parts[i].part;
+            return null;
+        }
+
+        public Palette_SO GetPalette(string paletteId)
+        {
+            if (string.IsNullOrEmpty(paletteId)) return null;
+            for (int i = 0; i < palettes.Count; i++)
+                if (palettes[i]?.palette != null && palettes[i].palette.PaletteId == paletteId) return palettes[i].palette;
+            return null;
+        }
 
         /// <summary>Cost to unlock a part, or -1 if the id isn't in the catalog.</summary>
         public int GetPartCost(string partId)

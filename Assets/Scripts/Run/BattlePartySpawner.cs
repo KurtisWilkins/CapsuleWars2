@@ -33,6 +33,9 @@ namespace CapsuleWars.Run
         [Tooltip("Catalog used to resolve each party member's UnitDefinition by id.")]
         [SerializeField] private UnitDefinitionCatalog_SO definitionCatalog;
 
+        [Tooltip("Part catalog used to resolve a party member's explicit parts (generated/recruited units). Optional.")]
+        [SerializeField] private PartCatalog_SO partCatalog;
+
         [Tooltip("Spawn transforms for player units, one per party slot. Extra party members fall back to spacing offsets.")]
         [SerializeField] private Transform[] playerSpawnPoints;
 
@@ -60,7 +63,8 @@ namespace CapsuleWars.Run
 
             for (int i = 0; i < party.Count; i++)
             {
-                UnitFactory.Spawn(party[i], baseUnitPrefab, database, SpawnPosition(i), SpawnRotation(i));
+                UnitFactory.Spawn(party[i], baseUnitPrefab, database, SpawnPosition(i), SpawnRotation(i),
+                                  parent: null, partDatabase: partCatalog);
             }
         }
 

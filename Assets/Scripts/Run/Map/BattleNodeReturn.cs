@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using CapsuleWars.Combat.Stats;
 using CapsuleWars.Combat.State;
 using CapsuleWars.Core;
+using CapsuleWars.Data.Units;
+using CapsuleWars.Persistence;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -22,6 +24,9 @@ namespace CapsuleWars.Run.Map
 
         [Tooltip("Gold awarded for winning a Boss node.")]
         [SerializeField, Min(0)] private int goldOnBossWin = 100;
+
+        [Tooltip("Part catalog the random recruit generator draws unlocked parts from. Optional — without it recruits are identity-only.")]
+        [SerializeField] private PartCatalog_SO partCatalog;
 
         private BattleStateManager stateManager;
 
@@ -47,9 +52,11 @@ namespace CapsuleWars.Run.Map
 
                 // Roguelike-only unit drop on non-boss wins (Combat/Elite), added
                 // to the run's recruit pool and offered for legacy promotion at
-                // run end. STUB generator — M9 replaces it with the real roll.
+                // run end. Draws from the player's unlocked parts.
                 if (!state.IsBossEncounter)
-                    state.AddRecruit(RoguelikeRecruitGenerator.Generate(state.CurrentFloor, state.Recruits.Count));
+                    state.AddRecruit(RandomUnitGenerator.Generate(
+                        partCatalog, LegacyStore.Current?.PlayerProfile, null,
+                        state.CurrentFloor, state.Recruits.Count));
 
                 state.AdvanceNode();
             }

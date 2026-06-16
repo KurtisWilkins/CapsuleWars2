@@ -36,6 +36,8 @@ namespace CapsuleWars.Run
         [SerializeField] private GameObject runEndPanel;
         [Tooltip("Run-start draft screen. If wired, a fresh run shows this before the map. Optional.")]
         [SerializeField] private GameObject draftPanel;
+        [Tooltip("End-of-run recruit screen, shown on a win before the run-end panel when recruits are pending. Optional.")]
+        [SerializeField] private GameObject recruitPanel;
 
         public RunState State => RunSession.Current;
 
@@ -120,6 +122,21 @@ namespace CapsuleWars.Run
 
         private void ShowRunEnd()
         {
+            // On a win with pending roguelike-only recruits, offer recruitment
+            // first; the recruit panel calls FinishRecruiting() to continue.
+            var s = RunSession.Current;
+            bool won = s != null && s.IsComplete && !s.IsLost;
+            if (won && recruitPanel != null && s.Recruits != null && s.Recruits.Count > 0)
+            {
+                ShowPanel(recruitPanel);
+                return;
+            }
+            ShowPanel(runEndPanel);
+        }
+
+        /// <summary>Called by the recruit panel when the player finishes (or skips) recruiting.</summary>
+        public void FinishRecruiting()
+        {
             ShowPanel(runEndPanel);
         }
 
@@ -130,6 +147,7 @@ namespace CapsuleWars.Run
             if (eventPanel != null) eventPanel.SetActive(panel == eventPanel);
             if (runEndPanel != null) runEndPanel.SetActive(panel == runEndPanel);
             if (draftPanel != null) draftPanel.SetActive(panel == draftPanel);
+            if (recruitPanel != null) recruitPanel.SetActive(panel == recruitPanel);
         }
 
         private void RefreshUi()

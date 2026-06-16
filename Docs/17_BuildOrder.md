@@ -121,17 +121,17 @@ Working game at the end of every milestone. No half-finished piles. Each milesto
 - [x] Customization screen UI. *(`CustomizationPanel` in the map scene + a Customize button: lists catalog parts with cost/owned, spends points to unlock; starters seeded on open.)*
 - [x] Unlock-aware `UnitCustomization`. *(CustomizationUnlocks.UnlockedPartsForSlot gates the picker + generator to owned parts; UnitCustomization.ApplyParts builds visuals from per-slot part ids.)*
 - [x] Random unit generator (`12_RoguelikeRun.md`) draws from unlocked pool. *(`RandomUnitGenerator` (seeded) + the parts apply/persist pipeline, wired live into BattleNodeReturn (combat-win drops) and BattlePartySpawner (spawn visuals). Class/element/ability rolls still TODO — only the part visuals that unlocks gate are generated.)*
-- [ ] Asymmetric mixing UI controls. *(Deferred — a per-unit left/right appearance editor; the unlock store + generator are in, the mixing editor UI is not.)*
+- [~] Asymmetric mixing. *(Data layer done + tested: `UnitAppearance` sets per-slot parts with LeftHand/RightHand (and feet) fully independent, with unlock/slot validation. The editor UI — needs a 3D preview + visual QA — is the remaining piece.)*
 
 ## M10 — Polish & MVP candidate
 **Demo state:** shippable single-player loop.
 
-- [ ] Audio: `AudioCueSO`, hit/heal/KO/UI cues, basic music.
+- [~] Audio: `AudioCueSO` + `AudioService` framework done + tested. Actual clips, event wiring (hit/heal/KO/UI), and music are content/follow-up.
 - [ ] DOTween polish on UI transitions, damage popups, camera shake.
 - [ ] Tutorial stub: 3-screen popup intro on first launch.
 - [ ] Multi-arena: 4 hand-crafted arenas with prop variant placement.
 - [ ] Balance pass: enemy stat curve, gold economy, ability cooldowns.
-- [ ] Settings screen: graphics, audio sliders, input rebinds.
+- [~] Settings: `SettingsDTO` + `SettingsStore` (persistence) + `SettingsService.Apply` done + tested. The settings *screen* UI + input rebinds are follow-up.
 - [ ] Localization sweep: ensure no hardcoded strings.
 - [ ] Performance pass: target 60fps mid-tier device, no GC spikes mid-battle.
 

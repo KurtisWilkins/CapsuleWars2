@@ -10,7 +10,8 @@
         "CapsuleWars.Run",
         "CapsuleWars.Legacy",
         "CapsuleWars.Persistence",
-        "CapsuleWars.Audio"
+        "CapsuleWars.Audio",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

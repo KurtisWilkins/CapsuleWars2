@@ -61,6 +61,14 @@ namespace CapsuleWars.Units.Controllers
         public event Action<StatusEffect_SO> OnStatusApplied;
         public event Action<StatusEffect_SO> OnStatusExpired;
 
+        /// <summary>
+        /// Raised whenever something that affects the modified stat getters
+        /// changes — equipping/unequipping items or receiving new synergy buffs.
+        /// The inspection/customization UI subscribes to refresh live. (Status
+        /// effects already raise OnStatusApplied/OnStatusExpired.)
+        /// </summary>
+        public event Action OnStatsChanged;
+
         public bool CannotAct => HasFlag(static e => e.PreventsAction);
         public bool CannotMove => HasFlag(static e => e.PreventsMovement);
         public bool CannotUseAbilities => HasFlag(static e => e.PreventsAbilities) || CannotAct;
@@ -137,20 +145,32 @@ namespace CapsuleWars.Units.Controllers
         {
             synergyBuffs.Clear();
             if (buffs != null) synergyBuffs.AddRange(buffs);
+            OnStatsChanged?.Invoke();
         }
 
         public void Equip(EquipmentSlot slot, Equipment_SO item)
         {
-            UnequipSlot(slot);
+            RemoveSlot(slot);
             equipment.Add(new EquippedItem { slot = slot, item = item });
+            OnStatsChanged?.Invoke();
         }
 
         public void UnequipSlot(EquipmentSlot slot)
         {
+            if (RemoveSlot(slot)) OnStatsChanged?.Invoke();
+        }
+
+        // Removes any item(s) in the slot without raising OnStatsChanged, so
+        // Equip (remove-then-add) fires exactly once. Returns true if it removed
+        // anything.
+        private bool RemoveSlot(EquipmentSlot slot)
+        {
+            bool removed = false;
             for (int i = equipment.Count - 1; i >= 0; i--)
             {
-                if (equipment[i].slot == slot) equipment.RemoveAt(i);
+                if (equipment[i].slot == slot) { equipment.RemoveAt(i); removed = true; }
             }
+            return removed;
         }
 
         // -----------------------------------------------------------------

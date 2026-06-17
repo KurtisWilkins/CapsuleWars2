@@ -43,6 +43,8 @@ namespace CapsuleWars.UI.Deployment
         {
             if (manager == null) manager = FindAnyObjectByType<DeploymentManager>();
             if (stateManager == null) stateManager = FindAnyObjectByType<BattleStateManager>();
+            if (gridRenderer == null) gridRenderer = GetComponent<DeploymentGridRenderer>();
+            if (inspectionPanel == null) inspectionPanel = FindAnyObjectByType<UnitInspectionPanel>(FindObjectsInactive.Include);
             if (raycastCamera == null) raycastCamera = Camera.main;
             if (startBattleButton != null) startBattleButton.onClick.AddListener(OnStartBattle);
         }

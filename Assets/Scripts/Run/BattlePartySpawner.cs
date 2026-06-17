@@ -1,3 +1,4 @@
+using CapsuleWars.Combat.Deployment;
 using CapsuleWars.Core;
 using CapsuleWars.Data.Units;
 using CapsuleWars.Persistence;
@@ -42,6 +43,10 @@ namespace CapsuleWars.Run
         [Tooltip("X-spacing used when there are more party members than spawn points.")]
         [SerializeField, Min(0.1f)] private float fallbackSpacing = 2f;
 
+        [Tooltip("Grid config for spawn-then-arrange: a party member with a saved placement " +
+                 "(RunState.Placements) spawns at that cell's world position. Keep in sync with the deployment UI grid.")]
+        [SerializeField] private DeploymentGridConfig deploymentGrid = new DeploymentGridConfig();
+
         private void Awake()
         {
             if (!RunSession.IsActive) return;
@@ -63,7 +68,7 @@ namespace CapsuleWars.Run
 
             for (int i = 0; i < party.Count; i++)
             {
-                UnitFactory.Spawn(party[i], baseUnitPrefab, database, SpawnPosition(i), SpawnRotation(i),
+                UnitFactory.Spawn(party[i], baseUnitPrefab, database, SpawnPosition(i, party[i]?.Id), SpawnRotation(i),
                                   parent: null, partDatabase: partCatalog);
             }
         }
@@ -86,8 +91,14 @@ namespace CapsuleWars.Run
             }
         }
 
-        private Vector3 SpawnPosition(int index)
+        private Vector3 SpawnPosition(int index, string unitId)
         {
+            // Spawn-then-arrange: a saved deployment placement for this unit wins.
+            if (deploymentGrid != null && !string.IsNullOrEmpty(unitId)
+                && RunSession.IsActive
+                && RunSession.Current.Placements.TryGetValue(unitId, out var coord))
+                return deploymentGrid.CellToWorld(coord);
+
             if (playerSpawnPoints != null && index < playerSpawnPoints.Length && playerSpawnPoints[index] != null)
                 return playerSpawnPoints[index].position;
 

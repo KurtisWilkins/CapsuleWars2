@@ -25,6 +25,26 @@ namespace CapsuleWars.Persistence.Dto
         }
     }
 
+    /// <summary>One serialized deployment placement: which grid cell (col/row) a
+    /// unit was last positioned on, so an arrangement persists between battles.
+    /// Col/row are ints to keep Persistence free of any Combat (GridCoord) reference.</summary>
+    [Serializable]
+    public class UnitPlacementDTO
+    {
+        public string unitId;
+        public int col;
+        public int row;
+
+        public UnitPlacementDTO() { }
+
+        public UnitPlacementDTO(string unitId, int col, int row)
+        {
+            this.unitId = unitId;
+            this.col = col;
+            this.row = row;
+        }
+    }
+
     /// <summary>
     /// Serialized form of an in-progress run (Docs/12_RoguelikeRun.md,
     /// Docs/14_Persistence.md). Persisted to <c>run.json</c> via <c>RunStore</c>
@@ -52,5 +72,8 @@ namespace CapsuleWars.Persistence.Dto
 
         /// <summary>Roguelike-only units picked up this run; offered for recruitment at run end.</summary>
         public List<UnitDTO> Recruits = new List<UnitDTO>();
+
+        /// <summary>The player's last deployment-grid placement per unit (spawn-then-arrange persistence).</summary>
+        public List<UnitPlacementDTO> Placements = new List<UnitPlacementDTO>();
     }
 }

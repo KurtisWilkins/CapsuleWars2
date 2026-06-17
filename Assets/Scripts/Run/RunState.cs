@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CapsuleWars.Combat.Deployment;
 using CapsuleWars.Persistence.Dto;
 using CapsuleWars.Run.Map;
 
@@ -65,6 +66,26 @@ namespace CapsuleWars.Run
             if (unit != null) recruits.Remove(unit);
         }
 
+        /// <summary>
+        /// The player's last deployment-grid placement per unit id (col/row), so an
+        /// arrangement persists between battles. Updated by the deployment UI;
+        /// consumed by BattlePartySpawner (spawn-then-arrange).
+        /// </summary>
+        private readonly Dictionary<string, GridCoord> placements = new();
+        public IReadOnlyDictionary<string, GridCoord> Placements => placements;
+
+        public void SetPlacement(string unitId, GridCoord coord)
+        {
+            if (!string.IsNullOrEmpty(unitId)) placements[unitId] = coord;
+        }
+
+        public void ClearPlacement(string unitId)
+        {
+            if (!string.IsNullOrEmpty(unitId)) placements.Remove(unitId);
+        }
+
+        public void ClearPlacements() => placements.Clear();
+
         public MapNode CurrentNode => Map?.Get(CurrentFloor);
         public bool IsComplete => Map != null && CurrentFloor >= Map.Count;
         public bool IsBossFloor => CurrentNode != null && CurrentNode.Type == NodeType.Boss;
@@ -114,6 +135,8 @@ namespace CapsuleWars.Run
 
             foreach (var u in party) if (u != null) dto.Party.Add(u);
             foreach (var u in recruits) if (u != null) dto.Recruits.Add(u);
+            foreach (var kv in placements)
+                dto.Placements.Add(new UnitPlacementDTO(kv.Key, kv.Value.col, kv.Value.row));
             return dto;
         }
 
@@ -138,6 +161,9 @@ namespace CapsuleWars.Run
             if (dto.Party != null) state.SetParty(dto.Party);
             if (dto.Recruits != null)
                 foreach (var u in dto.Recruits) state.AddRecruit(u);
+            if (dto.Placements != null)
+                foreach (var p in dto.Placements)
+                    if (p != null) state.SetPlacement(p.unitId, new GridCoord(p.col, p.row));
             return state;
         }
     }

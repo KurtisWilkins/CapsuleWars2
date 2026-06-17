@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CapsuleWars.Combat.Deployment;
 using CapsuleWars.Core;
 using CapsuleWars.Persistence;
 using CapsuleWars.Persistence.Dto;
@@ -42,6 +43,7 @@ namespace CapsuleWars.Tests.EditMode
             var p2 = new UnitDTO("u2", "Merlin", "mage_01");
             state.SetParty(new[] { p1, p2 });
             state.AddRecruit(new UnitDTO("r1", "Recruit", "rogue_01"));
+            state.SetPlacement("u1", new GridCoord(3, 1));   // saved deployment arrangement
             return state;
         }
 
@@ -81,6 +83,16 @@ namespace CapsuleWars.Tests.EditMode
             Assert.AreEqual(2, restored.Party.Count);
             Assert.AreEqual("iron_sword", restored.Party[0].Equipment[0].equipmentId);
             Assert.AreEqual(1, restored.Recruits.Count);
+        }
+
+        [Test]
+        public void Placements_SurviveRoundTrip()
+        {
+            var restored = RunState.FromDTO(MakeRun().ToDTO());
+
+            Assert.AreEqual(1, restored.Placements.Count);
+            Assert.IsTrue(restored.Placements.TryGetValue("u1", out var coord));
+            Assert.AreEqual(new GridCoord(3, 1), coord);
         }
 
         [Test]

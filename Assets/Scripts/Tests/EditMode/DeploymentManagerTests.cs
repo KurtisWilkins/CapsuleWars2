@@ -105,5 +105,23 @@ namespace CapsuleWars.Tests.EditMode
             Object.DestroyImmediate(u1.gameObject);
             Object.DestroyImmediate(u2.gameObject);
         }
+
+        [Test]
+        public void Tokens_PlaceRemoveClear_WithoutLiveUnits()
+        {
+            Assert.IsTrue(manager.PlaceToken("u1", new GridCoord(2, 1)));
+            Assert.IsTrue(manager.Grid.IsOccupied(new GridCoord(2, 1)));
+            Assert.IsTrue(manager.GetPlacements().ContainsKey("u1"));
+
+            Assert.IsFalse(manager.PlaceToken("u2", new GridCoord(2, 7)), "row 7 is outside the player zone");
+
+            Assert.IsTrue(manager.RemoveToken("u1"));
+            Assert.IsFalse(manager.Grid.IsOccupied(new GridCoord(2, 1)));
+
+            manager.PlaceToken("a", new GridCoord(0, 0));
+            manager.PlaceToken("b", new GridCoord(1, 0));
+            manager.ClearAll();
+            Assert.AreEqual(0, manager.GetPlacements().Count);
+        }
     }
 }

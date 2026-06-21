@@ -49,6 +49,35 @@ namespace CapsuleWars.Combat.Deployment
             return result;
         }
 
+        // -----------------------------------------------------------------
+        // Token placement (place-then-spawn): occupy cells by unit id with NO
+        // live unit, for the deployment bench. The UI mirrors these into
+        // RunState.Placements so the spawner spawns each unit at its cell.
+        // -----------------------------------------------------------------
+
+        /// <summary>Place an occupant id on a deployable, empty cell (no transform). Raises OnPlacementsChanged on success.</summary>
+        public bool PlaceToken(string unitId, GridCoord coord)
+        {
+            if (!Grid.TryPlace(coord, unitId)) return false;
+            OnPlacementsChanged?.Invoke(GetPlacements());
+            return true;
+        }
+
+        /// <summary>Remove an occupant id from the grid (back to the bench). Raises OnPlacementsChanged if it removed anything.</summary>
+        public bool RemoveToken(string unitId)
+        {
+            if (!Grid.RemoveOccupant(unitId)) return false;
+            OnPlacementsChanged?.Invoke(GetPlacements());
+            return true;
+        }
+
+        /// <summary>Clear every placement. Raises OnPlacementsChanged.</summary>
+        public void ClearAll()
+        {
+            Grid.Clear();
+            OnPlacementsChanged?.Invoke(GetPlacements());
+        }
+
         /// <summary>
         /// Place (or move) a registered unit onto a cell, snapping its transform to
         /// the cell's world position (preserving the unit's own ground height).

@@ -4,13 +4,11 @@
 > specific and self-contained. Move finished items to "Done (recent)".
 
 ## Next up (work top-down)
-- [ ] **Assemble + play-test the branching map** (`Test_M7_Map`, `-force-d3d11`). One-time scene wiring then
-      test — full steps in PROJECT_STATE "Needs human verification": (1) add a `GameObject ▸ UI ▸ Scroll View`
-      child of the map panel (vertical only; Content anchor/pivot bottom-centre); (2) add `MapView` to the map
-      panel + wire `scrollRect`/`content`/`nodePrefab` (`Assets/Prefabs/Map/MapNode_View.prefab`)/`edgePrefab`
-      (`Assets/Prefabs/Map/Edge_Line.prefab`); (3) assign a Font to the node prefab Label; (4) set
-      `RunController` `MapGenConfig` + `fixedSeed` + `difficultyPerDepth`. Then: start run → branching map →
-      pick start → encounter → return → climb → clear Boss → new segment stitches on; lose → run ends.
+- [ ] **Play-test the branching map** (`Test_M7_Map`, `-force-d3d11`). Scene is assembled (ScrollRect +
+      `MapView` wired, node label font set). Start a run → branching map renders → pick a start → encounter →
+      return → only connected nodes clickable → climb → clear Boss → new segment stitches on; lose → run ends.
+      Tune `RunController` `MapGenConfig`/`fixedSeed`/`difficultyPerDepth` + MapView spacing as desired; delete
+      any leftover old Map Panel content if it shows through. (Full notes in PROJECT_STATE.)
 - [ ] **Re-bake the NavMesh for the enlarged arena.** In `Test_M3_Battle`, select `Plane` →
       `NavMeshSurface` → **Bake** (the Plane was scaled to 4, centred at (10.5,0,14)). Without this,
       combat movement on the bigger board will be broken/off-mesh.

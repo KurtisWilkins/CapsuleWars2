@@ -9,8 +9,8 @@ _Last updated: 2026-06-21, after the Branching Map pass (Slay-the-Spire run prog
 **Branching run map (NEW):** the linear route is replaced by a seeded, branching, **infinite** node graph
 (rows of nodes + edges; pick a start, follow edges upward; clear the Boss → a new segment stitches on;
 run ends only on loss). Model + generator + run-state + flow are done and **162/162 EditMode green**
-(8 generator-invariant tests). The `MapView` UI code + node/edge prefabs exist; the **ScrollRect
-container + MapView wiring in `Test_M7_Map` is the remaining editor task** (checklist below). Prior
+(8 generator-invariant tests). The `MapView` UI + node/edge prefabs are **assembled and wired
+into `Test_M7_Map`** (ScrollRect + MapView via MCP); the remaining step is a **Play-mode test**. Prior
 unverified passes (Deployment v2, Customization v2) still need their Play-mode checks too.
 
 ## What currently works
@@ -43,23 +43,19 @@ unverified passes (Deployment v2, Customization v2) still need their Play-mode c
   verification + arena tuning remain (below).
 
 ## Needs human verification (Claude can't see Play Mode)
-- **Branching map — assemble + wire in `Test_M7_Map` (one-time), then test (`-force-d3d11`):**
-  1. **ScrollRect:** select the map panel (`RunController.mapPanel`) → `GameObject ▸ UI ▸ Scroll View` as a
-     child, set it to fill the panel, **disable Horizontal** / keep **Vertical**. This creates a masked
-     Viewport + Content. Set **Content** RectTransform anchor+pivot to **bottom-centre** (anchorMin/Max
-     (0.5,0), pivot (0.5,0)) with a wide width.
-  2. **MapView:** add `MapView` to the map panel and wire `scrollRect` = the Scroll View, `content` = its
-     Content, `nodePrefab` = `Assets/Prefabs/Map/MapNode_View.prefab`, `edgePrefab` =
-     `Assets/Prefabs/Map/Edge_Line.prefab` (layout values default to rowSpacing 170 / colSpacing 150).
-  3. **Font:** assign a Font (e.g. `LegacyRuntime.ttf`) to the `MapNode_View` prefab's `Label` Text so the
-     node letters render (nodes are colour-coded by type regardless).
-  4. **RunController:** set `MapGenConfig` (rowsPerSegment ~12–13, nodesPerRow 2–4, pathCount 6, type
-     weights) + `fixedSeed` (0 = random; non-zero reproduces a layout) + `difficultyPerDepth` (~0.05).
-  5. **Test:** start a run → a **branching map** renders; bottom-row nodes are clickable, the rest dimmed →
-     click a start → its encounter runs via the existing battle/panel entry → back to the map at the new
-     position → only edge-connected nodes are now clickable → climb to and clear the **Boss** (top row) →
-     **a new segment generates + stitches on** and the map extends upward; repeat. **Lose a battle** → the
-     run ends (Defeat screen). Restart the app mid-run → the same graph + position reloads.
+- **Branching map — assembled in `Test_M7_Map` (done via MCP); play-test it (`-force-d3d11`):**
+  Built: under **Map Panel** → `MapScrollView` (ScrollRect, dark bg) → masked `Viewport` → `Content`
+  (bottom-centre anchor/pivot); `MapView` added to Map Panel with `scrollRect`/`content`/`nodePrefab`
+  (MapNode_View)/`edgePrefab` (Edge_Line) wired; node Label font = LiberationSans.
+  - **Test:** start a run → a **branching map** renders; bottom-row nodes are clickable (rest dimmed) →
+    click a start → its encounter runs via the existing battle/panel entry → back to the map at the new
+    position → only edge-connected nodes clickable → climb to + clear the **Boss** (top row) → **a new
+    segment generates + stitches on** and the map extends upward; repeat. **Lose** → run-end (Defeat).
+    Restart the app mid-run → the same graph + position reloads.
+  - **Double-check while testing:** (a) on `RunController` set `MapGenConfig`/`fixedSeed`/`difficultyPerDepth`
+    if you want non-defaults; (b) the map fills/scrolls correctly (tune Content width or rowSpacing/colSpacing
+    on MapView if cramped); (c) the **old Map Panel content** (pre-existing children) sits behind the new
+    dark scroll view — delete it if it peeks through.
 - **⚠ Re-bake the NavMesh first** (`Plane` → `NavMeshSurface` → Bake): the arena was enlarged
   (Plane scale 4, centre (10.5,0,14)), so combat movement needs a fresh bake covering the new board.
 - **Deployment loop (spawn-on-place):** load a combat node *with a drafted party* → during deployment,

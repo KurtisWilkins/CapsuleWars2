@@ -26,6 +26,8 @@ namespace CapsuleWars.UI.Deployment
         [SerializeField] private Color occupiedColor = new Color(0.2f, 0.5f, 0.9f, 0.5f);
         [SerializeField] private Color blockedColor = new Color(0.9f, 0.2f, 0.2f, 0.5f);
         [SerializeField] private Color outsideColor = new Color(0.5f, 0.5f, 0.5f, 0.25f);
+        [Tooltip("Far-side enemy zone tiles, shown so the two sides read as clearly separated.")]
+        [SerializeField] private Color enemyZoneColor = new Color(0.9f, 0.35f, 0.2f, 0.4f);
 
         private DeploymentManager manager;
         private readonly Dictionary<GridCoord, Renderer> cells = new Dictionary<GridCoord, Renderer>();
@@ -59,9 +61,12 @@ namespace CapsuleWars.UI.Deployment
             foreach (var kv in cells)
             {
                 var state = manager.Grid.GetState(kv.Key);
-                bool hidden = state == CellState.OutsideZone && !showOutsideZone;
+                // The enemy zone is "outside" the player zone but we still show it
+                // (distinct colour) so the near/far sides read as separated.
+                bool isEnemyZone = state == CellState.OutsideZone && manager.Config.InEnemyZone(kv.Key);
+                bool hidden = state == CellState.OutsideZone && !isEnemyZone && !showOutsideZone;
                 kv.Value.enabled = !hidden;
-                kv.Value.material.color = ColorFor(state);
+                kv.Value.material.color = isEnemyZone ? enemyZoneColor : ColorFor(state);
             }
         }
 

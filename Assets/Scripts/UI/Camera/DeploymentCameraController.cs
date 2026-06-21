@@ -37,26 +37,31 @@ namespace CapsuleWars.UI.CameraControl
         [SerializeField, Min(0f)] private float scrollZoomSpeed = 1.5f;
         [SerializeField, Min(0f)] private float pinchZoomSpeed = 0.03f;
         [SerializeField] private float minHeight = 3f;
-        [SerializeField] private float maxHeight = 25f;
+        [SerializeField] private float maxHeight = 50f;
 
         [Header("World bounds (XZ)")]
         [Tooltip("Minimum world X (x) and Z (y) the camera position is clamped to.")]
-        [SerializeField] private Vector2 boundsMin = new Vector2(-20f, -20f);
+        [SerializeField] private Vector2 boundsMin = new Vector2(-15f, -25f);
         [Tooltip("Maximum world X (x) and Z (y) the camera position is clamped to.")]
-        [SerializeField] private Vector2 boundsMax = new Vector2(20f, 20f);
+        [SerializeField] private Vector2 boundsMax = new Vector2(40f, 45f);
 
         [Header("Gating")]
         [Tooltip("When true, the camera only moves during BattlePhase.PreBattle (locked once combat is active).")]
         [SerializeField] private bool restrictToDeployment = true;
 
         [Header("Auto-frame (deployment)")]
-        [Tooltip("On deployment start, lerp to the pose below to frame the whole board; restore to the battle pose on Assemble.")]
+        [Tooltip("On deployment start, lerp to a pose that frames the whole board; restore to the battle pose on Assemble.")]
         [SerializeField] private bool autoFrameOnDeployment = true;
-        [Tooltip("Pulled-back camera position that frames the 7x9 board (tune to the arena).")]
+        [Tooltip("When true, the framing pose is COMPUTED from the deployment grid (always fits, follows cellSize/row " +
+                 "changes). Falls back to the manual pose below if no DeploymentManager is found.")]
+        [SerializeField] private bool computeFramingFromGrid = true;
+        [Tooltip("Pitch (deg) for the computed frame. 90 = straight top-down; ~78 tilts slightly behind the player side.")]
+        [SerializeField, Range(40f, 90f)] private float deploymentTiltDegrees = 78f;
+        [Tooltip("Fallback camera position (used only when not computing from the grid).")]
         [SerializeField] private Vector3 deploymentPosition = new Vector3(4.5f, 14f, 6f);
-        [Tooltip("Camera euler rotation while framing (e.g. ~70 deg pitch to look down at the board).")]
+        [Tooltip("Fallback camera euler rotation (used only when not computing from the grid).")]
         [SerializeField] private Vector3 deploymentEuler = new Vector3(70f, 0f, 0f);
-        [Tooltip("Field of view during deployment (0 = keep current).")]
+        [Tooltip("Field of view during deployment (0 = keep current). Also used as the FOV for the computed frame.")]
         [SerializeField] private float deploymentFov = 0f;
         [Tooltip("Seconds for the camera transition in/out of the deployment framing.")]
         [SerializeField, Min(0.01f)] private float transitionSeconds = 0.6f;
@@ -68,6 +73,7 @@ namespace CapsuleWars.UI.CameraControl
 
         private Camera cam;
         private DeploymentPhaseController phase;
+        private DeploymentManager gridSource;
         private Vector3 battlePosition;
         private Quaternion battleRotation;
         private float battleFov;
@@ -86,6 +92,7 @@ namespace CapsuleWars.UI.CameraControl
 
             phase = FindAnyObjectByType<DeploymentPhaseController>();
             if (phase != null) phase.OnConfirmed += FrameBattle;
+            gridSource = FindAnyObjectByType<DeploymentManager>();
         }
 
         private void Start()
@@ -98,8 +105,48 @@ namespace CapsuleWars.UI.CameraControl
             if (phase != null) phase.OnConfirmed -= FrameBattle;
         }
 
-        /// <summary>Lerp to the pulled-back pose that frames the whole board.</summary>
-        public void FrameDeployment() => BeginTransition(deploymentPosition, Quaternion.Euler(deploymentEuler), deploymentFov);
+        /// <summary>Lerp to a pose that frames the whole board (computed from the grid when possible).</summary>
+        public void FrameDeployment()
+        {
+            if (computeFramingFromGrid && TryComputeBoardFraming(out var pos, out var rot, out var fov))
+                BeginTransition(pos, rot, fov);
+            else
+                BeginTransition(deploymentPosition, Quaternion.Euler(deploymentEuler), deploymentFov);
+        }
+
+        /// <summary>
+        /// Compute a near-top-down pose that frames the whole grid, derived from the
+        /// deployment grid's size so it always fits and follows cellSize/row changes.
+        /// Distance is the larger of the width-fit and depth-fit (so the board fits in
+        /// both screen axes for the current aspect); the camera sits above and slightly
+        /// behind the player's near side. Returns false if no grid source is available.
+        /// </summary>
+        private bool TryComputeBoardFraming(out Vector3 pos, out Quaternion rot, out float fov)
+        {
+            pos = default; rot = Quaternion.identity; fov = 0f;
+            if (gridSource == null || gridSource.Config == null) return false;
+
+            var cfg = gridSource.Config;
+            float width = cfg.columns * cfg.cellSize;   // X
+            float depth = cfg.rows * cfg.cellSize;      // Z
+            Vector3 center = cfg.origin + new Vector3((cfg.columns - 1) * 0.5f * cfg.cellSize, 0f,
+                                                      (cfg.rows - 1) * 0.5f * cfg.cellSize);
+
+            fov = deploymentFov > 0f ? deploymentFov : (cam != null ? cam.fieldOfView : 60f);
+            float aspect = cam != null && cam.aspect > 0.01f ? cam.aspect : (9f / 16f);
+            float vHalf = fov * 0.5f * Mathf.Deg2Rad;
+            float hHalf = Mathf.Atan(Mathf.Tan(vHalf) * aspect);
+            float margin = cfg.cellSize;                // ~one cell of padding
+
+            float distW = (width * 0.5f + margin) / Mathf.Max(0.01f, Mathf.Tan(hHalf));
+            float distD = (depth * 0.5f + margin) / Mathf.Max(0.01f, Mathf.Tan(vHalf));
+            float dist = Mathf.Max(distW, distD);
+
+            float tilt = deploymentTiltDegrees * Mathf.Deg2Rad;
+            pos = center + new Vector3(0f, dist * Mathf.Sin(tilt), -dist * Mathf.Cos(tilt));
+            rot = Quaternion.Euler(deploymentTiltDegrees, 0f, 0f);
+            return true;
+        }
 
         /// <summary>Lerp back to the camera's stored battle pose (called on Assemble).</summary>
         public void FrameBattle() => BeginTransition(battlePosition, battleRotation, battleFov);

@@ -27,6 +27,8 @@ namespace CapsuleWars.UI.Deployment
         [SerializeField] private DeploymentManager manager;
         [SerializeField] private DeploymentGridRenderer gridRenderer;
         [SerializeField] private DeploymentPhaseController phase;
+        [Tooltip("Spawns the visible unit at each placed cell (and despawns on bench/clear).")]
+        [SerializeField] private CapsuleWars.Run.BattlePartySpawner spawner;
 
         [Header("Bench / buttons")]
         [SerializeField] private GameObject hudRoot;
@@ -47,6 +49,7 @@ namespace CapsuleWars.UI.Deployment
         {
             if (manager == null) manager = FindAnyObjectByType<DeploymentManager>();
             if (phase == null) phase = FindAnyObjectByType<DeploymentPhaseController>();
+            if (spawner == null) spawner = FindAnyObjectByType<CapsuleWars.Run.BattlePartySpawner>();
             if (raycastCamera == null) raycastCamera = Camera.main;
             if (readyButton != null) readyButton.onClick.AddListener(OnReady);
             if (clearButton != null) clearButton.onClick.AddListener(OnClear);
@@ -92,6 +95,7 @@ namespace CapsuleWars.UI.Deployment
             if (manager.Grid.TryGetOccupant(coord, out var occupant))
             {
                 manager.RemoveToken(occupant);
+                if (spawner != null) spawner.Despawn(occupant);
                 if (RunSession.IsActive) RunSession.Current.ClearPlacement(occupant);
                 Deselect();
                 RebuildBench();
@@ -101,6 +105,7 @@ namespace CapsuleWars.UI.Deployment
             // Empty cell + a bench unit selected → place it (no-op if not deployable).
             if (!string.IsNullOrEmpty(selectedUnitId) && manager.PlaceToken(selectedUnitId, coord))
             {
+                if (spawner != null) spawner.SpawnOrMoveAt(selectedUnitId, coord);
                 if (RunSession.IsActive) RunSession.Current.SetPlacement(selectedUnitId, coord);
                 Deselect();
                 RebuildBench();
@@ -155,6 +160,7 @@ namespace CapsuleWars.UI.Deployment
         private void OnClear()
         {
             if (manager != null) manager.ClearAll();
+            if (spawner != null) spawner.DespawnAll();
             if (RunSession.IsActive) RunSession.Current.ClearPlacements();
             if (phase != null) phase.NotifyCleared();
             Deselect();

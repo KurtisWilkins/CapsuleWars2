@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using CapsuleWars.Combat.Deployment;
 using CapsuleWars.Core;
 using CapsuleWars.Data.Units;
 using CapsuleWars.Persistence;
+using CapsuleWars.Persistence.Dto;
 using CapsuleWars.Units.Controllers;
 using UnityEngine;
 
@@ -23,6 +25,12 @@ namespace CapsuleWars.Run
     /// No-ops when there's no active run or the party is empty, leaving the
     /// scene's own player units in place so the battle scene stays playable
     /// standalone.
+    ///
+    /// Spawn-on-place: when a deployment phase is present, units are NOT spawned here —
+    /// the deployment UI calls <see cref="SpawnOrMoveAt"/> as the player places each
+    /// unit (so they're visible during setup) and those same instances carry into combat
+    /// when Assemble flips the phase to Active (no double-spawn). The immediate
+    /// <see cref="SpawnParty"/> path is the standalone fallback when no deployment phase exists.
     /// </summary>
     [DefaultExecutionOrder(-50)]
     [DisallowMultipleComponent]
@@ -49,6 +57,12 @@ namespace CapsuleWars.Run
 
         private DeploymentPhaseController deployment;
 
+        // Live deployment-preview instances, keyed by unit id; these become the combat units.
+        private readonly Dictionary<string, UnitRoot> placed = new Dictionary<string, UnitRoot>();
+        private Transform deployedContainer;
+        private UnitDefinitionDatabase cachedDatabase;
+        private bool databaseBuilt;
+
         private void Awake()
         {
             if (!RunSession.IsActive) return;
@@ -62,23 +76,16 @@ namespace CapsuleWars.Run
             }
 
             // Clear scene placeholder player units now; in deployment mode the field
-            // starts empty and the party spawns at its placed cells on Assemble.
+            // starts empty and the party spawns as it's placed.
             RetireScenePlayerUnits();
 
-            // Place-then-spawn: if a deployment phase is present, defer spawning until
-            // the player confirms (units appear at their placed cells). Late-spawned
-            // units still register via UnitRoot.OnEnable → registry.OnUnitRegistered.
-            // Otherwise spawn immediately so the battle scene is playable standalone.
+            // Spawn-on-place: with a deployment phase, the deployment UI spawns each unit
+            // via SpawnOrMoveAt as it's placed, and those instances carry into combat on
+            // Assemble (no spawn here). Without a deployment phase, spawn immediately so the
+            // battle scene stays playable standalone.
             deployment = FindAnyObjectByType<DeploymentPhaseController>();
-            if (deployment != null)
-                deployment.OnConfirmed += SpawnParty;
-            else
+            if (deployment == null)
                 SpawnParty();
-        }
-
-        private void OnDestroy()
-        {
-            if (deployment != null) deployment.OnConfirmed -= SpawnParty;
         }
 
         private void SpawnParty()
@@ -96,6 +103,91 @@ namespace CapsuleWars.Run
                 UnitFactory.Spawn(party[i], baseUnitPrefab, database, SpawnPosition(i, party[i]?.Id), SpawnRotation(i),
                                   parent: null, partDatabase: partCatalog);
             }
+        }
+
+        // -----------------------------------------------------------------
+        // Deployment preview API (driven by the deployment UI as units are placed).
+        // -----------------------------------------------------------------
+
+        /// <summary>
+        /// Spawn the drafted unit with this id at the cell, or move its existing instance
+        /// there. The instance is the real unit, but spawned during PreBattle its combat
+        /// controllers stay idle (they gate on Phase == Active) until Assemble — so it reads
+        /// as a placed "preview" and then simply joins combat. Returns false if the id isn't
+        /// in the party.
+        /// </summary>
+        public bool SpawnOrMoveAt(string unitId, GridCoord cell)
+        {
+            if (string.IsNullOrEmpty(unitId) || baseUnitPrefab == null || !RunSession.IsActive) return false;
+
+            Vector3 pos = deploymentGrid != null ? deploymentGrid.CellToWorld(cell) : transform.position;
+
+            if (placed.TryGetValue(unitId, out var existing) && existing != null)
+            {
+                pos.y = existing.transform.position.y;   // keep its own ground height
+                existing.transform.position = pos;
+                return true;
+            }
+
+            var dto = FindPartyMember(unitId);
+            if (dto == null) return false;
+
+            var unit = UnitFactory.Spawn(dto, baseUnitPrefab, Database(), pos, Quaternion.identity,
+                                         parent: DeployedContainer(), partDatabase: partCatalog);
+            if (unit == null) return false;
+            placed[unitId] = unit;
+            return true;
+        }
+
+        /// <summary>Destroy the placed instance for this id (sent back to the bench). No-op if not placed.</summary>
+        public bool Despawn(string unitId)
+        {
+            if (!placed.TryGetValue(unitId, out var unit)) return false;
+            placed.Remove(unitId);
+            DestroyInstance(unit);
+            return true;
+        }
+
+        /// <summary>Destroy every placed instance.</summary>
+        public void DespawnAll()
+        {
+            foreach (var kv in placed) DestroyInstance(kv.Value);
+            placed.Clear();
+        }
+
+        private static void DestroyInstance(UnitRoot unit)
+        {
+            if (unit == null) return;
+            // Deactivate before destroy so a registration sweep can't grab a dying unit.
+            unit.gameObject.SetActive(false);
+            Destroy(unit.gameObject);
+        }
+
+        private UnitDTO FindPartyMember(string unitId)
+        {
+            var party = RunSession.Current.Party;
+            if (party == null) return null;
+            for (int i = 0; i < party.Count; i++)
+                if (party[i] != null && party[i].Id == unitId) return party[i];
+            return null;
+        }
+
+        private UnitDefinitionDatabase Database()
+        {
+            if (!databaseBuilt)
+            {
+                cachedDatabase = definitionCatalog != null ? definitionCatalog.BuildDatabase() : null;
+                if (definitionCatalog == null)
+                    Debug.LogWarning("[BattlePartySpawner] No definition catalog assigned; draftees keep base-prefab visuals.", this);
+                databaseBuilt = true;
+            }
+            return cachedDatabase;
+        }
+
+        private Transform DeployedContainer()
+        {
+            if (deployedContainer == null) deployedContainer = new GameObject("DeployedUnits").transform;
+            return deployedContainer;
         }
 
         private void RetireScenePlayerUnits()

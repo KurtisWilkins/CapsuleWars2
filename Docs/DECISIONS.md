@@ -137,4 +137,19 @@ natural and keeps generation pure/testable (8 invariant tests). Persistence bump
 editor checklist (Claude can't see Play mode). Node visuals are procedural placeholders (coloured squares
 + a letter). A persistent run-scoped item inventory + a win/recruit path for infinite runs remain follow-ups.
 
+### ADR-014 — Deployment click path: frame board above the HUD; enemy inspection via enemy-zone cell taps
+**Decided:** the deployment placement bug (HUD bar covering the player-zone cells, so taps were dropped by
+`DeploymentTray`'s `IsPointerOverGameObject` gate) is fixed by **moving the view, not making UI
+click-through**: `DeploymentCameraController.bottomViewportInset` frames the board into the upper screen
+above a clear bottom band for the HUD (+ a `framingOffset` nudge). The legacy `DeploymentView` (a second,
+now-redundant click handler that no-ops under spawn-on-place) is **disabled**. Enemy stat inspection is
+**cell-based, collider-free**: tapping an enemy-zone cell (`InEnemyZone`) finds the `Team.Enemy` `UnitRoot`
+there and shows the shared `UnitInspectionPanel` (real `UnitStatusController` stats), anchored top-right so
+it never overlaps the player zone — read-only, no placement effect.
+**Why:** the user preferred a camera/UI move over click-through; cell-based enemy selection reuses the
+existing ground raycast + `InEnemyZone` and respects ADR-008 (units have no colliders). Keeps a single
+active click handler (`DeploymentTray`).
+**Implication:** `bottomViewportInset`/`framingOffset` + the `EnemyInspectionPanel` RectTransform are
+serialized/scene-tunable; verify in Play mode.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

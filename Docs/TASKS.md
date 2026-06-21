@@ -4,6 +4,11 @@
 > specific and self-contained. Move finished items to "Done (recent)".
 
 ## Next up (work top-down)
+- [ ] **Play-test the deployment placement fix + enemy inspection** (`Test_M3_Battle`, `-force-d3d11`,
+      drafted run). Select a bench unit → click a **player-zone cell** ⇒ it places (board now frames above
+      the HUD via `DeploymentCameraController.bottomViewportInset`; raise it / nudge `framingOffset` if the
+      HUD still overlaps). Click an **enemy** ⇒ top-right stats panel shows; doesn't block placement.
+      (Full notes in PROJECT_STATE.)
 - [ ] **Play-test the branching map** (`Test_M7_Map`, `-force-d3d11`). Scene is assembled (ScrollRect +
       `MapView` wired, node label font set). Start a run → branching map renders → pick a start → encounter →
       return → only connected nodes clickable → climb → clear Boss → new segment stitches on; lose → run ends.
@@ -41,6 +46,10 @@
 - [ ] Clean up battle-end UI placeholder "New Text" labels. Remaining M10 polish (see `Docs/17_BuildOrder.md`).
 
 ## Done (recent — prune periodically)
+- [x] **Deployment placement fix + enemy inspection** (ADR-014): camera `bottomViewportInset`/`framingOffset`
+      frame the board above the bottom HUD (player-zone clicks were dropped as "over UI"); legacy
+      `DeploymentView` disabled; enemy-zone cell tap → shared `UnitInspectionPanel` (read-only, top-right),
+      wired in `Test_M3_Battle`. 162/162 green.
 - [x] **Branching run map** (ADR-013): seeded branching+infinite graph model/generator (`MapNode` edges,
       `RunMap`, `MapGenConfig`, `MapGenerator` GenerateInitial/AppendSegment); graph `RunState` (CurrentNodeId,
       depth, Seed, TravelTo, DifficultyMultiplier, AppendNextSegment); `RunController.TravelToNode` + stitch +

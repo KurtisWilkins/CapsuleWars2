@@ -3,15 +3,15 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-21, after the Branching Map pass (Slay-the-Spire run progression) — branch `claude/deployment-grid`_
+_Last updated: 2026-06-21, after the Deployment placement fix + enemy inspection — branch `claude/deployment-grid`_
 
 ## One-line status
-**Branching run map (NEW):** the linear route is replaced by a seeded, branching, **infinite** node graph
-(rows of nodes + edges; pick a start, follow edges upward; clear the Boss → a new segment stitches on;
-run ends only on loss). Model + generator + run-state + flow are done and **162/162 EditMode green**
-(8 generator-invariant tests). The `MapView` UI + node/edge prefabs are **assembled and wired
-into `Test_M7_Map`** (ScrollRect + MapView via MCP); the remaining step is a **Play-mode test**. Prior
-unverified passes (Deployment v2, Customization v2) still need their Play-mode checks too.
+**Deployment placement fix (NEW):** the full-width bottom HUD bar covered the player-zone cells, so those
+clicks were dropped as "over UI". Fixed by framing the board into the upper screen (new
+`DeploymentCameraController.bottomViewportInset`, default 0.22) above a clear bottom band, and disabling
+the redundant legacy `DeploymentView` click handler. Also added **click an enemy (its zone) to inspect its
+stats** (shared `UnitInspectionPanel`, read-only, top-right, doesn't block placement). **162/162 EditMode
+green.** Prior passes (Branching Map, Deployment v2, Customization v2) still await their Play-mode checks.
 
 ## What currently works
 - Milestone base through ~M9 (draft → battle → recruit; combat, abilities, elements, synergies,
@@ -24,6 +24,10 @@ unverified passes (Deployment v2, Customization v2) still need their Play-mode c
   spawns the real unit at each placed cell (idle in PreBattle), and those instances become the combat
   units on Assemble. `DeploymentCameraController` auto-computes framing from the grid. Renderer +
   gizmo colour the enemy zone. All committed; gate/zone/grid logic unit-tested (160 green).
+  **Placement fix:** the camera frames the board above a clear bottom band (`bottomViewportInset`) so the
+  player-zone cells aren't hidden behind the HUD (clicks were being dropped as "over UI"); the legacy
+  `DeploymentView` (redundant click handler) is disabled. **Enemy inspection:** tapping an enemy-zone cell
+  shows that enemy's stats in a shared `UnitInspectionPanel` (top-right, read-only) — wired in `Test_M3_Battle`.
 - **Branching run map (NEW, code-complete):** `Run/Map/` — `MapNode` (Row/Column/Edges), `RunMap` (graph
   helpers), `MapGenConfig` (rows/segment, nodesPerRow, pathCount, type weights, rules), `MapGenerator`
   (`GenerateInitial`/`AppendSegment`: seeded path-walk edges + reachability repair + rule/weight types +
@@ -43,7 +47,16 @@ unverified passes (Deployment v2, Customization v2) still need their Play-mode c
   verification + arena tuning remain (below).
 
 ## Needs human verification (Claude can't see Play Mode)
-- **Branching map — assembled in `Test_M7_Map` (done via MCP); play-test it (`-force-d3d11`):**
+- **Deployment placement fix + enemy inspection (`Test_M3_Battle`, `-force-d3d11`, drafted run):**
+  1. **Placement:** the board frames above the bottom HUD; select a bench unit → click any **player-zone
+     cell** ⇒ the unit places there. If the HUD still overlaps the near cells, raise `Main Camera` →
+     `DeploymentCameraController.bottomViewportInset` (0.22→~0.3) or nudge `framingOffset`; the legacy
+     `DeploymentView` on `Deployment` should be **disabled** (done). (Fallback if needed: set the HUD bar
+     background Image `raycastTarget = false`.)
+  2. **Enemy inspection:** click an **enemy** (its far-zone cell) ⇒ the top-right stats panel shows its
+     name + HP/ATK/DEF/SPD (matching combat); Close (or click a player cell) hides it and **placement still
+     works** — the panel is top-right and never covers the player zone. Tune the `EnemyInspectionPanel`
+     RectTransform if its position/scale needs adjusting (instantiated via MCP).
   Built: under **Map Panel** → `MapScrollView` (ScrollRect, dark bg) → masked `Viewport` → `Content`
   (bottom-centre anchor/pivot); `MapView` added to Map Panel with `scrollRect`/`content`/`nodePrefab`
   (MapNode_View)/`edgePrefab` (Edge_Line) wired; node Label font = LiberationSans.

@@ -6,6 +6,32 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-21 — deployment placement fix + enemy stat inspection
+**Goal this session:** placing a unit on a cell didn't work (HUD covered the player-zone cells); also add
+clicking an enemy to see its stats.
+
+**Done (committed on `claude/deployment-grid`; 162/162 EditMode green):**
+- **Root cause:** `DeploymentTray.Update` drops taps where `EventSystem.IsPointerOverGameObject()` is true;
+  the `DeploymentHUD` is a full-width 230px bottom bar and the camera framed the whole board near-top-down,
+  so the player zone (near rows) sat at the bottom under the HUD → taps dropped.
+- **FIX 1 (camera/UI move):** `DeploymentCameraController.bottomViewportInset` (default 0.22) frames the
+  board into the upper screen above a clear bottom band; added `framingOffset` nudge. Disabled the legacy
+  `DeploymentView` (redundant 2nd click handler, no-ops under spawn-on-place).
+- **FIX 2 (enemy inspection):** `DeploymentTray` — tapping an enemy-zone cell (`InEnemyZone`) finds the
+  `Team.Enemy` `UnitRoot` there and shows the shared `UnitInspectionPanel` (real `UnitStatusController`
+  stats), read-only, returns without placing. Instantiated `UnitInspectionPanel.prefab` as
+  `EnemyInspectionPanel` (top-right, clear of the player zone) in `Test_M3_Battle` + wired the ref.
+
+**Compiled clean:** yes. **EditMode 162/162.**
+
+**Needs human verification (Play Mode, `-force-d3d11`):** see PROJECT_STATE — place a unit on a player cell;
+click an enemy to see stats without blocking placement; tune `bottomViewportInset`/`framingOffset` + panel
+RectTransform if needed.
+
+**Decisions:** ADR-014 (frame board above HUD; collider-free enemy-zone-cell inspection; DeploymentView retired).
+
+**Next session starts with:** play-test the deployment placement fix + enemy inspection (TASKS top item).
+
 ## 2026-06-21 — branching run map (Slay-the-Spire: seeded, infinite, choice-based)
 **Goal this session:** replace the linear "advance" route with a visual branching node map — pick a
 start, follow edges upward, infinite segments stitch on, run ends only on loss.

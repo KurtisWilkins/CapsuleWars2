@@ -13,11 +13,13 @@ namespace CapsuleWars.Combat.Deployment
     [System.Serializable]
     public class DeploymentGridConfig
     {
-        [Min(1)] public int columns = 9;
-        [Min(1)] public int rows = 7;
+        [Tooltip("Board width: number of columns, laid out along world +X.")]
+        [Min(1)] public int columns = 7;
+        [Tooltip("Board depth: number of rows, laid out along world +Z (the player's near rows are the deploy zone).")]
+        [Min(1)] public int rows = 9;
         [Min(0.01f)] public float cellSize = 1.5f;
 
-        [Tooltip("World position of the center of cell (0,0). Columns extend +X, rows extend +Z.")]
+        [Tooltip("World position of the center of cell (0,0). Columns extend +X (width), rows extend +Z (depth).")]
         public Vector3 origin = Vector3.zero;
 
         [Header("Player deploy zone (inclusive row range)")]

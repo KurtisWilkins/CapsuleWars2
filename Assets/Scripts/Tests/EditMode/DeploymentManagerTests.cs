@@ -75,11 +75,11 @@ namespace CapsuleWars.Tests.EditMode
             manager.ApplyPlacements(new System.Collections.Generic.Dictionary<string, GridCoord>
             {
                 { "u1", new GridCoord(0, 0) },
-                { "u2", new GridCoord(8, 2) },
+                { "u2", new GridCoord(6, 2) },
             });
 
             Assert.IsTrue(manager.Grid.IsOccupied(new GridCoord(0, 0)));
-            Assert.IsTrue(manager.Grid.IsOccupied(new GridCoord(8, 2)));
+            Assert.IsTrue(manager.Grid.IsOccupied(new GridCoord(6, 2)));
 
             Object.DestroyImmediate(u1.gameObject);
             Object.DestroyImmediate(u2.gameObject);

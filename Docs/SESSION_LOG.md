@@ -6,6 +6,34 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-21 — deployment phase (7×9 grid, gate, tray HUD, camera)
+**Goal this session:** add a Deployment Phase before combat — a 7×9 grid with a visible tray HUD
+to place units, camera pulled back to frame the board, confirm-to-start.
+
+**Done (all committed on `claude/deployment-grid`; 158/158 EditMode green):**
+- Grid → 7×9 (columns = X/width, rows = Z/depth); updated the scene's DeploymentManager +
+  BattlePartySpawner configs. New `DeploymentGizmos` draws the grid + player zone in the Scene view.
+- `DeploymentPhaseController` gates `BattleStateManager.StartBattle` (DeploymentRequired/Confirmed);
+  `Confirm()` (Assemble) spawns + starts. `BattlePartySpawner` defers spawn to `OnConfirmed`
+  (place-then-spawn); falls back to immediate spawn when no deployment phase. Late-spawned units
+  still register via `UnitRoot.OnEnable → registry.OnUnitRegistered` (verified).
+- `DeploymentManager` token placement (`PlaceToken/RemoveToken/ClearAll`). `DeploymentTray` HUD:
+  bench from `RunSession.Party`, tap-select → tap-cell to place, tap a placed cell to bench it,
+  Assemble/Clear; mirrors `RunState.Placements`; refreshes the grid renderer for valid/invalid colours.
+- `DeploymentCameraController` auto-frames the board on deploy, restores the battle pose on Assemble.
+- Wired in `Test_M3_Battle`: `DeploymentPhase` + `DeploymentHUD` (bottom bench bar + Assemble/Clear +
+  selection label) + the gizmo component. HUD bar + buttons render (confirmed in the Simulator).
+
+**Compiled clean:** yes. **EditMode 158/158** (+gate, +token, +7×9 fix tests).
+
+**Needs human verification (Play Mode):** see PROJECT_STATE. Core loop: load a combat node with a
+drafted party → HUD bench populates → place units → Assemble → units spawn at placed cells → combat
+runs. Camera deployment pose + grid origin/zone need tuning to the arena.
+
+**Decisions:** ADR-010 (deployment phase: place-then-spawn + confirm gate + 7×9 + camera auto-frame).
+
+**Next session starts with:** Play-mode test of the full deployment loop with a drafted run (TASKS top item).
+
 ## 2026-06-21 — continuity setup + battle/customization UI
 **Goal this session:** ship the battle/customization UI feature set, then stand up a
 cross-session continuity system (this doc system).

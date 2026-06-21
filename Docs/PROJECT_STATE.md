@@ -3,68 +3,55 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-21, after wiring the customization trigger — branch `claude/deployment-grid`_
+_Last updated: 2026-06-21, after the Deployment Phase feature — branch `claude/deployment-grid`_
 
 ## One-line status
-The battle + customization UI feature set (deployment grid, deploy camera, unit
-inspection, between-rounds customization) is **code-complete and committed**, with
-the UI screens built in-scene; **155/155 EditMode tests green**. The end-to-end
-gameplay flows still need a Play-mode pass.
+A full **pre-combat Deployment Phase** is implemented and wired into the battle scene
+(7×9 grid, visible bench HUD, place units, confirm-to-start, camera framing, place-then-spawn).
+**158/158 EditMode tests green.** The end-to-end loop needs a Play-mode pass with a drafted run.
 
 ## What currently works
-- **Milestone base through ~M9** (see `Docs/00`–`Docs/17`): draft → battle → win →
-  recruit → roster cap; combat (BattleStateManager, abilities, elements, class
-  synergies, status effects, stats aggregation); roguelike run/map; legacy persistence;
-  customization unlocks + parts/palette pipeline.
-- **Equipment + run-state + placement persistence** — `UnitFactory` applies/captures
-  equipment; `RunStore` saves `run.json`; deployment placements persist battle-to-battle.
-  EditMode round-trip tested.
-- **Stat pipeline** — `UnitStatusController` computes final stats (base + equipment×rarity
-  + status + synergy) and raises `OnStatsChanged`. Tested.
-- **Deployment grid** — `Combat/Deployment` model + `DeploymentManager` (cell-based
-  placement, `AutoArrange`) tested; in Play the green tiles render and units auto-arrange
-  into the deploy zone (visually confirmed).
-- **Unit inspection panel** — built in `Test_M3_Battle`, reusable prefab; renders all
-  fields and correctly hides on Play (confirmed on screen).
-- **Deployment camera** — pan/zoom/clamp, gated to PreBattle; compiles, wired to Main Camera.
+- Milestone base through ~M9 (draft → battle → recruit; combat, abilities, elements, synergies,
+  status, stats; run/map; legacy + customization-unlock pipelines).
+- Equipment + run-state + placement persistence (`UnitFactory` equipment, `RunStore`). EditMode-tested.
+- Stat pipeline in `UnitStatusController` (+ `OnStatsChanged`). Tested.
+- **Deployment phase (NEW):** 7×9 grid model + `DeploymentManager` (placement, tokens, AutoArrange);
+  `DeploymentPhaseController` gate (combat blocked until Assemble); `DeploymentTray` bench HUD;
+  `DeploymentGizmos` Scene-view grid; `DeploymentCameraController` auto-frame; `BattlePartySpawner`
+  place-then-spawn. All committed; HUD renders; gate/token/grid logic unit-tested.
+- Unit inspection panel + between-rounds customization screen + launcher (built earlier; reachable).
 
 ## In progress
-- **Customization screen** — built in `Test_M7_Map` and now **reachable in-game**: a
-  `CustomizationLauncher` ("Customize" button → party picker from `RunSession.Current.Party`)
-  calls `CustomizationScreen.Show(unitId)`. All refs wired; layout confirmed in the Game view.
-  Functional play-test (equip → live stats → persist) is the only thing left — needs a run.
+- Nothing mid-edit. The deployment feature is code-complete + scene-wired; only the Play-mode
+  verification + arena tuning remain (below).
 
 ## Needs human verification (Claude can't see Play Mode)
-- Deployment interaction: tap a unit's cell → inspection panel shows live stats; tap an
-  empty deploy cell → the selected unit moves there.
-- Customization loop end-to-end (trigger now wired): with a drafted run, click Customize →
-  pick a unit → equip → verify live stat update → persists across Close/restart/battle.
-- Deployment camera feel/bounds tuning to the arena.
-- `DeploymentGridConfig` origin/cellSize/zone alignment to the arena (keep
-  `BattlePartySpawner.deploymentGrid` in sync).
+- **Deployment loop:** load a combat node *with a drafted party* (RunSession.Party non-empty) →
+  the bottom HUD bench lists units → tap a unit then a green cell to place (only the player zone;
+  tap a placed unit to bench it) → **Assemble** → units spawn at the placed cells → combat starts.
+  Confirm **Clear** empties the board and combat does NOT start before Assemble.
+- **Camera:** tune `DeploymentCameraController` deploymentPosition/euler/FOV so it frames the whole
+  7×9 board; confirm the transition in/out feels right.
+- **Grid placement:** tune `DeploymentGridConfig` origin/cellSize on the `Deployment` object (and
+  the matching copy on `BattlePartySpawner`) so the board sits on the arena; verify the gizmo in the Scene view.
+- Earlier-built UI still pending Play QA: inspection click-to-show, customization equip→live stats→persist.
 - Battle-end UI shows placeholder "New Text" labels (pre-existing) — cosmetic cleanup.
 
 ## Known issues / blockers
-- CoplayDev MCP bridge **drops on every domain reload** (recompile / entering Play) and
-  cycles ports (6400→6401→…). Just reconnect (`refresh_unity` / `manage_editor`).
-- **Game-view MCP screenshots return blank.** Use `manage_camera capture_source=scene_view`
-  for 3D/world, or computer-use on the Unity Game/Simulator window for overlay UI.
-- Setting object/component reference fields via MCP must use object form
-  (`{"instanceID": N}` / `{"path": "Assets/..."}`); a bare integer silently fails to bind.
+- CoplayDev MCP bridge drops on every domain reload (recompile / entering Play) and cycles ports — reconnect.
+- Game-view MCP screenshots are blank; use `manage_camera capture_source=scene_view` or computer-use on the Game/Simulator window.
+- MCP object/component ref fields must use object form (`{"instanceID":N}` / `{"path":"..."}`); bare ints fail.
+- Deployment uses the full `Unit_Sample_Prefab` for spawned units (NavMeshAgent etc.) — fine in battle; a
+  stripped preview prefab is still a backlog item for the customization screen.
 
 ## Key paths
-- ScriptableObject data layer (code): `Assets/Scripts/Data/` (Units, Equipment, Elements,
-  Classes, StatusEffects, Weapons). Authored assets: `Assets/Data/`.
-- UnitFactory: `Assets/Scripts/Persistence/UnitFactory.cs`
-- Stat computation (NO `StatCalculator` class — see ADR-007):
-  `Assets/Scripts/Units/Controllers/UnitStatusController.cs`
-- Deployment — model: `Assets/Scripts/Combat/Deployment/`; view: `Assets/Scripts/UI/Deployment/`
-- Inspection: `Assets/Scripts/UI/Inspection/UnitInspectionPanel.cs` +
-  `Assets/Prefabs/UnitInspectionPanel.prefab`
-- Customization: `Assets/Scripts/UI/Customization/CustomizationScreen.cs`
-- Persistence: `Assets/Scripts/Persistence/` (`RunStore`, `LegacyStore`, `Dto/`)
-- Scenes: `Assets/Scenes/Test_M3_Battle.unity` (combat + deployment),
-  `Test_M7_Map.unity` (map + between-rounds), `Test_M3_Idle`, `Test_M1_Idle`
-- Tests: `Assets/Scripts/Tests/EditMode/` (155 green); PlayMode asmdef exists.
-- Branch: `claude/deployment-grid` (stacked: equipment-persistence → deploy-camera →
-  unit-inspection → deployment-grid; none pushed; `claude/unit-factory` not yet on `main`).
+- Deployment model + phase: `Assets/Scripts/Combat/Deployment/` (GridCoord, CellState, DeploymentGridConfig,
+  DeploymentGrid, DeploymentManager, DeploymentPhaseController, DeploymentGizmos).
+- Deployment UI: `Assets/Scripts/UI/Deployment/` (DeploymentTray, DeploymentGridRenderer, DeploymentView) +
+  `Assets/Scripts/UI/Camera/DeploymentCameraController.cs`.
+- Spawn/persist: `Assets/Scripts/Run/BattlePartySpawner.cs`, `RunState.Placements`, `Assets/Scripts/Persistence/`.
+- Stats (NO StatCalculator — see ADR-007): `Assets/Scripts/Units/Controllers/UnitStatusController.cs`.
+- UnitFactory: `Assets/Scripts/Persistence/UnitFactory.cs`.
+- Scenes: `Assets/Scenes/Test_M3_Battle.unity` (combat + deployment), `Test_M7_Map.unity` (map + between-rounds).
+- Tests: `Assets/Scripts/Tests/EditMode/` (158 green).
+- Branch: `claude/deployment-grid` (stacked off `claude/unit-factory`; none pushed).

@@ -4,52 +4,40 @@
 > specific and self-contained. Move finished items to "Done (recent)".
 
 ## Next up (work top-down)
-- [ ] **Play-mode verify the customization loop** (now reachable via the Customize button):
-      in `Test_M7_Map` with a drafted run, click **Customize** → pick a party unit → equip an
-      item from the catalog → confirm the inspection panel stats update live → Close → re-open
-      and confirm the loadout persisted (and survives a battle). Needs a run session first.
-- [ ] **Play-mode verify deployment** (`Test_M3_Battle`): in PreBattle, tap a
-      unit's cell → inspection panel shows that unit's stats; tap an empty deploy
-      cell → the selected unit moves there; confirm tiles colour by `CellState`.
-- [ ] **Tune `DeploymentGridConfig`** (origin / cellSize / playerRowMin–Max) to the
-      actual arena so the deploy zone sits under the player units. Keep the copy on
-      `BattlePartySpawner.deploymentGrid` in sync (it maps saved placements → world).
-- [ ] **Camera pass (Slice A):** tune `DeploymentCameraController` bounds/feel on the
-      battle Main Camera; swap `DeploymentCell.prefab`'s material to a transparent one
-      so the green/blue/red alpha tints read correctly.
+- [ ] **Play-mode test the full deployment loop** (needs a drafted run). In `Test_M3_Battle`,
+      start with `RunSession.Current.Party` non-empty (draft via `Test_M7_Map`, or temporarily
+      seed a party): the bottom **DeploymentHUD** bench should list the party → tap a unit then a
+      green deploy-zone cell to place it → tap a placed unit to send it back → **Assemble** →
+      units spawn at the placed cells and combat starts → **Clear** empties the board and combat
+      must NOT start before Assemble. Report what renders/works.
+- [ ] **Tune the deployment camera + grid to the arena.** On `Main Camera`'s
+      `DeploymentCameraController`, set deploymentPosition/euler/FOV so it frames the whole 7×9 board;
+      on the `Deployment` object's `DeploymentManager.config` (and the matching `BattlePartySpawner.deploymentGrid`)
+      set origin/cellSize so the grid sits on the arena. Check the gizmo in the Scene view.
+- [ ] **Play-mode verify the customization loop** (`Test_M7_Map`): Customize → pick a unit → equip →
+      live stats update → persists across Close/restart/battle.
 
 ## Backlog (not yet scheduled)
-- [ ] Persist body-part / palette edits made in the customization screen.
-      `UnitFactory.FromUnit` currently captures **equipment only**, not `Parts`/`PaletteId`,
-      so cosmetic edits there won't save until that's extended.
-- [ ] Real equipment source for customization. Only `EquipmentCatalog.asset`
-      (Eq_IronSword, Eq_LeatherChest) exists — there is no loot/inventory system.
-- [ ] Stripped "preview" unit prefab for the customization screen (the full
-      `Unit_Sample_Prefab` drags in NavMeshAgent/movement → harmless warnings in the
-      map scene with no NavMesh).
-- [ ] Land `claude/unit-factory` → `main`, then merge the stacked feature branches in
-      order (equipment-persistence → deploy-camera → unit-inspection → deployment-grid).
-- [ ] Clean up battle-end UI placeholder "New Text" labels in `Test_M3_Battle`.
-- [ ] Remaining M10 polish: real audio clips + event wiring, settings screen UI +
-      input rebinds, tutorial, multi-arena, balance pass. See `Docs/17_BuildOrder.md`.
+- [ ] Bench-item prefab polish: deployment + customization reuse `EquipButton.prefab`; make a dedicated
+      unit-card prefab (icon + name) if desired.
+- [ ] Stripped "preview" unit prefab (no NavMeshAgent) for the customization screen.
+- [ ] Persist body-part/palette edits (`UnitFactory.FromUnit` captures equipment only).
+- [ ] Real equipment source / loot-inventory (only `EquipmentCatalog` with 2 items exists).
+- [ ] `BattleStartButton` is now redundant with Assemble (gated) — hide it during deployment or remove.
+- [ ] Replace deprecated `FindObjectsByType(FindObjectsSortMode)` calls (CS0618 warnings) in
+      DeploymentView/LegacyPromoteButton/RunBattleSetup.
+- [ ] Land `claude/unit-factory` → `main`, then merge the stacked feature branches in order.
+- [ ] Clean up battle-end UI placeholder "New Text" labels. Remaining M10 polish (see `Docs/17_BuildOrder.md`).
 
 ## Done (recent — prune periodically)
-- [x] Between-rounds customization **trigger**: `CustomizationLauncher` ("Customize" button →
-      party picker from `RunSession.Current.Party` → `CustomizationScreen.Show(unitId)`), built
-      + wired in `Test_M7_Map`. Compiles, layout confirmed; functional play-test pending (above).
-- [x] Cross-session continuity system (this file + CLAUDE.md + Docs/ + skills).
-- [x] Customization screen built in `Test_M7_Map` (panel + inspection prefab instance
-      + EquipButton prefab + PreviewAnchor; all refs wired).
-- [x] Unit inspection panel built in `Test_M3_Battle` + extracted to a reusable prefab;
-      renders + hides-on-Play confirmed.
-- [x] Deployment grid: model + `DeploymentManager` (AutoArrange, cell-based selection)
-      + view + renderer; tiles render and units auto-arrange in Play.
-- [x] Deployment camera controller (pan/zoom/clamp, PreBattle-gated) wired to Main Camera.
-- [x] Run-scoped equipment + run-state + placement persistence (UnitFactory equipment,
-      RunStore, RunStateDTO). EditMode-tested.
-- [x] `UnitStatusController.OnStatsChanged` event for live UI refresh.
-- [x] Fixed the pre-existing EditMode baseline regression. **155/155 EditMode green.**
+- [x] **Deployment Phase** (7×9 grid + gizmos; DeploymentPhaseController confirm gate; place-then-spawn
+      `BattlePartySpawner`; DeploymentManager token placement; DeploymentTray bench HUD with Assemble/Clear;
+      camera auto-frame; wired in `Test_M3_Battle`). 158/158 green; HUD renders.
+- [x] Between-rounds customization launcher/trigger (`CustomizationLauncher`).
+- [x] Cross-session continuity system (CLAUDE.md + Docs/ + skills).
+- [x] Customization screen, inspection panel (+prefab), deployment grid core, camera controller,
+      run-scoped equipment/run-state/placement persistence, `OnStatsChanged`, baseline test fix.
 
 ## Notes
 - New ideas discovered mid-task go in Backlog, not into the current task.
-- Run the EditMode suite (`run_tests`) after C# changes; it should stay green (155).
+- Run the EditMode suite (`run_tests`) after C# changes; keep it green (currently 158).

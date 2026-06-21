@@ -69,4 +69,19 @@ own commit (`450d3f3`).
 **Why:** keeps each slice independently reviewable; `unit-factory` isn't on
 `main` yet, so stacking avoids an unprompted merge.
 
-<!-- Add new decisions below as ADR-010, ADR-011, ... -->
+### ADR-010 — Deployment Phase: place-then-spawn, confirm-gated, 7×9
+**Decided:** a pre-combat Deployment Phase on a **7×9** grid (columns = X/width, rows = Z/depth;
+player zone = near rows). Model = **place-then-spawn**: during deployment the field has no player
+units — the player places party **tokens** from a bench (`DeploymentTray`) onto cells, and on
+**Assemble** the party spawns at the placed cells (`BattlePartySpawner` deferred to
+`DeploymentPhaseController.OnConfirmed`). Combat is **gated**: `BattleStateManager.StartBattle`
+won't reach Active while `DeploymentRequired && !DeploymentConfirmed`. The camera auto-frames the
+board on entry and restores the battle pose on Assemble.
+**Why:** matches the "tray of available units → units spawn where I placed them" intent, and reuses
+the existing `RunState.Placements` + spawner. Late-spawned units register fine via
+`UnitRoot.OnEnable → registry.OnUnitRegistered`, so deferring spawn is safe.
+**Implication / fallback:** if no `DeploymentPhaseController` is in the scene (or no run party),
+`BattlePartySpawner` spawns immediately as before — existing combat is unaffected. Gate flags
+default off. Selection is cell-based (units have no colliders).
+
+<!-- Add new decisions below as ADR-011, ADR-012, ... -->

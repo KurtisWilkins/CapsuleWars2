@@ -3,7 +3,7 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-21, continuity-setup session — branch `claude/deployment-grid`_
+_Last updated: 2026-06-21, after wiring the customization trigger — branch `claude/deployment-grid`_
 
 ## One-line status
 The battle + customization UI feature set (deployment grid, deploy camera, unit
@@ -29,15 +29,16 @@ gameplay flows still need a Play-mode pass.
 - **Deployment camera** — pan/zoom/clamp, gated to PreBattle; compiles, wired to Main Camera.
 
 ## In progress
-- **Customization screen** — built in `Test_M7_Map` (left-edge panel + inspection-prefab
-  instance + EquipButton prefab + PreviewAnchor; all refs wired). Not yet reachable in-game
-  (no caller for `Show(unitId)`) and not play-tested.
+- **Customization screen** — built in `Test_M7_Map` and now **reachable in-game**: a
+  `CustomizationLauncher` ("Customize" button → party picker from `RunSession.Current.Party`)
+  calls `CustomizationScreen.Show(unitId)`. All refs wired; layout confirmed in the Game view.
+  Functional play-test (equip → live stats → persist) is the only thing left — needs a run.
 
 ## Needs human verification (Claude can't see Play Mode)
 - Deployment interaction: tap a unit's cell → inspection panel shows live stats; tap an
   empty deploy cell → the selected unit moves there.
-- Customization screen end-to-end: needs a wired trigger + a run session to populate;
-  verify equip → live stats update → persists across restart.
+- Customization loop end-to-end (trigger now wired): with a drafted run, click Customize →
+  pick a unit → equip → verify live stat update → persists across Close/restart/battle.
 - Deployment camera feel/bounds tuning to the arena.
 - `DeploymentGridConfig` origin/cellSize/zone alignment to the arena (keep
   `BattlePartySpawner.deploymentGrid` in sync).

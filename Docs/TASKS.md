@@ -4,12 +4,10 @@
 > specific and self-contained. Move finished items to "Done (recent)".
 
 ## Next up (work top-down)
-- [ ] **Wire the between-rounds trigger for the customization screen.** Nothing
-      calls `CustomizationScreen.Show(unitId)` yet, so it's unreachable in-game.
-      Add an entry point in the map scene (`Test_M7_Map`): e.g. a button per party
-      unit in the map HUD, or a `RunController` hook shown after a battle node
-      completes. `CustomizationScreen` lives on the `CustomizationScreen` GameObject
-      under `Canvas`; `RunSession.Current.Party` holds the unit ids.
+- [ ] **Play-mode verify the customization loop** (now reachable via the Customize button):
+      in `Test_M7_Map` with a drafted run, click **Customize** → pick a party unit → equip an
+      item from the catalog → confirm the inspection panel stats update live → Close → re-open
+      and confirm the loadout persisted (and survives a battle). Needs a run session first.
 - [ ] **Play-mode verify deployment** (`Test_M3_Battle`): in PreBattle, tap a
       unit's cell → inspection panel shows that unit's stats; tap an empty deploy
       cell → the selected unit moves there; confirm tiles colour by `CellState`.
@@ -36,6 +34,9 @@
       input rebinds, tutorial, multi-arena, balance pass. See `Docs/17_BuildOrder.md`.
 
 ## Done (recent — prune periodically)
+- [x] Between-rounds customization **trigger**: `CustomizationLauncher` ("Customize" button →
+      party picker from `RunSession.Current.Party` → `CustomizationScreen.Show(unitId)`), built
+      + wired in `Test_M7_Map`. Compiles, layout confirmed; functional play-test pending (above).
 - [x] Cross-session continuity system (this file + CLAUDE.md + Docs/ + skills).
 - [x] Customization screen built in `Test_M7_Map` (panel + inspection prefab instance
       + EquipButton prefab + PreviewAnchor; all refs wired).

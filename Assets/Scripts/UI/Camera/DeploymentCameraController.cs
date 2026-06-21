@@ -1,3 +1,4 @@
+using CapsuleWars.Combat.Deployment;
 using CapsuleWars.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -48,13 +49,76 @@ namespace CapsuleWars.UI.CameraControl
         [Tooltip("When true, the camera only moves during BattlePhase.PreBattle (locked once combat is active).")]
         [SerializeField] private bool restrictToDeployment = true;
 
+        [Header("Auto-frame (deployment)")]
+        [Tooltip("On deployment start, lerp to the pose below to frame the whole board; restore to the battle pose on Assemble.")]
+        [SerializeField] private bool autoFrameOnDeployment = true;
+        [Tooltip("Pulled-back camera position that frames the 7x9 board (tune to the arena).")]
+        [SerializeField] private Vector3 deploymentPosition = new Vector3(4.5f, 14f, 6f);
+        [Tooltip("Camera euler rotation while framing (e.g. ~70 deg pitch to look down at the board).")]
+        [SerializeField] private Vector3 deploymentEuler = new Vector3(70f, 0f, 0f);
+        [Tooltip("Field of view during deployment (0 = keep current).")]
+        [SerializeField] private float deploymentFov = 0f;
+        [Tooltip("Seconds for the camera transition in/out of the deployment framing.")]
+        [SerializeField, Min(0.01f)] private float transitionSeconds = 0.6f;
+
         private bool dragging;
         private Vector2 lastDragPos;
         private bool pinching;
         private float lastPinchDist;
 
+        private Camera cam;
+        private DeploymentPhaseController phase;
+        private Vector3 battlePosition;
+        private Quaternion battleRotation;
+        private float battleFov;
+        private bool transitioning;
+        private Vector3 fromPos, targetPos;
+        private Quaternion fromRot, targetRot;
+        private float fromFov, targetFov;
+        private float transitionT;
+
+        private void Awake()
+        {
+            cam = GetComponent<Camera>();
+            battlePosition = transform.position;     // store the authored battle pose to restore later
+            battleRotation = transform.rotation;
+            battleFov = cam != null ? cam.fieldOfView : 60f;
+
+            phase = FindAnyObjectByType<DeploymentPhaseController>();
+            if (phase != null) phase.OnConfirmed += FrameBattle;
+        }
+
+        private void Start()
+        {
+            if (autoFrameOnDeployment && phase != null) FrameDeployment();
+        }
+
+        private void OnDestroy()
+        {
+            if (phase != null) phase.OnConfirmed -= FrameBattle;
+        }
+
+        /// <summary>Lerp to the pulled-back pose that frames the whole board.</summary>
+        public void FrameDeployment() => BeginTransition(deploymentPosition, Quaternion.Euler(deploymentEuler), deploymentFov);
+
+        /// <summary>Lerp back to the camera's stored battle pose (called on Assemble).</summary>
+        public void FrameBattle() => BeginTransition(battlePosition, battleRotation, battleFov);
+
+        private void BeginTransition(Vector3 pos, Quaternion rot, float fov)
+        {
+            fromPos = transform.position; targetPos = pos;
+            fromRot = transform.rotation; targetRot = rot;
+            fromFov = cam != null ? cam.fieldOfView : 60f;
+            targetFov = fov > 0f ? fov : fromFov;
+            transitionT = 0f;
+            transitioning = true;
+            dragging = false; pinching = false;
+        }
+
         private void Update()
         {
+            if (transitioning) { AdvanceTransition(); return; }   // no manual control mid-transition
+
             if (restrictToDeployment && CombatServices.Phase != BattlePhase.PreBattle)
             {
                 dragging = false;
@@ -71,6 +135,16 @@ namespace CapsuleWars.UI.CameraControl
                 p.y += heightDelta;
                 transform.position = Clamp(p);
             }
+        }
+
+        private void AdvanceTransition()
+        {
+            transitionT += Time.deltaTime / Mathf.Max(0.01f, transitionSeconds);
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(transitionT));
+            transform.position = Vector3.Lerp(fromPos, targetPos, t);
+            transform.rotation = Quaternion.Slerp(fromRot, targetRot, t);
+            if (cam != null) cam.fieldOfView = Mathf.Lerp(fromFov, targetFov, t);
+            if (transitionT >= 1f) transitioning = false;
         }
 
         /// <summary>

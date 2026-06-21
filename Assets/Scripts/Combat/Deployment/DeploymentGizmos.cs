@@ -19,6 +19,7 @@ namespace CapsuleWars.Combat.Deployment
 
         [SerializeField] private Color gridColor = new Color(1f, 1f, 1f, 0.35f);
         [SerializeField] private Color zoneColor = new Color(0.2f, 0.8f, 0.3f, 0.25f);
+        [SerializeField] private Color enemyZoneColor = new Color(0.9f, 0.35f, 0.2f, 0.25f);
         [SerializeField] private bool onlyWhenSelected = false;
 
         private DeploymentGridConfig Config => manager != null ? manager.Config : overrideConfig;
@@ -48,6 +49,11 @@ namespace CapsuleWars.Combat.Deployment
                     if (cfg.InPlayerZone(coord))
                     {
                         Gizmos.color = zoneColor;
+                        Gizmos.DrawCube(center, new Vector3(cfg.cellSize * 0.95f, 0.02f, cfg.cellSize * 0.95f));
+                    }
+                    else if (cfg.InEnemyZone(coord))
+                    {
+                        Gizmos.color = enemyZoneColor;
                         Gizmos.DrawCube(center, new Vector3(cfg.cellSize * 0.95f, 0.02f, cfg.cellSize * 0.95f));
                     }
 

@@ -37,6 +37,15 @@ namespace CapsuleWars.Combat.State
         public SynergyResolver Synergies { get; private set; }
         public bool SuddenDeathEngaged { get; private set; }
 
+        /// <summary>
+        /// Deployment gate. When <see cref="DeploymentRequired"/> is set (by a
+        /// DeploymentPhaseController in the scene), <see cref="StartBattle"/> is
+        /// blocked until <see cref="DeploymentConfirmed"/> is set on "Assemble".
+        /// Both default off, so battles without a deployment phase start as before.
+        /// </summary>
+        public bool DeploymentRequired { get; set; }
+        public bool DeploymentConfirmed { get; set; }
+
         public event Action<BattleResult, IReadOnlyList<BattleLeaderboardEntry>> OnBattleEnded;
         public event Action OnBattleStarted;
         public event Action<BattlePhase> OnPhaseChanged;
@@ -109,6 +118,11 @@ namespace CapsuleWars.Combat.State
         public void StartBattle()
         {
             if (Phase != BattlePhase.PreBattle) return;
+            if (DeploymentRequired && !DeploymentConfirmed)
+            {
+                Debug.Log("[BattleStateManager] StartBattle blocked — deployment not confirmed yet.");
+                return;
+            }
             Synergies?.RecomputeSynergies();
             SetPhase(BattlePhase.Active);
             battleStartTime = Time.time;

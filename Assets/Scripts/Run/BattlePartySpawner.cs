@@ -47,6 +47,8 @@ namespace CapsuleWars.Run
                  "(RunState.Placements) spawns at that cell's world position. Keep in sync with the deployment UI grid.")]
         [SerializeField] private DeploymentGridConfig deploymentGrid = new DeploymentGridConfig();
 
+        private DeploymentPhaseController deployment;
+
         private void Awake()
         {
             if (!RunSession.IsActive) return;
@@ -59,12 +61,35 @@ namespace CapsuleWars.Run
                 return;
             }
 
+            // Clear scene placeholder player units now; in deployment mode the field
+            // starts empty and the party spawns at its placed cells on Assemble.
+            RetireScenePlayerUnits();
+
+            // Place-then-spawn: if a deployment phase is present, defer spawning until
+            // the player confirms (units appear at their placed cells). Late-spawned
+            // units still register via UnitRoot.OnEnable → registry.OnUnitRegistered.
+            // Otherwise spawn immediately so the battle scene is playable standalone.
+            deployment = FindAnyObjectByType<DeploymentPhaseController>();
+            if (deployment != null)
+                deployment.OnConfirmed += SpawnParty;
+            else
+                SpawnParty();
+        }
+
+        private void OnDestroy()
+        {
+            if (deployment != null) deployment.OnConfirmed -= SpawnParty;
+        }
+
+        private void SpawnParty()
+        {
+            if (!RunSession.IsActive) return;
+            var party = RunSession.Current.Party;
+            if (party == null || party.Count == 0 || baseUnitPrefab == null) return;
+
             var database = definitionCatalog != null ? definitionCatalog.BuildDatabase() : null;
             if (definitionCatalog == null)
                 Debug.LogWarning("[BattlePartySpawner] No definition catalog assigned; draftees keep base-prefab visuals.", this);
-
-            // Retire scene placeholders BEFORE spawning so we don't remove our own units.
-            RetireScenePlayerUnits();
 
             for (int i = 0; i < party.Count; i++)
             {

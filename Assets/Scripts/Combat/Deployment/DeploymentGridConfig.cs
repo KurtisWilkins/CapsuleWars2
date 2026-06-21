@@ -17,21 +17,31 @@ namespace CapsuleWars.Combat.Deployment
         [Min(1)] public int columns = 7;
         [Tooltip("Board depth: number of rows, laid out along world +Z (the player's near rows are the deploy zone).")]
         [Min(1)] public int rows = 9;
-        [Min(0.01f)] public float cellSize = 1.5f;
+        [Tooltip("World size of one cell. Larger = a bigger battlefield with more spacing between units.")]
+        [Min(0.01f)] public float cellSize = 3.5f;
 
         [Tooltip("World position of the center of cell (0,0). Columns extend +X (width), rows extend +Z (depth).")]
         public Vector3 origin = Vector3.zero;
 
-        [Header("Player deploy zone (inclusive row range)")]
+        [Header("Player deploy zone (inclusive row range, near side)")]
         [Tooltip("Lowest row index the player may place on.")]
         [Min(0)] public int playerRowMin = 0;
         [Tooltip("Highest row index the player may place on.")]
         [Min(0)] public int playerRowMax = 2;
 
+        [Header("Enemy zone (inclusive row range, far side)")]
+        [Tooltip("Lowest row index of the enemy zone.")]
+        [Min(0)] public int enemyRowMin = 6;
+        [Tooltip("Highest row index of the enemy zone.")]
+        [Min(0)] public int enemyRowMax = 8;
+
         public bool InBounds(GridCoord c) => c.col >= 0 && c.col < columns && c.row >= 0 && c.row < rows;
 
-        /// <summary>In bounds and within the inclusive player row range.</summary>
+        /// <summary>In bounds and within the inclusive player row range (near side).</summary>
         public bool InPlayerZone(GridCoord c) => InBounds(c) && c.row >= playerRowMin && c.row <= playerRowMax;
+
+        /// <summary>In bounds and within the inclusive enemy row range (far side).</summary>
+        public bool InEnemyZone(GridCoord c) => InBounds(c) && c.row >= enemyRowMin && c.row <= enemyRowMax;
 
         /// <summary>World-space center of a cell.</summary>
         public Vector3 CellToWorld(GridCoord c) =>

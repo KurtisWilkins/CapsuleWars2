@@ -44,6 +44,39 @@ namespace CapsuleWars.Tests.EditMode
         }
 
         [Test]
+        public void PlayerAndEnemyZones_AreDisjoint_WithNeutralMiddle()
+        {
+            var cfg = new DeploymentGridConfig
+            {
+                columns = 7, rows = 9, cellSize = 3.5f, origin = Vector3.zero,
+                playerRowMin = 0, playerRowMax = 2,
+                enemyRowMin = 6, enemyRowMax = 8,
+            };
+
+            // Player zone = near rows 0-2; enemy zone = far rows 6-8.
+            Assert.IsTrue(cfg.InPlayerZone(new GridCoord(3, 0)));
+            Assert.IsTrue(cfg.InPlayerZone(new GridCoord(3, 2)));
+            Assert.IsTrue(cfg.InEnemyZone(new GridCoord(3, 6)));
+            Assert.IsTrue(cfg.InEnemyZone(new GridCoord(3, 8)));
+
+            // No cell is ever in both zones; neutral middle rows are in neither.
+            for (int row = 0; row < cfg.rows; row++)
+            {
+                var c = new GridCoord(3, row);
+                Assert.IsFalse(cfg.InPlayerZone(c) && cfg.InEnemyZone(c), $"row {row} in both zones");
+                if (row >= 3 && row <= 5)
+                    Assert.IsFalse(cfg.InPlayerZone(c) || cfg.InEnemyZone(c), $"neutral row {row} should be in neither zone");
+            }
+        }
+
+        [Test]
+        public void CellToWorld_UsesCellSize()
+        {
+            var cfg = new DeploymentGridConfig { columns = 7, rows = 9, cellSize = 3.5f, origin = Vector3.zero };
+            Assert.AreEqual(new Vector3(2 * 3.5f, 0f, 4 * 3.5f), cfg.CellToWorld(new GridCoord(2, 4)));
+        }
+
+        [Test]
         public void CellToWorld_AndBack_RoundTrips()
         {
             var cfg = Config();

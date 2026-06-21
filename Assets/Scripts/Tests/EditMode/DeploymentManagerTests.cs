@@ -20,7 +20,7 @@ namespace CapsuleWars.Tests.EditMode
         {
             mgrGo = new GameObject("DeploymentManager");
             manager = mgrGo.AddComponent<DeploymentManager>();
-            // default config: 9x7, cellSize 1.5, origin (0,0,0), player rows 0..2
+            // default config: 7x9, cellSize 3.5, origin (0,0,0), player rows 0..2, enemy rows 6..8
         }
 
         [TearDown]
@@ -46,8 +46,8 @@ namespace CapsuleWars.Tests.EditMode
             Assert.IsTrue(manager.PlaceUnit("u1", new GridCoord(3, 1)));
             Assert.IsTrue(manager.Grid.IsOccupied(new GridCoord(3, 1)));
 
-            // CellToWorld((3,1)) with default config = (3*1.5, y, 1*1.5); y preserved (0).
-            Assert.AreEqual(new Vector3(4.5f, 0f, 1.5f), unit.transform.position);
+            // CellToWorld((3,1)) with default config = (3*3.5, y, 1*3.5); y preserved (0).
+            Assert.AreEqual(new Vector3(10.5f, 0f, 3.5f), unit.transform.position);
 
             Object.DestroyImmediate(unit.gameObject);
         }

@@ -84,5 +84,26 @@ namespace CapsuleWars.Tests.EditMode
             Object.DestroyImmediate(u1.gameObject);
             Object.DestroyImmediate(u2.gameObject);
         }
+
+        [Test]
+        public void AutoArrange_PlacesUnitsInDeployZone_EvenWhenSpawnedOutside()
+        {
+            var u1 = MakeUnit("u1");
+            var u2 = MakeUnit("u2");
+            u1.transform.position = new Vector3(100f, 0f, 100f);   // far outside any cell/zone
+            u2.transform.position = new Vector3(-50f, 0f, -50f);
+            manager.RegisterUnit(u1);
+            manager.RegisterUnit(u2);
+
+            manager.AutoArrange();
+
+            var placements = manager.GetPlacements();
+            Assert.AreEqual(2, placements.Count);
+            foreach (var kv in placements)
+                Assert.IsTrue(manager.Config.InPlayerZone(kv.Value), $"{kv.Key} not placed in the deploy zone");
+
+            Object.DestroyImmediate(u1.gameObject);
+            Object.DestroyImmediate(u2.gameObject);
+        }
     }
 }

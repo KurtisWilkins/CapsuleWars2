@@ -79,15 +79,43 @@ namespace CapsuleWars.Combat.Deployment
             OnPlacementsChanged?.Invoke(GetPlacements());
         }
 
-        /// <summary>Seed the grid from each registered unit's current position (nearest cell).</summary>
-        public void SeedFromCurrentPositions()
+        /// <summary>
+        /// Ensure every registered unit occupies a deployable cell so it can be
+        /// selected and repositioned: a unit already over a free deployable cell
+        /// keeps it, otherwise it's assigned the next free cell in the player zone.
+        /// Units are snapped to their assigned cell. Used at deployment start when
+        /// there's no saved arrangement to restore.
+        /// </summary>
+        public void AutoArrange()
         {
             foreach (var kv in units)
             {
-                if (kv.Value == null) continue;
-                Grid.TryPlace(config.WorldToCell(kv.Value.transform.position), kv.Key);
+                var unit = kv.Value;
+                if (unit == null) continue;
+
+                Grid.RemoveOccupant(kv.Key);   // clear any stale placement first
+
+                var near = config.WorldToCell(unit.transform.position);
+                GridCoord? target = Grid.IsDeployable(near) && !Grid.IsOccupied(near)
+                    ? near
+                    : FirstFreeCell();
+
+                if (target.HasValue && Grid.TryPlace(target.Value, kv.Key))
+                    SnapToCell(unit, target.Value);
             }
             OnPlacementsChanged?.Invoke(GetPlacements());
+        }
+
+        /// <summary>First free, deployable cell scanning the player zone row by row, or null if the zone is full.</summary>
+        public GridCoord? FirstFreeCell()
+        {
+            for (int row = config.playerRowMin; row <= config.playerRowMax && row < config.rows; row++)
+                for (int col = 0; col < config.columns; col++)
+                {
+                    var c = new GridCoord(col, row);
+                    if (Grid.IsDeployable(c) && !Grid.IsOccupied(c)) return c;
+                }
+            return null;
         }
 
         private void SnapToCell(UnitRoot unit, GridCoord coord)

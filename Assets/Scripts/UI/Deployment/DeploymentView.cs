@@ -33,7 +33,6 @@ namespace CapsuleWars.UI.Deployment
 
         [Header("Raycasting")]
         [SerializeField] private Camera raycastCamera;
-        [SerializeField] private LayerMask unitMask = ~0;
         [SerializeField] private LayerMask groundMask = ~0;
         [SerializeField] private float maxRayDistance = 500f;
 
@@ -68,11 +67,11 @@ namespace CapsuleWars.UI.Deployment
             for (int i = 0; i < roots.Length; i++)
                 if (roots[i] != null && roots[i].Team == Team.Player) manager.RegisterUnit(roots[i]);
 
-            // Restore the saved arrangement, else seed from current spawn positions.
+            // Restore the saved arrangement, else auto-arrange units into the deploy zone.
             if (RunSession.IsActive && RunSession.Current.Placements.Count > 0)
                 manager.ApplyPlacements(RunSession.Current.Placements);
             else
-                manager.SeedFromCurrentPositions();
+                manager.AutoArrange();
 
             if (gridRenderer != null) gridRenderer.Build(manager);
         }
@@ -83,26 +82,27 @@ namespace CapsuleWars.UI.Deployment
             if (manager == null || raycastCamera == null) return;
             if (!TryGetPress(out Vector2 screenPos)) return;
 
-            Ray ray = raycastCamera.ScreenPointToRay(screenPos);
+            // Raycast the ground / cell tiles (units have no colliders, so selection
+            // is cell-based): resolve the tapped cell, then act on its occupancy.
+            if (!Physics.Raycast(raycastCamera.ScreenPointToRay(screenPos),
+                                  out RaycastHit hit, maxRayDistance, groundMask))
+                return;
 
-            // 1) Tapping a player unit selects + inspects it.
-            if (Physics.Raycast(ray, out RaycastHit unitHit, maxRayDistance, unitMask))
+            var coord = manager.Config.WorldToCell(hit.point);
+
+            // Tapping a cell that holds a unit selects + inspects it.
+            if (manager.Grid.TryGetOccupant(coord, out var occupantId)
+                && manager.TryGetUnit(occupantId, out var occupant))
             {
-                var root = unitHit.collider.GetComponentInParent<UnitRoot>();
-                if (root != null && root.Team == Team.Player)
-                {
-                    selected = root;
-                    if (inspectionPanel != null) inspectionPanel.Show(root);
-                    return;
-                }
+                selected = occupant;
+                if (inspectionPanel != null) inspectionPanel.Show(occupant);
+                return;
             }
 
-            // 2) With a unit selected, tapping the ground places it on that cell.
-            if (selected != null && Physics.Raycast(ray, out RaycastHit groundHit, maxRayDistance, groundMask))
-            {
-                var coord = manager.Config.WorldToCell(groundHit.point);
-                manager.PlaceUnit(selected.UnitId, coord);   // no-op if the cell isn't deployable
-            }
+            // Tapping an empty cell moves the selected unit there (no-op if the
+            // cell isn't deployable).
+            if (selected != null)
+                manager.PlaceUnit(selected.UnitId, coord);
         }
 
         private void HandlePlacementsChanged(IReadOnlyDictionary<string, GridCoord> placements)

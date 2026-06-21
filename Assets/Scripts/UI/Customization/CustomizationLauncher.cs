@@ -32,7 +32,19 @@ namespace CapsuleWars.UI.Customization
         public void Open()
         {
             if (pickerRoot != null) pickerRoot.SetActive(true);
+            EnsureForeground();
             BuildPartyList();
+        }
+
+        // Make the picker render + raycast above other map UI (own Canvas + raycaster).
+        private void EnsureForeground()
+        {
+            if (pickerRoot == null) return;
+            var canvas = pickerRoot.GetComponent<Canvas>();
+            if (canvas == null) canvas = pickerRoot.AddComponent<Canvas>();
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = 90;
+            if (pickerRoot.GetComponent<GraphicRaycaster>() == null) pickerRoot.AddComponent<GraphicRaycaster>();
         }
 
         public void Close()

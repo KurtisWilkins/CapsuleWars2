@@ -69,6 +69,7 @@ namespace CapsuleWars.UI.Customization
             currentUnitId = unitId;
             SpawnPreview(dto);
             if (panelRoot != null) panelRoot.SetActive(true);
+            EnsureForeground();
             if (inspectionPanel != null && preview != null) inspectionPanel.Show(preview);
             BuildEquipmentList();
         }
@@ -82,6 +83,24 @@ namespace CapsuleWars.UI.Customization
             preview = null;
             currentUnitId = null;
             if (panelRoot != null) panelRoot.SetActive(false);
+        }
+
+        // Guarantee the panel renders and raycasts above all other map UI, regardless of
+        // scene wiring: a nested Canvas with overrideSorting + a high sortingOrder, its own
+        // GraphicRaycaster, and a CanvasGroup that accepts input.
+        private void EnsureForeground()
+        {
+            if (panelRoot == null) return;
+            var canvas = panelRoot.GetComponent<Canvas>();
+            if (canvas == null) canvas = panelRoot.AddComponent<Canvas>();
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = 100;
+            if (panelRoot.GetComponent<GraphicRaycaster>() == null) panelRoot.AddComponent<GraphicRaycaster>();
+            var cg = panelRoot.GetComponent<CanvasGroup>();
+            if (cg == null) cg = panelRoot.AddComponent<CanvasGroup>();
+            cg.blocksRaycasts = true;
+            cg.interactable = true;
+            cg.alpha = 1f;
         }
 
         private void SpawnPreview(UnitDTO dto)

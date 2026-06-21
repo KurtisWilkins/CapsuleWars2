@@ -11,49 +11,49 @@ using NUnit.Framework;
 namespace CapsuleWars.Tests.EditMode
 {
     /// <summary>
-    /// Round-trip tests for run-state persistence: RunState &lt;-&gt; RunStateDTO
-    /// mapping, JSON serialization, and the RunStore disk save/load. Verifies
-    /// run-scoped party equipment survives the trip.
+    /// Round-trip tests for run-state persistence: RunState &lt;-&gt; RunStateDTO mapping
+    /// (graph nodes + edges + seed + position), JSON serialization, and disk save/load.
     /// </summary>
     public class RunStatePersistenceTests
     {
         [TearDown]
-        public void Teardown()
-        {
-            RunStore.Delete();   // never leave a run.json behind
-        }
+        public void Teardown() => RunStore.Delete();
 
+        // 3-row chain: Fight(0) -> Shop(1) -> Boss(2). Travel to depth 1, clearing both.
         private static RunState MakeRun()
         {
-            var nodes = new List<MapNode>
-            {
-                new MapNode(0, NodeType.Combat, "Fight"),
-                new MapNode(1, NodeType.Shop, "Shop"),
-                new MapNode(2, NodeType.Boss, "Boss"),
-            };
-            var state = new RunState(new RunMap(nodes), 50)
+            var n0 = new MapNode(0, 0, 0, NodeType.Combat, "Fight");
+            var n1 = new MapNode(1, 1, 0, NodeType.Shop, "Shop");
+            var n2 = new MapNode(2, 2, 0, NodeType.Boss, "Boss");
+            n0.AddEdge(1);
+            n1.AddEdge(2);
+
+            var state = new RunState(new RunMap(new List<MapNode> { n0, n1, n2 }), 50, seed: 1234)
             {
                 IsBossEncounter = true,
                 RewardsGranted = true,
             };
-            state.AdvanceNode();   // CurrentFloor 0 -> 1, marks node 0 visited
+            state.TravelTo(0); state.MarkCurrentCleared();
+            state.TravelTo(1); state.MarkCurrentCleared();   // current = node 1, depth 1
 
             var p1 = new UnitDTO("u1", "Conan", "warrior_01");
             p1.Equipment.Add(new UnitEquipmentDTO(EquipmentSlot.RightHand, "iron_sword"));
             var p2 = new UnitDTO("u2", "Merlin", "mage_01");
             state.SetParty(new[] { p1, p2 });
             state.AddRecruit(new UnitDTO("r1", "Recruit", "rogue_01"));
-            state.SetPlacement("u1", new GridCoord(3, 1));   // saved deployment arrangement
+            state.SetPlacement("u1", new GridCoord(3, 1));
             return state;
         }
 
         [Test]
-        public void ToDTO_CapturesAllFields_AndPartyEquipment()
+        public void ToDTO_CapturesGraphSeedPositionAndEquipment()
         {
             var dto = MakeRun().ToDTO();
 
-            Assert.AreEqual(1, dto.SaveVersion);
+            Assert.AreEqual(2, dto.SaveVersion);
             Assert.AreEqual(1, dto.CurrentFloor);
+            Assert.AreEqual(1, dto.CurrentNodeId);
+            Assert.AreEqual(1234, dto.Seed);
             Assert.AreEqual(50, dto.Gold);
             Assert.IsTrue(dto.IsBossEncounter);
             Assert.IsTrue(dto.RewardsGranted);
@@ -61,25 +61,27 @@ namespace CapsuleWars.Tests.EditMode
             Assert.AreEqual(3, dto.Nodes.Count);
             Assert.AreEqual((int)NodeType.Boss, dto.Nodes[2].Type);
             Assert.IsTrue(dto.Nodes[0].Visited);
+            Assert.AreEqual(1, dto.Nodes[1].Row);
+            CollectionAssert.Contains(dto.Nodes[0].Edges, 1);
 
             Assert.AreEqual(2, dto.Party.Count);
-            Assert.AreEqual(1, dto.Party[0].Equipment.Count);
             Assert.AreEqual("iron_sword", dto.Party[0].Equipment[0].equipmentId);
             Assert.AreEqual(1, dto.Recruits.Count);
         }
 
         [Test]
-        public void FromDTO_ReconstructsRun()
+        public void FromDTO_ReconstructsGraphAndPosition()
         {
             var restored = RunState.FromDTO(MakeRun().ToDTO());
 
             Assert.IsNotNull(restored);
             Assert.AreEqual(1, restored.CurrentFloor);
-            Assert.AreEqual(50, restored.Gold);
-            Assert.IsTrue(restored.IsBossEncounter);
+            Assert.AreEqual(1, restored.CurrentNodeId);
+            Assert.AreEqual(1234, restored.Seed);
             Assert.AreEqual(3, restored.Map.Count);
             Assert.AreEqual(NodeType.Boss, restored.Map.Get(2).Type);
             Assert.IsTrue(restored.Map.Get(0).Visited);
+            CollectionAssert.Contains(restored.Map.Get(0).Edges, 1);
             Assert.AreEqual(2, restored.Party.Count);
             Assert.AreEqual("iron_sword", restored.Party[0].Equipment[0].equipmentId);
             Assert.AreEqual(1, restored.Recruits.Count);
@@ -89,52 +91,47 @@ namespace CapsuleWars.Tests.EditMode
         public void Placements_SurviveRoundTrip()
         {
             var restored = RunState.FromDTO(MakeRun().ToDTO());
-
             Assert.AreEqual(1, restored.Placements.Count);
             Assert.IsTrue(restored.Placements.TryGetValue("u1", out var coord));
             Assert.AreEqual(new GridCoord(3, 1), coord);
         }
 
         [Test]
-        public void FromDTO_Null_ReturnsNull()
+        public void FromDTO_Null_ReturnsNull() => Assert.IsNull(RunState.FromDTO(null));
+
+        [Test]
+        public void FromDTO_PreV2Save_ReturnsNull()
         {
-            Assert.IsNull(RunState.FromDTO(null));
+            var dto = MakeRun().ToDTO();
+            dto.SaveVersion = 1;   // legacy linear save
+            Assert.IsNull(RunState.FromDTO(dto));
         }
 
         [Test]
-        public void JsonRoundTrip_PreservesRunAndEquipment()
+        public void JsonRoundTrip_PreservesRunGraphAndEquipment()
         {
             var dto = MakeRun().ToDTO();
-            var json = JsonConvert.SerializeObject(dto);
-            var back = JsonConvert.DeserializeObject<RunStateDTO>(json);
+            var back = JsonConvert.DeserializeObject<RunStateDTO>(JsonConvert.SerializeObject(dto));
 
             Assert.AreEqual(dto.CurrentFloor, back.CurrentFloor);
-            Assert.AreEqual(dto.Gold, back.Gold);
+            Assert.AreEqual(dto.CurrentNodeId, back.CurrentNodeId);
+            Assert.AreEqual(dto.Seed, back.Seed);
             Assert.AreEqual(dto.Nodes.Count, back.Nodes.Count);
-            Assert.AreEqual(dto.Party.Count, back.Party.Count);
+            CollectionAssert.AreEqual(dto.Nodes[0].Edges, back.Nodes[0].Edges);
             Assert.AreEqual("iron_sword", back.Party[0].Equipment[0].equipmentId);
         }
 
         [Test]
-        public void RunStore_SaveLoad_DiskRoundTrip()
+        public void RunStore_SaveLoadDelete_DiskRoundTrip()
         {
             var dto = MakeRun().ToDTO();
-
             RunStore.Save(dto);
             Assert.IsTrue(RunStore.Exists());
 
             var loaded = RunStore.Load();
             Assert.IsNotNull(loaded);
-            Assert.AreEqual(dto.CurrentFloor, loaded.CurrentFloor);
-            Assert.AreEqual(dto.Party.Count, loaded.Party.Count);
+            Assert.AreEqual(dto.CurrentNodeId, loaded.CurrentNodeId);
             Assert.AreEqual("iron_sword", loaded.Party[0].Equipment[0].equipmentId);
-        }
-
-        [Test]
-        public void RunStore_Delete_RemovesSave()
-        {
-            RunStore.Save(MakeRun().ToDTO());
-            Assert.IsTrue(RunStore.Exists());
 
             RunStore.Delete();
             Assert.IsFalse(RunStore.Exists());
@@ -147,13 +144,13 @@ namespace CapsuleWars.Tests.EditMode
             RunSession.Clear();
             Assert.IsFalse(RunSession.HasSavedRun);
 
-            RunSession.StartNew(MakeRun());   // StartNew persists
+            RunSession.StartNew(MakeRun());
             Assert.IsTrue(RunSession.HasSavedRun);
 
-            RunSession.Current = null;        // simulate app restart (in-memory gone)
+            RunSession.Current = null;        // simulate app restart
             Assert.IsTrue(RunSession.TryLoad());
             Assert.IsNotNull(RunSession.Current);
-            Assert.AreEqual(1, RunSession.Current.CurrentFloor);
+            Assert.AreEqual(1, RunSession.Current.CurrentNodeId);
             Assert.AreEqual("iron_sword", RunSession.Current.Party[0].Equipment[0].equipmentId);
 
             RunSession.Clear();

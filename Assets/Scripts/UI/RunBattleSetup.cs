@@ -33,14 +33,21 @@ namespace CapsuleWars.UI
                 }
             }
 
-            // Boss buff: temporary stat boost on every enemy unit.
-            if (RunSession.IsActive && RunSession.Current.IsBossEncounter)
+            // Enemy scaling: per-depth difficulty (RunState.DifficultyMultiplier) times the
+            // boss multiplier on boss encounters.
+            if (RunSession.IsActive)
             {
-                for (int i = 0; i < roots.Length; i++)
+                var s = RunSession.Current;
+                float depthMul = Mathf.Max(1f, s.DifficultyMultiplier);
+                float mul = depthMul * (s.IsBossEncounter ? bossStatMultiplier : 1f);
+                if (mul > 1.001f)
                 {
-                    var root = roots[i];
-                    if (root == null || root.Team != Team.Enemy) continue;
-                    BoostUnit(root, bossStatMultiplier);
+                    for (int i = 0; i < roots.Length; i++)
+                    {
+                        var root = roots[i];
+                        if (root == null || root.Team != Team.Enemy) continue;
+                        BoostUnit(root, mul);
+                    }
                 }
             }
         }

@@ -9,13 +9,11 @@ using UnityEngine.SceneManagement;
 namespace CapsuleWars.Run
 {
     /// <summary>
-    /// Orchestrates a run within the Map scene. Reads <see cref="RunSession.Current"/>
-    /// (creates a new run if none exists), routes node entry to the right
-    /// handler (load battle scene, show shop panel, show event panel, etc.),
-    /// and shows the run-end panel when the run completes or is lost.
-    ///
-    /// UI components (RunHud etc.) subscribe to <see cref="OnStateRefreshed"/>
-    /// instead of being referenced directly — keeps Run independent of UI.
+    /// Orchestrates a run within the Map scene. Builds a seeded branching map, lets the
+    /// map UI travel to a chosen node (<see cref="TravelToNode"/>), routes node entry to
+    /// the right handler (battle scene / shop / event panel), stitches a new segment on
+    /// when the player clears a top-row boss (infinite climb), and shows the run-end
+    /// panel on loss. UI subscribes to <see cref="OnStateRefreshed"/>.
     /// </summary>
     public class RunController : MonoBehaviour
     {
@@ -24,11 +22,15 @@ namespace CapsuleWars.Run
         [Tooltip("Scene to load for Combat/Elite/Boss nodes.")]
         [SerializeField] private string battleSceneName = "Test_M3_Battle";
 
-        [Tooltip("Total floors for a new run. Min 2 (first floor + boss).")]
-        [SerializeField, Min(2)] private int defaultFloors = 5;
-
         [Tooltip("Starting gold for a new run.")]
         [SerializeField, Min(0)] private int startingGold = 0;
+
+        [Header("Map generation")]
+        [SerializeField] private MapGenConfig mapConfig = new MapGenConfig();
+        [Tooltip("Fixed RNG seed for reproducible runs. 0 = random seed each new run.")]
+        [SerializeField] private int fixedSeed = 0;
+        [Tooltip("Difficulty added per row of depth (encounter setup reads RunState.DifficultyMultiplier).")]
+        [SerializeField, Min(0f)] private float difficultyPerDepth = 0.05f;
 
         [Header("Panels")]
         [SerializeField] private GameObject mapPanel;
@@ -37,58 +39,72 @@ namespace CapsuleWars.Run
         [SerializeField] private GameObject runEndPanel;
         [Tooltip("Run-start draft screen. If wired, a fresh run shows this before the map. Optional.")]
         [SerializeField] private GameObject draftPanel;
-        [Tooltip("End-of-run recruit screen, shown on a win before the run-end panel when recruits are pending. Optional.")]
+        [Tooltip("End-of-run recruit screen (legacy win-flow; dormant for infinite runs). Optional.")]
         [SerializeField] private GameObject recruitPanel;
 
         public RunState State => RunSession.Current;
 
         private void Start()
         {
-            // Returning to the map mid-run (e.g. after a battle): just show it.
-            if (RunSession.Current != null)
-            {
-                ShowPanel(mapPanel);
-                RefreshUi();
-                return;
-            }
+            // Returning to the map mid-run (e.g. after a battle).
+            if (RunSession.Current != null) { ResumeOnMap(); return; }
 
-            // Resume a persisted run across app restarts (run-scoped party +
-            // equipment survive via RunStore). Only when no in-memory run exists.
-            if (RunSession.TryLoad())
-            {
-                ShowPanel(mapPanel);
-                RefreshUi();
-                return;
-            }
+            // Resume a persisted run across app restarts.
+            if (RunSession.TryLoad()) { ResumeOnMap(); return; }
 
-            // Fresh entry: draft first if a draft panel is wired; otherwise start
-            // immediately with no drafted party (battle uses scene-placed units).
+            // Fresh entry: draft first if wired, else start immediately.
             if (draftPanel != null) ShowPanel(draftPanel);
             else StartRunWithParty(null);
         }
 
-        /// <summary>
-        /// Begin a new run with the given drafted party (may be null/empty, in
-        /// which case the battle scene falls back to its scene-placed players).
-        /// Called by the draft screen.
-        /// </summary>
+        // Show the map (or the run-end panel on loss), stitching a new segment if the
+        // player just cleared the current top-row boss.
+        private void ResumeOnMap()
+        {
+            if (State != null && State.IsLost) { ShowRunEnd(); return; }
+
+            if (State != null && State.HasStarted && State.IsAtTopRow && State.CurrentNode.Visited)
+            {
+                State.AppendNextSegment(mapConfig);   // infinite: grow the map upward
+                RunSession.Save();
+            }
+
+            ShowPanel(mapPanel);
+            RefreshUi();
+        }
+
+        /// <summary>Begin a new run with the given drafted party (may be null/empty).</summary>
         public void StartRunWithParty(IEnumerable<UnitDTO> party)
         {
-            var map = MapGenerator.Generate(defaultFloors);
-            var state = new RunState(map, startingGold);
+            int seed = fixedSeed != 0 ? fixedSeed : Environment.TickCount;
+            var map = MapGenerator.GenerateInitial(mapConfig, seed);
+            var state = new RunState(map, startingGold, seed) { DifficultyPerDepth = difficultyPerDepth };
             state.SetParty(party);
             RunSession.StartNew(state);
             ShowPanel(mapPanel);
             RefreshUi();
         }
 
+        /// <summary>
+        /// Travel to a reachable node (called by the map UI) and enter its encounter.
+        /// No-op if the node isn't currently reachable.
+        /// </summary>
+        public void TravelToNode(int nodeId)
+        {
+            if (State == null || State.IsLost) return;
+            if (!State.TravelTo(nodeId)) return;
+            RunSession.Save();
+            EnterCurrentNode();
+        }
+
+        /// <summary>Dispatch the current node to its handler (battle scene or in-map panel).</summary>
         public void EnterCurrentNode()
         {
             if (State == null) return;
-            if (State.IsLost || State.IsComplete) { ShowRunEnd(); return; }
+            if (State.IsLost) { ShowRunEnd(); return; }
 
             var node = State.CurrentNode;
-            if (node == null) { ShowRunEnd(); return; }
+            if (node == null) return;
 
             switch (node.Type)
             {
@@ -112,20 +128,22 @@ namespace CapsuleWars.Run
             }
         }
 
-        /// <summary>Called by non-combat panels (Shop / Event) when the player presses Continue.</summary>
+        /// <summary>Called by non-combat panels (Shop / Event) on Continue: clear the node, back to the map.</summary>
         public void CompleteCurrentNode()
         {
             if (State == null) return;
-            State.AdvanceNode();
+            State.MarkCurrentCleared();
+            // Non-combat nodes are never the top-row boss, but keep the stitch check
+            // here too so the flow is uniform.
+            if (State.HasStarted && State.IsAtTopRow && State.CurrentNode.Visited)
+                State.AppendNextSegment(mapConfig);
             RunSession.Save();
             ShowPanel(mapPanel);
-            if (State.IsComplete) ShowRunEnd();
-            else RefreshUi();
+            RefreshUi();
         }
 
         public void StartNewRun()
         {
-            // Route a brand-new run back through the draft when one is wired.
             RunSession.Clear();
             if (draftPanel != null) ShowPanel(draftPanel);
             else StartRunWithParty(null);
@@ -134,37 +152,22 @@ namespace CapsuleWars.Run
         private void ShowRunEnd()
         {
             AwardUnlockPoints();
-
-            // On a win with pending roguelike-only recruits, offer recruitment
-            // first; the recruit panel calls FinishRecruiting() to continue.
-            var s = RunSession.Current;
-            bool won = s != null && s.IsComplete && !s.IsLost;
-            if (won && recruitPanel != null && s.Recruits != null && s.Recruits.Count > 0)
-            {
-                ShowPanel(recruitPanel);
-                return;
-            }
             ShowPanel(runEndPanel);
         }
 
         /// <summary>Called by the recruit panel when the player finishes (or skips) recruiting.</summary>
-        public void FinishRecruiting()
-        {
-            ShowPanel(runEndPanel);
-        }
+        public void FinishRecruiting() => ShowPanel(runEndPanel);
 
         /// <summary>
-        /// Award meta-progression unlock points for a finished run, exactly once
-        /// (Docs/12_RoguelikeRun.md §82). Points scale with floors reached, plus a
-        /// completion bonus on a win.
+        /// Award meta-progression unlock points once, when a run ends (on loss for an
+        /// infinite run). Points scale with depth reached.
         /// </summary>
         private void AwardUnlockPoints()
         {
             var s = RunSession.Current;
-            if (s == null || s.RewardsGranted) return;
-            if (!s.IsComplete && !s.IsLost) return;   // run not actually finished
+            if (s == null || s.RewardsGranted || !s.IsLost) return;
 
-            int pts = UnlockRewards.PointsForRun(s.CurrentFloor, s.IsComplete && !s.IsLost);
+            int pts = UnlockRewards.PointsForRun(s.CurrentFloor, won: false);
             if (pts > 0)
             {
                 LegacyStore.Current.PlayerProfile.AddPoints(pts);
@@ -183,9 +186,6 @@ namespace CapsuleWars.Run
             if (recruitPanel != null) recruitPanel.SetActive(panel == recruitPanel);
         }
 
-        private void RefreshUi()
-        {
-            OnStateRefreshed?.Invoke();
-        }
+        private void RefreshUi() => OnStateRefreshed?.Invoke();
     }
 }

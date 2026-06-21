@@ -5,7 +5,9 @@ namespace CapsuleWars.Persistence.Dto
 {
     /// <summary>One serialized map node. Stores <c>NodeType</c> as an int so the
     /// Persistence assembly stays free of any reference to the Run assembly
-    /// (the DTO &lt;-&gt; runtime mapping lives in Run, on <c>RunState</c>).</summary>
+    /// (the DTO &lt;-&gt; runtime mapping lives in Run, on <c>RunState</c>).
+    /// <see cref="Row"/>/<see cref="Column"/>/<see cref="Edges"/> carry the branching
+    /// graph (M8+); <see cref="Edges"/> holds outgoing node ids.</summary>
     [Serializable]
     public class MapNodeDTO
     {
@@ -13,6 +15,9 @@ namespace CapsuleWars.Persistence.Dto
         public int Type;
         public string DisplayLabel;
         public bool Visited;
+        public int Row;
+        public int Column;
+        public List<int> Edges = new List<int>();
 
         public MapNodeDTO() { }
 
@@ -22,6 +27,17 @@ namespace CapsuleWars.Persistence.Dto
             Type = type;
             DisplayLabel = displayLabel;
             Visited = visited;
+        }
+
+        public MapNodeDTO(int index, int type, string displayLabel, bool visited, int row, int column, List<int> edges)
+        {
+            Index = index;
+            Type = type;
+            DisplayLabel = displayLabel;
+            Visited = visited;
+            Row = row;
+            Column = column;
+            Edges = edges ?? new List<int>();
         }
     }
 
@@ -55,16 +71,24 @@ namespace CapsuleWars.Persistence.Dto
     [Serializable]
     public class RunStateDTO
     {
-        /// <summary>Save schema version. Bump on breaking change.</summary>
-        public int SaveVersion = 1;
+        /// <summary>Save schema version. v2 = branching/infinite map (graph + seed + node id).</summary>
+        public int SaveVersion = 2;
 
+        /// <summary>Depth reached (row of the current node). Display + scoring + difficulty.</summary>
         public int CurrentFloor;
         public int Gold;
         public bool IsLost;
         public bool IsBossEncounter;
         public bool RewardsGranted;
 
-        /// <summary>The run map, flattened. Order matches node index (M7 linear map).</summary>
+        /// <summary>Per-run RNG seed (reproducible generation + segment stitching).</summary>
+        public int Seed;
+        /// <summary>Current graph position (node id); -1 = run not started (pick a bottom-row node).</summary>
+        public int CurrentNodeId = -1;
+        /// <summary>How many segments have been generated/stitched so far.</summary>
+        public int SegmentIndex;
+
+        /// <summary>The run map, flattened to a graph of nodes (with edges).</summary>
         public List<MapNodeDTO> Nodes = new List<MapNodeDTO>();
 
         /// <summary>The drafted party for this run (identity + run-scoped equipment).</summary>

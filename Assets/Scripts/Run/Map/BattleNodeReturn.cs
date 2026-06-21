@@ -58,7 +58,9 @@ namespace CapsuleWars.Run.Map
                         partCatalog, LegacyStore.Current?.PlayerProfile, null,
                         state.CurrentFloor, state.Recruits.Count));
 
-                state.AdvanceNode();
+                // Clear the node; the player picks their next node on the map. The
+                // controller stitches a new segment when a top-row boss is cleared.
+                state.MarkCurrentCleared();
             }
             else
             {

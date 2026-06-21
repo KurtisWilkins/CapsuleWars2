@@ -34,12 +34,10 @@ namespace CapsuleWars.UI
                 return;
             }
 
-            bool won = state.IsComplete && !state.IsLost;
-            if (titleText != null) titleText.text = won ? "VICTORY" : "DEFEAT";
+            // Runs are infinite and end only on loss.
+            if (titleText != null) titleText.text = "DEFEAT";
             if (summaryText != null)
-            {
-                summaryText.text = $"Floors reached: {state.CurrentFloor} / {state.Map.Count}\nGold earned: {state.Gold}";
-            }
+                summaryText.text = $"Depth reached: {state.CurrentFloor}\nGold earned: {state.Gold}";
         }
 
         private void OnReplay()

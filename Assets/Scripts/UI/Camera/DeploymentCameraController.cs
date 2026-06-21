@@ -63,6 +63,11 @@ namespace CapsuleWars.UI.CameraControl
         [SerializeField] private Vector3 deploymentEuler = new Vector3(70f, 0f, 0f);
         [Tooltip("Field of view during deployment (0 = keep current). Also used as the FOV for the computed frame.")]
         [SerializeField] private float deploymentFov = 0f;
+        [Tooltip("Fraction of the screen height to leave clear at the BOTTOM (for the deployment HUD): the board is " +
+                 "framed into the upper part so the player zone isn't hidden behind the bottom bar. ~0.22 ≈ a 230px bar.")]
+        [SerializeField, Range(0f, 0.45f)] private float bottomViewportInset = 0.22f;
+        [Tooltip("Extra world-space nudge added to the computed framing position, for fine-tuning what's on screen.")]
+        [SerializeField] private Vector3 framingOffset = Vector3.zero;
         [Tooltip("Seconds for the camera transition in/out of the deployment framing.")]
         [SerializeField, Min(0.01f)] private float transitionSeconds = 0.6f;
 
@@ -142,8 +147,12 @@ namespace CapsuleWars.UI.CameraControl
             float distD = (depth * 0.5f + margin) / Mathf.Max(0.01f, Mathf.Tan(vHalf));
             float dist = Mathf.Max(distW, distD);
 
+            // Bias the whole rig toward the player (near) side so the board sits in the
+            // UPPER part of the screen, leaving a clear band at the bottom for the HUD.
+            center.z -= depth * bottomViewportInset * 0.5f;
+
             float tilt = deploymentTiltDegrees * Mathf.Deg2Rad;
-            pos = center + new Vector3(0f, dist * Mathf.Sin(tilt), -dist * Mathf.Cos(tilt));
+            pos = center + new Vector3(0f, dist * Mathf.Sin(tilt), -dist * Mathf.Cos(tilt)) + framingOffset;
             rot = Quaternion.Euler(deploymentTiltDegrees, 0f, 0f);
             return true;
         }

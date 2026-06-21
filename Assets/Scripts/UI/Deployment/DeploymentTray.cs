@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using CapsuleWars.Combat.Deployment;
+using CapsuleWars.Core;
 using CapsuleWars.Run;
+using CapsuleWars.UI.Inspection;
+using CapsuleWars.Units.Controllers;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -43,6 +46,10 @@ namespace CapsuleWars.UI.Deployment
         [SerializeField] private LayerMask groundMask = ~0;
         [SerializeField] private float maxRayDistance = 500f;
 
+        [Header("Enemy inspection")]
+        [Tooltip("Panel shown (read-only) when an enemy-zone cell holding an enemy is tapped. Optional.")]
+        [SerializeField] private UnitInspectionPanel enemyInspectionPanel;
+
         private string selectedUnitId;
 
         private void Awake()
@@ -50,6 +57,7 @@ namespace CapsuleWars.UI.Deployment
             if (manager == null) manager = FindAnyObjectByType<DeploymentManager>();
             if (phase == null) phase = FindAnyObjectByType<DeploymentPhaseController>();
             if (spawner == null) spawner = FindAnyObjectByType<CapsuleWars.Run.BattlePartySpawner>();
+            if (enemyInspectionPanel == null) enemyInspectionPanel = FindAnyObjectByType<UnitInspectionPanel>(FindObjectsInactive.Include);
             if (raycastCamera == null) raycastCamera = Camera.main;
             if (readyButton != null) readyButton.onClick.AddListener(OnReady);
             if (clearButton != null) clearButton.onClick.AddListener(OnClear);
@@ -91,6 +99,14 @@ namespace CapsuleWars.UI.Deployment
 
         private void HandleCellTap(GridCoord coord)
         {
+            // Enemy zone → inspect the enemy standing there (read-only; never places/benches).
+            if (manager.Config.InEnemyZone(coord))
+            {
+                var enemy = FindEnemyAtCell(coord);
+                if (enemy != null && enemyInspectionPanel != null) enemyInspectionPanel.Show(enemy);
+                return;
+            }
+
             // Occupied cell → send that unit back to the bench.
             if (manager.Grid.TryGetOccupant(coord, out var occupant))
             {
@@ -110,6 +126,27 @@ namespace CapsuleWars.UI.Deployment
                 Deselect();
                 RebuildBench();
             }
+        }
+
+        // Nearest Team.Enemy unit on the tapped cell (exact cell wins, else the closest
+        // enemy within ~one cell), for read-only inspection. Null if none.
+        private UnitRoot FindEnemyAtCell(GridCoord coord)
+        {
+            var cfg = manager.Config;
+            Vector3 cellWorld = cfg.CellToWorld(coord);
+            var roots = FindObjectsByType<UnitRoot>(FindObjectsSortMode.None);
+            UnitRoot best = null;
+            float bestSqr = cfg.cellSize * cfg.cellSize;   // accept within ~one cell
+            for (int i = 0; i < roots.Length; i++)
+            {
+                var r = roots[i];
+                if (r == null || r.Team != Team.Enemy) continue;
+                var c = cfg.WorldToCell(r.transform.position);
+                if (c.col == coord.col && c.row == coord.row) return r;   // exact cell match
+                float d = (r.transform.position - cellWorld).sqrMagnitude;
+                if (d < bestSqr) { bestSqr = d; best = r; }
+            }
+            return best;
         }
 
         private void RebuildBench()

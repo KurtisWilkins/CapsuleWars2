@@ -117,4 +117,24 @@ item meshes are placeholder cubes (`EquipVisual_Cube`) to swap for real art. Sta
 `EquipmentCatalog` (the screen also unions a serialized `starterItems`); a persistent run-scoped inventory
 is still a follow-up.
 
+### ADR-013 — Branching, seeded, infinite run map (Slay-the-Spire style); runs end only on loss
+**Decided:** the linear `RunMap`/`MapGenerator` is replaced by a **branching graph** generated one
+**segment** at a time, seeded per run for reproducibility. `MapNode` gains Row/Column/Edges;
+`MapGenerator.GenerateInitial`/`AppendSegment` walk bottom-to-top paths (adjacency-biased) + repair
+reachability/outgoing edges + assign types by rules (bottom=Combat, top=single Boss gate, a Rest near
+the top, no adjacent Rests) and weights (`MapGenConfig`). `RunState` tracks graph position
+(`CurrentNodeId`), depth (`CurrentFloor`), `Seed`, `SegmentIndex`, and a `DifficultyMultiplier`;
+`TravelTo`/`ReachableNodeIds` enforce edge-following choice. The player picks any bottom node to start,
+then any node connected by an outgoing edge. Clearing the top Boss **stitches a new segment** on
+(`AppendNextSegment`), so the climb is **infinite** — the run ends **only on loss** (the old
+boss-win/recruit completion path is dormant; unlock points are awarded by depth on loss). The visual
+map is `UI/Map/MapView` (+`MapNodeView`): a ScrollRect of colour-coded clickable nodes + edge lines,
+data-driven off `RunState.Map`, reusing the existing encounter entry point (`RunController.EnterCurrentNode`).
+**Why:** the requested player-driven branching progression; segment-at-a-time generation makes "infinite"
+natural and keeps generation pure/testable (8 invariant tests). Persistence bumped to SaveVersion 2
+(pre-v2 linear saves are discarded on load).
+**Implication:** node/edge prefabs + the ScrollRect container are assembled/wired in `Test_M7_Map` per the
+editor checklist (Claude can't see Play mode). Node visuals are procedural placeholders (coloured squares
++ a letter). A persistent run-scoped item inventory + a win/recruit path for infinite runs remain follow-ups.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

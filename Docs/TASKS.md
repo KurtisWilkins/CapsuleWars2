@@ -4,6 +4,13 @@
 > specific and self-contained. Move finished items to "Done (recent)".
 
 ## Next up (work top-down)
+- [ ] **Assemble + play-test the branching map** (`Test_M7_Map`, `-force-d3d11`). One-time scene wiring then
+      test — full steps in PROJECT_STATE "Needs human verification": (1) add a `GameObject ▸ UI ▸ Scroll View`
+      child of the map panel (vertical only; Content anchor/pivot bottom-centre); (2) add `MapView` to the map
+      panel + wire `scrollRect`/`content`/`nodePrefab` (`Assets/Prefabs/Map/MapNode_View.prefab`)/`edgePrefab`
+      (`Assets/Prefabs/Map/Edge_Line.prefab`); (3) assign a Font to the node prefab Label; (4) set
+      `RunController` `MapGenConfig` + `fixedSeed` + `difficultyPerDepth`. Then: start run → branching map →
+      pick start → encounter → return → climb → clear Boss → new segment stitches on; lose → run ends.
 - [ ] **Re-bake the NavMesh for the enlarged arena.** In `Test_M3_Battle`, select `Plane` →
       `NavMeshSurface` → **Bake** (the Plane was scaled to 4, centred at (10.5,0,14)). Without this,
       combat movement on the bigger board will be broken/off-mesh.
@@ -36,6 +43,10 @@
 - [ ] Clean up battle-end UI placeholder "New Text" labels. Remaining M10 polish (see `Docs/17_BuildOrder.md`).
 
 ## Done (recent — prune periodically)
+- [x] **Branching run map** (ADR-013): seeded branching+infinite graph model/generator (`MapNode` edges,
+      `RunMap`, `MapGenConfig`, `MapGenerator` GenerateInitial/AppendSegment); graph `RunState` (CurrentNodeId,
+      depth, Seed, TravelTo, DifficultyMultiplier, AppendNextSegment); `RunController.TravelToNode` + stitch +
+      loss-only end; DTOs v2; `MapView`/`MapNodeView` + node/edge prefabs. 162/162 green. Scene wiring = checklist.
 - [x] **Customization v2** (ADR-012): screen/launcher self-promote to front + clickable (`EnsureForeground`);
       equip toggle + selected highlight; 4 starter items in the catalog; `UnitEquipmentVisuals` renders
       equipped items as meshes on named sockets (RightHand/LeftHand/Helmet/Chest) live + in combat. 160 green.
@@ -53,4 +64,4 @@
 
 ## Notes
 - New ideas discovered mid-task go in Backlog, not into the current task.
-- Run the EditMode suite (`run_tests`) after C# changes; keep it green (currently 160).
+- Run the EditMode suite (`run_tests`) after C# changes; keep it green (currently 162).

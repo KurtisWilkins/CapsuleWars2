@@ -6,6 +6,38 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-21 — branching run map (Slay-the-Spire: seeded, infinite, choice-based)
+**Goal this session:** replace the linear "advance" route with a visual branching node map — pick a
+start, follow edges upward, infinite segments stitch on, run ends only on loss.
+
+**Done (committed on `claude/deployment-grid`; 162/162 EditMode green):**
+- **Model/gen** (`Run/Map/`): `MapNode` +Row/Column/Edges; `RunMap` graph helpers; new `MapGenConfig`
+  (rows/segment, nodesPerRow, pathCount, type weights, rules); `MapGenerator.GenerateInitial`/`AppendSegment`
+  — seeded bottom-to-top path-walk edges + reachability/outgoing repair + rule/weight types + segment
+  stitching. 8 invariant tests (reachability, outgoing, bottom=Combat, top=Boss, no adjacent Rests, range,
+  determinism, stitch). Legacy linear `Generate` kept only to ease the migration.
+- **Run state/flow:** `RunState` graph-based (`CurrentNodeId`/-1, depth=`CurrentFloor`, `Seed`,
+  `SegmentIndex`, `TravelTo`/`ReachableNodeIds`/`MarkCurrentCleared`/`AppendNextSegment`/`DifficultyMultiplier`);
+  DTOs v2 (edges/row/col + seed + node id; pre-v2 saves discarded). `RunController` builds a seeded first
+  segment, `TravelToNode` for the map UI, stitches on top-row clear, ends only on loss (points by depth).
+  `BattleNodeReturn` marks cleared (no auto-advance); `RunBattleSetup` scales enemies by depth; `RunHud`
+  shows depth/segment; `RunEndPanel` shows depth. Rewrote `RunStateTests`/`RunStatePersistenceTests`.
+- **UI:** `UI/Map/MapView` (ScrollRect of colour/state-coded nodes + edge lines, click→TravelToNode,
+  auto-scroll, foreground) + `MapNodeView`; procedural node/edge prefabs (`Assets/Prefabs/Map/`).
+
+**Compiled clean:** yes. **EditMode 162/162.**
+
+**Mid-session blocker:** Unity Editor closed/crashed during planning; I kept edits additive + paused the
+coupled migration until it was relaunched, then did it with test feedback.
+
+**Needs human verification (Play Mode):** scene assembly + test — see PROJECT_STATE (add a Scroll View to
+the map panel, wire `MapView` + the 2 prefabs, assign a Label font, set `RunController` MapGenConfig/seed,
+then run a branching climb). Launch `-force-d3d11`.
+
+**Decisions:** ADR-013 (branching/infinite seeded map; graph run-state; loss-only end; MapView UI).
+
+**Next session starts with:** assemble + play-test the branching map (TASKS top item).
+
 ## 2026-06-21 — customization v2 (front/clickable + starter items + item meshes on sockets)
 **Goal this session:** fix three customization-screen gaps — (1) not in front / hard to click,
 (2) no items to test with, (3) equipping changes stats but shows nothing on the unit.

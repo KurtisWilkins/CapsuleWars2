@@ -3,15 +3,15 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-21, after the Customization v2 pass (front/clickable + starter items + item meshes) — branch `claude/deployment-grid`_
+_Last updated: 2026-06-21, after the Branching Map pass (Slay-the-Spire run progression) — branch `claude/deployment-grid`_
 
 ## One-line status
-Two feature passes done this session. **Deployment v2:** placing a unit spawns the real unit at the cell
-(carries into combat, no double-spawn) on a larger split-zone board. **Customization v2:** the screen
-forces itself to the front + clickable (code-added overriding canvas), starts with 4 test items, and
-equipped items now render as **meshes on named unit sockets** — live in the preview AND on combat units.
-**160/160 EditMode tests green.** Both need a Play-mode pass (NavMesh re-bake for the enlarged arena;
-swap placeholder item cubes for real meshes).
+**Branching run map (NEW):** the linear route is replaced by a seeded, branching, **infinite** node graph
+(rows of nodes + edges; pick a start, follow edges upward; clear the Boss → a new segment stitches on;
+run ends only on loss). Model + generator + run-state + flow are done and **162/162 EditMode green**
+(8 generator-invariant tests). The `MapView` UI code + node/edge prefabs exist; the **ScrollRect
+container + MapView wiring in `Test_M7_Map` is the remaining editor task** (checklist below). Prior
+unverified passes (Deployment v2, Customization v2) still need their Play-mode checks too.
 
 ## What currently works
 - Milestone base through ~M9 (draft → battle → recruit; combat, abilities, elements, synergies,
@@ -24,6 +24,12 @@ swap placeholder item cubes for real meshes).
   spawns the real unit at each placed cell (idle in PreBattle), and those instances become the combat
   units on Assemble. `DeploymentCameraController` auto-computes framing from the grid. Renderer +
   gizmo colour the enemy zone. All committed; gate/zone/grid logic unit-tested (160 green).
+- **Branching run map (NEW, code-complete):** `Run/Map/` — `MapNode` (Row/Column/Edges), `RunMap` (graph
+  helpers), `MapGenConfig` (rows/segment, nodesPerRow, pathCount, type weights, rules), `MapGenerator`
+  (`GenerateInitial`/`AppendSegment`: seeded path-walk edges + reachability repair + rule/weight types +
+  stitching). `RunState` is graph-based (`CurrentNodeId`, depth, `Seed`, `SegmentIndex`, `TravelTo`,
+  `ReachableNodeIds`, `DifficultyMultiplier`, `AppendNextSegment`); `RunController.TravelToNode` + stitch
+  on top-row clear + loss-only end. `UI/Map/MapView`+`MapNodeView` render it. Needs scene assembly (below).
 - Unit inspection panel + between-rounds customization screen + launcher (reachable).
 - **Customization (v2):** screen/launcher self-promote to the front + clickable (`EnsureForeground`:
   overriding high-sort Canvas + GraphicRaycaster + CanvasGroup added on open). Equip is a **toggle** with
@@ -37,6 +43,23 @@ swap placeholder item cubes for real meshes).
   verification + arena tuning remain (below).
 
 ## Needs human verification (Claude can't see Play Mode)
+- **Branching map — assemble + wire in `Test_M7_Map` (one-time), then test (`-force-d3d11`):**
+  1. **ScrollRect:** select the map panel (`RunController.mapPanel`) → `GameObject ▸ UI ▸ Scroll View` as a
+     child, set it to fill the panel, **disable Horizontal** / keep **Vertical**. This creates a masked
+     Viewport + Content. Set **Content** RectTransform anchor+pivot to **bottom-centre** (anchorMin/Max
+     (0.5,0), pivot (0.5,0)) with a wide width.
+  2. **MapView:** add `MapView` to the map panel and wire `scrollRect` = the Scroll View, `content` = its
+     Content, `nodePrefab` = `Assets/Prefabs/Map/MapNode_View.prefab`, `edgePrefab` =
+     `Assets/Prefabs/Map/Edge_Line.prefab` (layout values default to rowSpacing 170 / colSpacing 150).
+  3. **Font:** assign a Font (e.g. `LegacyRuntime.ttf`) to the `MapNode_View` prefab's `Label` Text so the
+     node letters render (nodes are colour-coded by type regardless).
+  4. **RunController:** set `MapGenConfig` (rowsPerSegment ~12–13, nodesPerRow 2–4, pathCount 6, type
+     weights) + `fixedSeed` (0 = random; non-zero reproduces a layout) + `difficultyPerDepth` (~0.05).
+  5. **Test:** start a run → a **branching map** renders; bottom-row nodes are clickable, the rest dimmed →
+     click a start → its encounter runs via the existing battle/panel entry → back to the map at the new
+     position → only edge-connected nodes are now clickable → climb to and clear the **Boss** (top row) →
+     **a new segment generates + stitches on** and the map extends upward; repeat. **Lose a battle** → the
+     run ends (Defeat screen). Restart the app mid-run → the same graph + position reloads.
 - **⚠ Re-bake the NavMesh first** (`Plane` → `NavMeshSurface` → Bake): the arena was enlarged
   (Plane scale 4, centre (10.5,0,14)), so combat movement needs a fresh bake covering the new board.
 - **Deployment loop (spawn-on-place):** load a combat node *with a drafted party* → during deployment,
@@ -79,5 +102,8 @@ swap placeholder item cubes for real meshes).
 - Customization: `Assets/Scripts/UI/Customization/` (CustomizationScreen, CustomizationLauncher) +
   `Assets/Scripts/Units/Customization/` (UnitCustomization, UnitEquipmentVisuals) + `Assets/Data/Equipment/`
   (Equipment_SO, EquipmentCatalog.asset, Equip_Starter*.asset).
-- Tests: `Assets/Scripts/Tests/EditMode/` (160 green).
+- Run map: `Assets/Scripts/Run/Map/` (MapNode, RunMap, MapGenConfig, MapGenerator, BattleNodeReturn) +
+  `RunController`/`RunState`/`RunSession`; UI: `Assets/Scripts/UI/Map/` (MapView, MapNodeView) +
+  `Assets/Prefabs/Map/` (MapNode_View, Edge_Line). DTOs: `Assets/Scripts/Persistence/Dto/RunStateDTO.cs` (v2).
+- Tests: `Assets/Scripts/Tests/EditMode/` (162 green).
 - Branch: `claude/deployment-grid` (stacked off `claude/unit-factory`; none pushed).

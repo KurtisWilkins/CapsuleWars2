@@ -6,6 +6,32 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-21 — customization v2 (front/clickable + starter items + item meshes on sockets)
+**Goal this session:** fix three customization-screen gaps — (1) not in front / hard to click,
+(2) no items to test with, (3) equipping changes stats but shows nothing on the unit.
+
+**Done (all committed on `claude/deployment-grid`; 160/160 EditMode green):**
+- **Front + clickable (CHANGE 1, code):** `CustomizationScreen.EnsureForeground` + `CustomizationLauncher.EnsureForeground`
+  add an overriding high-sort `Canvas` (100 / 90) + `GraphicRaycaster` + `CanvasGroup` to the panel/picker on
+  open — guarantees foreground + raycasts above other map UI regardless of scene wiring (both map canvases were
+  Screen Space–Overlay at sort 0). Equip became a **toggle** with a green selected highlight.
+- **Starter items (CHANGE 2):** 4 `Equipment_SO` (sword/shield/helm/plate across slots) added to
+  `EquipmentCatalog.asset` (now 6) + a serialized `starterItems` union on the screen.
+- **Item meshes (CHANGE 3):** `Equipment_SO` gained `attachSocketName` + `visualPrefab`; new
+  `UnitEquipmentVisuals` (on `Unit_Sample_Prefab`) holds named sockets (RightHand/LeftHand/Helmet/Chest as
+  root empties) and diff-rebuilds attached meshes on `OnStatsChanged` — live in preview AND on combat units
+  (UnitFactory.Equip fires the event). Placeholder `EquipVisual_Cube` prefab as the visual.
+
+**Compiled clean:** yes. **EditMode 160/160.**
+
+**Needs human verification (Play Mode, `-force-d3d11`):** see PROJECT_STATE — open Customize → in front +
+clickable → 4 items listed → click ⇒ cube on socket + highlight → Close → combat unit shows the cube. Swap
+the placeholder cube for real meshes.
+
+**Decisions:** ADR-012 (item visuals via named sockets + UnitEquipmentVisuals; customization foreground in code).
+
+**Next session starts with:** re-bake NavMesh (deployment v2) + Play-mode test both v2 passes (TASKS top items).
+
 ## 2026-06-21 — deployment v2 (spawn-on-place + split-zone board + grid-fit camera)
 **Goal this session:** fix two deployment problems — (1) you couldn't *see* units as you placed them
 (placement was data-only), and (2) the board was tiny with no enemy zone (sides overlapped).

@@ -101,4 +101,20 @@ needs the ground Plane enlarged (done) and the **NavMesh re-baked** for combat m
 no-deployment-phase fallback (immediate `SpawnParty`) is unchanged. Enemies are still scene-placed
 (now repositioned into the enemy zone); a runtime enemy-zone placer is a follow-up if they become dynamic.
 
+### ADR-012 — Equipment visuals via named sockets + UnitEquipmentVisuals; customization brought to front in code
+**Decided:** equipped items render as child objects on **named sockets**. `Equipment_SO` gains
+`attachSocketName` + optional `visualPrefab` (falls back to the existing `visualMesh`/`visualMaterials`).
+New `UnitEquipmentVisuals` (Units layer, on the unit prefab) holds a serialized `name→Transform` socket
+list and **diff-rebuilds** attached visuals on `UnitStatusController.OnStatsChanged`. Sockets are empties
+**under the unit root** (not animated bones) for now. The customization screen + launcher **guarantee
+foreground in code** (`EnsureForeground`: add a nested `Canvas` with `overrideSorting` + high
+`sortingOrder` + `GraphicRaycaster` + `CanvasGroup` on open) rather than relying on scene wiring.
+**Why:** the player wanted to *see* gear on the unit live and in combat, and the panel reliably on top
+and clickable. Because `UnitFactory.ApplyEquipment` calls `Status.Equip` (→ `OnStatsChanged`), the same
+component makes visuals appear automatically on deployment/combat units — no spawner changes.
+**Implication:** root-relative sockets don't follow limb animation (re-parent under bones later if needed);
+item meshes are placeholder cubes (`EquipVisual_Cube`) to swap for real art. Starter items live in the
+`EquipmentCatalog` (the screen also unions a serialized `starterItems`); a persistent run-scoped inventory
+is still a follow-up.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

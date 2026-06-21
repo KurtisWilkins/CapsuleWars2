@@ -4,16 +4,15 @@
 > specific and self-contained. Move finished items to "Done (recent)".
 
 ## Next up (work top-down)
-- [ ] **Play-mode test the full deployment loop** (needs a drafted run). In `Test_M3_Battle`,
-      start with `RunSession.Current.Party` non-empty (draft via `Test_M7_Map`, or temporarily
-      seed a party): the bottom **DeploymentHUD** bench should list the party → tap a unit then a
-      green deploy-zone cell to place it → tap a placed unit to send it back → **Assemble** →
-      units spawn at the placed cells and combat starts → **Clear** empties the board and combat
-      must NOT start before Assemble. Report what renders/works.
-- [ ] **Tune the deployment camera + grid to the arena.** On `Main Camera`'s
-      `DeploymentCameraController`, set deploymentPosition/euler/FOV so it frames the whole 7×9 board;
-      on the `Deployment` object's `DeploymentManager.config` (and the matching `BattlePartySpawner.deploymentGrid`)
-      set origin/cellSize so the grid sits on the arena. Check the gizmo in the Scene view.
+- [ ] **Re-bake the NavMesh for the enlarged arena.** In `Test_M3_Battle`, select `Plane` →
+      `NavMeshSurface` → **Bake** (the Plane was scaled to 4, centred at (10.5,0,14)). Without this,
+      combat movement on the bigger board will be broken/off-mesh.
+- [ ] **Play-mode test deployment v2** (needs a drafted run; launch editor with `-force-d3d11`). In
+      `Test_M3_Battle` with `RunSession.Current.Party` non-empty: tap a bench unit → tap a green
+      player-zone cell ⇒ the **real unit appears** at the cell (scale-in); tap a placed cell to bench it
+      (instance destroyed); **Clear** removes all. **Assemble** ⇒ those exact units start combat (no
+      duplicates); combat must NOT start before Assemble. Confirm the enemy sits on the far side and the
+      camera auto-frames the board. Report what renders/works.
 - [ ] **Play-mode verify the customization loop** (`Test_M7_Map`): Customize → pick a unit → equip →
       live stats update → persists across Close/restart/battle.
 
@@ -30,6 +29,10 @@
 - [ ] Clean up battle-end UI placeholder "New Text" labels. Remaining M10 polish (see `Docs/17_BuildOrder.md`).
 
 ## Done (recent — prune periodically)
+- [x] **Deployment v2** (ADR-011): spawn-on-place (`BattlePartySpawner.SpawnOrMoveAt/Despawn/DespawnAll`
+      driven by `DeploymentTray`; placed instances become combat units, no double-spawn); bigger board
+      (cellSize 3.5) + far enemy zone (rows 6–8, `InEnemyZone`) coloured in renderer + gizmo; camera
+      auto-frames from the grid; enemy repositioned + Plane enlarged. 160/160 green.
 - [x] **Deployment Phase** (7×9 grid + gizmos; DeploymentPhaseController confirm gate; place-then-spawn
       `BattlePartySpawner`; DeploymentManager token placement; DeploymentTray bench HUD with Assemble/Clear;
       camera auto-frame; wired in `Test_M3_Battle`). 158/158 green; HUD renders.

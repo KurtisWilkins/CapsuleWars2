@@ -6,6 +6,34 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-21 — deployment v2 (spawn-on-place + split-zone board + grid-fit camera)
+**Goal this session:** fix two deployment problems — (1) you couldn't *see* units as you placed them
+(placement was data-only), and (2) the board was tiny with no enemy zone (sides overlapped).
+
+**Done (all committed on `claude/deployment-grid`; 160/160 EditMode green):**
+- Camera framing fix (prior turn): deployment pose was pitched forward past the deploy zone; re-aimed
+  near-top-down. Then generalised into auto-framing (below).
+- **Spawn-on-place:** `BattlePartySpawner` gained `SpawnOrMoveAt/Despawn/DespawnAll` (instance dict +
+  `DeployedUnits` container, cached DB); `DeploymentTray` calls them on place/bench/clear. Dropped the
+  deferred OnConfirmed spawn — placed instances (idle in PreBattle) become the combat units on Assemble,
+  no double-spawn. No-deployment fallback unchanged.
+- **Bigger split-zone board:** `DeploymentGridConfig` cellSize 1.5→3.5; added `enemyRowMin/Max` (6–8) +
+  `InEnemyZone`. Renderer + gizmo colour the enemy zone. Scene: cellSize 3.5 on both grid configs, enemy
+  moved to (10.5,0,24.5), Plane enlarged (scale 4 @ (10.5,0,14)), wider camera bounds/zoom.
+- **Camera auto-frame:** `DeploymentCameraController` computes the framing pose from the grid (fits
+  board width/depth for the aspect, near-top-down tilt); falls back to the manual pose if no grid.
+- Tests: zone-disjoint + cellSize tests; fixed the default-cellSize assertion in DeploymentManagerTests.
+
+**Compiled clean:** yes. **EditMode 160/160.**
+
+**Needs human verification (Play Mode):** see PROJECT_STATE. **Re-bake the NavMesh** (Plane enlarged)
+first; then with a drafted run, place units (they should appear at the cell), Assemble → those units
+fight; enemy on the far side; camera auto-frames. Launch with `-force-d3d11`.
+
+**Decisions:** ADR-011 (deployment spawn-on-place + split-zone board + grid-fit camera; supersedes ADR-010 tokens).
+
+**Next session starts with:** re-bake the NavMesh, then Play-mode test deployment v2 (TASKS top items).
+
 ## 2026-06-21 — deployment phase (7×9 grid, gate, tray HUD, camera)
 **Goal this session:** add a Deployment Phase before combat — a 7×9 grid with a visible tray HUD
 to place units, camera pulled back to frame the board, confirm-to-start.

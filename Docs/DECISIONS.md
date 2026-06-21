@@ -84,4 +84,21 @@ the existing `RunState.Placements` + spawner. Late-spawned units register fine v
 `BattlePartySpawner` spawns immediately as before — existing combat is unaffected. Gate flags
 default off. Selection is cell-based (units have no colliders).
 
+### ADR-011 — Deployment: spawn-on-place + bigger split-zone board (supersedes ADR-010 token model)
+**Decided:** placing a unit now **spawns the real unit instance at the cell** (visible during
+setup), instead of placing a data-only token. `DeploymentTray` drives
+`BattlePartySpawner.SpawnOrMoveAt/Despawn/DespawnAll`; the placed instances ARE the combat units
+(spawned during PreBattle they stay idle — all combat controllers gate on `Phase == Active` — and
+simply join combat on Assemble, **no deferred double-spawn**). The board is enlarged (`cellSize`
+1.5→**3.5**) and split into a near **player zone** (rows 0–2), a neutral middle (3–5), and a far
+**enemy zone** (rows 6–8, new `enemyRowMin/Max` + `InEnemyZone`). The deployment camera **auto-computes**
+its framing from the grid (fits board width/depth for the current aspect), so it always frames the
+board and follows cellSize/row changes.
+**Why:** the player asked to *see* units as they deploy and for clearly separated sides; the token
+model showed neither. Spawning during PreBattle gives a live preview for free.
+**Implication:** units left on the bench aren't deployed (don't enter combat). The enlarged arena
+needs the ground Plane enlarged (done) and the **NavMesh re-baked** for combat movement. The
+no-deployment-phase fallback (immediate `SpawnParty`) is unchanged. Enemies are still scene-placed
+(now repositioned into the enemy zone); a runtime enemy-zone placer is a follow-up if they become dynamic.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

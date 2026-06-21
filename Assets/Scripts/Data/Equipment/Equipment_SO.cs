@@ -45,7 +45,14 @@ namespace CapsuleWars.Data.Equipment
         [Tooltip("Hand-slot items: weapon class. Drives Animator sub-SM + attack range/cooldown when equipped in RightHand.")]
         [SerializeField] private WeaponClass_SO weaponClass;
 
-        [Tooltip("Optional 3D mesh swap. Wired in M10 polish.")]
+        [Header("Visual attachment")]
+        [Tooltip("Name of the unit socket to attach this item's visual to (must match a socket on the unit's UnitEquipmentVisuals).")]
+        [SerializeField] private string attachSocketName;
+
+        [Tooltip("Prefab instantiated at the attach socket when equipped (preferred). Falls back to visualMesh if empty.")]
+        [SerializeField] private GameObject visualPrefab;
+
+        [Tooltip("Optional 3D mesh; instantiated as a MeshFilter+MeshRenderer at the socket when no visualPrefab is set.")]
         [SerializeField] private Mesh visualMesh;
 
         [Tooltip("Optional materials to pair with visualMesh.")]
@@ -60,6 +67,8 @@ namespace CapsuleWars.Data.Equipment
         public IReadOnlyList<StatBuff> StatBuffs => statBuffs;
         public ElementType_SO ElementAffinity => elementAffinity;
         public WeaponClass_SO WeaponClass => weaponClass;
+        public string AttachSocketName => attachSocketName;
+        public GameObject VisualPrefab => visualPrefab;
         public Mesh VisualMesh => visualMesh;
         public IReadOnlyList<Material> VisualMaterials => visualMaterials;
 

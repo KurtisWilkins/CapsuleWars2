@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using CapsuleWars.Data.Equipment;
 using CapsuleWars.Data.Units;
 using CapsuleWars.Persistence;
@@ -34,14 +35,23 @@ namespace CapsuleWars.UI.Customization
         [SerializeField] private EquipmentCatalog_SO equipmentCatalog;
         [SerializeField] private Transform previewAnchor;
 
+        [Tooltip("Default items the player starts with (testing). Shown in the list in addition to the catalog " +
+                 "(deduped by id). Add these to the EquipmentCatalog too so they resolve when units spawn in combat.")]
+        [SerializeField] private List<Equipment_SO> starterItems = new();
+
         [Header("UI")]
         [SerializeField] private UnitInspectionPanel inspectionPanel;
         [SerializeField] private Transform equipmentListRoot;   // parent for the generated equip buttons
         [SerializeField] private Button equipButtonPrefab;      // button with a child Text label
         [SerializeField] private Button closeButton;
 
+        [Header("Selection feedback")]
+        [SerializeField] private Color normalColor = Color.white;
+        [SerializeField] private Color equippedColor = new Color(0.3f, 0.8f, 0.4f, 1f);
+
         private UnitRoot preview;
         private string currentUnitId;
+        private readonly List<(Equipment_SO item, Button button)> itemButtons = new();
 
         private void Awake()
         {
@@ -90,28 +100,64 @@ namespace CapsuleWars.UI.Customization
 
         private void BuildEquipmentList()
         {
-            if (equipmentListRoot == null || equipButtonPrefab == null || equipmentCatalog == null) return;
+            if (equipmentListRoot == null || equipButtonPrefab == null) return;
 
             for (int i = equipmentListRoot.childCount - 1; i >= 0; i--)
                 Destroy(equipmentListRoot.GetChild(i).gameObject);
+            itemButtons.Clear();
 
-            foreach (var item in equipmentCatalog.Items)
+            foreach (var item in AvailableItems())
             {
-                if (item == null) continue;
                 var btn = Instantiate(equipButtonPrefab, equipmentListRoot);
                 var label = btn.GetComponentInChildren<Text>();
                 if (label != null) label.text = $"{item.Slot}: {item.EquipmentId}";
 
                 var captured = item;   // avoid closure capturing the loop variable
-                btn.onClick.AddListener(() => EquipItem(captured));
+                btn.onClick.AddListener(() => ToggleItem(captured));
+                itemButtons.Add((item, btn));
             }
+            RefreshHighlights();
         }
 
-        private void EquipItem(Equipment_SO item)
+        // Catalog items plus serialized starter items, deduped by id (catalog wins).
+        private IEnumerable<Equipment_SO> AvailableItems()
+        {
+            var seen = new HashSet<string>();
+            if (equipmentCatalog != null)
+                foreach (var it in equipmentCatalog.Items)
+                    if (it != null && seen.Add(it.EquipmentId)) yield return it;
+            if (starterItems != null)
+                foreach (var it in starterItems)
+                    if (it != null && seen.Add(it.EquipmentId)) yield return it;
+        }
+
+        // Toggle: clicking an item equips it (replacing its slot), or unequips it if
+        // it's already the item in that slot. Either way fires OnStatsChanged, so the
+        // inspection panel + the unit's equipment visuals update live.
+        private void ToggleItem(Equipment_SO item)
         {
             if (preview == null || item == null || preview.Status == null) return;
-            // Fires OnStatsChanged -> the inspection panel refreshes its stats live.
-            preview.Status.Equip(item.Slot, item);
+            if (IsEquipped(item)) preview.Status.UnequipSlot(item.Slot);
+            else preview.Status.Equip(item.Slot, item);
+            RefreshHighlights();
+        }
+
+        private bool IsEquipped(Equipment_SO item)
+        {
+            if (preview == null || preview.Status == null || item == null) return false;
+            foreach (var eq in preview.Status.Equipment)
+                if (eq.slot == item.Slot && eq.item == item) return true;
+            return false;
+        }
+
+        private void RefreshHighlights()
+        {
+            foreach (var (item, button) in itemButtons)
+            {
+                if (button == null) continue;
+                var img = (button.targetGraphic as Image) ?? button.GetComponent<Image>();
+                if (img != null) img.color = IsEquipped(item) ? equippedColor : normalColor;
+            }
         }
 
         // Write the preview's equipment back into the (existing) party DTO in place,

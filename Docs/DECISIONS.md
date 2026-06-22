@@ -252,4 +252,20 @@ starter items) — so nothing silently loses stats. `UnitEquipmentDTO` gained `m
 asset pipeline is untouched (Definitions authored/imported as before; the importer no longer needs to set stats).
 Verified by EditMode test: two instances of one definition → different stats; roller determinism + name + tier. 166/166 green.
 
+### ADR-020 — Trunk-based development on `main` (supersedes ADR-009)
+**Decided:** drop the stacked per-slice branch model. `main` is the trunk; work happens on `main` directly or on
+short-lived feature branches that merge straight back. **Why:** ADR-009's stack only pays off with PR review,
+which a solo project doesn't have. In practice the stack had collapsed anyway — all six branches
+(`unit-factory`, `equipment-persistence`, `deploy-camera`, `unit-inspection`, `capsule-wars-setup-pBoDq`,
+`deployment-grid`) ended up fully contained in `deployment-grid` with zero unique commits, while `main` sat 134
+commits behind and untouched. The stack was pure clutter + doc drift.
+**Action taken (2026-06-22 cleanup session):** fast-forwarded `main` → `deployment-grid` (a clean FF — main was a
+strict ancestor, no merge commit, no work lost), pushed `main`, tagged the pre-merge tip `pre-trunk-main`
+(`852a520`, also pushed) as a rollback point, and deleted the 5 contained local branches. `claude/deployment-grid`
+(local + remote) is retained as a synced pointer for now and can be pruned later.
+**Implication:** `main` now carries everything through ADR-019, including gameplay that is **not yet Play-verified**
+(deployment loop, branching map, customization v2, mirror equip, style consistency, mesh scale, NavMesh re-bake —
+tracked in PROJECT_STATE "Needs human verification"). `main` has no release semantics here; that verification list
+is the gate before any build. The editor asset-pipeline tooling can't ship (Editor-only). 166/166 EditMode green.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

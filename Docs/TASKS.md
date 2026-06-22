@@ -4,35 +4,28 @@
 > specific and self-contained. Move finished items to "Done (recent)".
 
 ## Next up (work top-down)
-- [ ] **Tune the shared style + confirm cross-part consistency.** Review/tune `StyleProfile` + the 8
-      `PartTemplate`s under `Assets/Editor/AssetPipeline/Style/`, then generate **two different parts** (e.g.
-      Helmet + Right Hand) and confirm they come out in the same grayscale/isolated cartoony style; edit
-      `StyleProfile.basePrompt`, regen one, confirm it carries. (Pipeline Grok+Meshy+Create/Wire already verified
-      live; Anthropic description needs account credits. Full checklist in PROJECT_STATE.)
-- [ ] **Check the generated Meshy mesh on a unit** — equip/spawn the created `BodyPart_SO` and confirm the
-      model's scale/orientation at the socket (generated models sometimes need a scale tweak).
-- [ ] **Play-test the branching map** (`Test_M7_Map`, `-force-d3d11`). Scene is assembled (ScrollRect +
-      `MapView` wired, node label font set). Start a run → branching map renders → pick a start → encounter →
-      return → only connected nodes clickable → climb → clear Boss → new segment stitches on; lose → run ends.
-      Tune `RunController` `MapGenConfig`/`fixedSeed`/`difficultyPerDepth` + MapView spacing as desired; delete
-      any leftover old Map Panel content if it shows through. (Full notes in PROJECT_STATE.)
-- [ ] **Re-bake the NavMesh for the enlarged arena.** In `Test_M3_Battle`, select `Plane` →
-      `NavMeshSurface` → **Bake** (the Plane was scaled to 4, centred at (10.5,0,14)). Without this,
-      combat movement on the bigger board will be broken/off-mesh.
-- [ ] **Play-mode test deployment v2** (needs a drafted run; launch editor with `-force-d3d11`). In
-      `Test_M3_Battle` with `RunSession.Current.Party` non-empty: tap a bench unit → tap a green
-      player-zone cell ⇒ the **real unit appears** at the cell (scale-in); tap a placed cell to bench it
-      (instance destroyed); **Clear** removes all. **Assemble** ⇒ those exact units start combat (no
-      duplicates); combat must NOT start before Assemble. Confirm the enemy sits on the far side and the
-      camera auto-frames the board. Report what renders/works.
-- [ ] **Play-mode test customization v2** (`Test_M7_Map`, `-force-d3d11`): Customize → picker on top +
-      clickable → pick a unit → screen in front, all equip buttons respond. List has the 4 starters →
-      click an item ⇒ its cube appears at the matching socket on the preview + button highlights; click
-      again ⇒ removed. Close (saves) → battle with that unit ⇒ cube shows on the combat unit too. Verify
-      stats still update live.
-- [ ] **Swap placeholder item visuals:** `EquipVisual_Cube` is a stand-in. Assign real `visualPrefab`/
-      `visualMesh` per `Equip_Starter*` asset; optionally re-parent the unit's `Socket_*` empties under
-      hand/head bones so attachments follow animation.
+- [ ] **START HERE — Play-mode verification pass (D3D11 is the project default; no `-force-d3d11` flag).** The
+      cleanup session landed everything on `main` with tests green; the gameplay below is code-complete but not
+      yet Play-verified. Re-bake the NavMesh FIRST, then walk the list (full per-item checklist in PROJECT_STATE).
+- [ ] **Re-bake the NavMesh for the enlarged arena.** `Test_M3_Battle` → `Plane` → `NavMeshSurface` → **Bake**
+      (Plane scaled to 4, centred (10.5,0,14)). Gates combat movement on the bigger board.
+- [ ] **Play-test deployment v2** (`Test_M3_Battle`, drafted run). Tap a bench unit → green player-zone cell ⇒
+      the real unit appears (scale-in); tap a placed cell to bench it; **Clear**; **Assemble** ⇒ those exact units
+      start combat (no dupes; NOT before Assemble); enemy on the far side; camera auto-frames. (Placement/enemy
+      inspection/Assemble were Play-verified 2026-06-21 — re-confirm after the NavMesh bake.)
+- [ ] **Play-test the branching map** (`Test_M7_Map`). Start a run → map renders → pick a start → encounter →
+      return → only edge-connected nodes clickable → climb + clear Boss → new segment stitches on; lose → ends.
+      Tune MapView spacing if cramped; delete any leftover old Map Panel content if it peeks through.
+- [ ] **Play-test customization v2** (`Test_M7_Map`): Customize → picker on top + clickable → equip toggles show
+      the cube on the matching socket + highlight → close (saves) → cube shows on the combat unit; stats live.
+- [ ] **Equipment rolled-item + mirror equip (visual):** roll an item (`EquipmentRoller.Roll(def, config, tier,
+      seed)`), equip → inspection shows stats + generated name while the mesh attaches; equip a mirrored part →
+      shows on the correct side; a starter/old item keeps its stats after load.
+- [ ] **Tune the shared style + check generated-mesh scale:** review the `StyleProfile` + 8 `PartTemplate`s;
+      generate two different parts and confirm one coherent grayscale/isolated style; edit `StyleProfile.basePrompt`,
+      regen, confirm it carries. Then check the generated Meshy mesh's scale/orientation at the socket.
+- [ ] **Swap placeholder item visuals:** `EquipVisual_Cube` is a stand-in. Assign real `visualPrefab`/`visualMesh`
+      per item; optionally re-parent `Socket_*` empties under hand/head bones for animated attachment.
 
 ## Backlog (not yet scheduled)
 - [ ] Bench-item prefab polish: deployment + customization reuse `EquipButton.prefab`; make a dedicated
@@ -42,13 +35,13 @@
 - [ ] Persistent run-scoped inventory (owned-item ids in `RunStateDTO`) seeded on new game; the screen
       currently shows the `EquipmentCatalog` (now 6 items incl. 4 starters) ∪ serialized `starterItems`.
 - [ ] Clean up battle-end UI placeholder "New Text" labels (cosmetic; pre-existing). Remaining M10 polish.
-- [ ] **Branch consolidation — PENDING your decision (cleanup session).** `main` is 134 commits behind
-      `claude/deployment-grid`, which **is pushed** and **fully contains all 5 stale local branches** (incl.
-      `claude/unit-factory`, which was never pushed). Recommended: fast-forward `main` → `deployment-grid`,
-      push, delete the contained branches, work trunk-based — would supersede ADR-009. (Obsolete prior plan
-      "land unit-factory → main then merge the stack" is moot: nothing has unique commits.)
+- [ ] *(Optional)* prune `claude/deployment-grid` (local + remote) now that `main` is the trunk and they're
+      identical — left as an explicit call (it's the most outward-facing delete).
 
 ## Done (recent — prune periodically)
+- [x] **Trunk consolidation (ADR-020, supersedes ADR-009):** fast-forwarded `main` → `deployment-grid` (clean FF,
+      no work lost), pushed `main`, tagged `pre-trunk-main` (852a520) as rollback, deleted the 5 contained local
+      branches. Now trunk-based on `main`; `deployment-grid` kept as a synced pointer (prunable).
 - [x] **Repo hygiene (cleanup session 2026-06-22):** committed 10 orphaned `.meta` (committed scripts/folders
       whose metas were never staged → GUID-regeneration risk on clone); removed dead `DeploymentView`
       (inert scene component + script + meta — superseded by `DeploymentTray`, ADR-011/014). Verified two

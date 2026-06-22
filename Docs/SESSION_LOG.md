@@ -6,6 +6,35 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-22 — Cleanup / consolidation: trunk-based on `main` (ADR-020) + repo hygiene
+**Goal this session:** no features — get git state, docs, and loose code hygiene into a clean, truthful, sustainable shape.
+
+**Step 1 — found (docs had drifted):** `deployment-grid` was actually **pushed** (docs said "none pushed");
+the per-slice stack had **collapsed** — all 5 other local branches contained in `deployment-grid`, zero unique
+commits; `claude/unit-factory` existed locally but never on the remote; `main` was 134 behind. Also found **6
+committed `.cs` with untracked `.meta`** (GUID risk), stale test counts (162 vs actual 166), a `-force-d3d11`
+self-contradiction, and a garbled deployment/map bullet.
+
+**Step 2/3 — done (committed + pushed on `main`):**
+- **Branch consolidation (ADR-020, supersedes ADR-009):** FF `main` → `deployment-grid` (clean, no work lost),
+  pushed `main`, tagged `pre-trunk-main` (852a520) as rollback, deleted the 5 contained local branches. Now
+  trunk-based on `main`. `deployment-grid` (local+remote) kept as a synced pointer (prunable).
+- **Meta hygiene:** committed the 10 orphaned `.meta` (`7e5b35d`).
+- **Dead code:** removed `DeploymentView` — pulled its inert (disabled/unwired) component from `Test_M3_Battle`,
+  then deleted script+meta; no missing-script left (`6806bde`). 166/166 green.
+- **Verified two backlog items were themselves drift:** `BattleStartButton` already disabled (`fdab6a5`); the
+  "deprecated `FindObjectsByType` CS0618" item is a **false alarm** (that's the current API; zero CS0618).
+- **Doc-sync** of TASKS + PROJECT_STATE to git reality (`6aa82ef`), plus this handoff's full PROJECT_STATE rewrite.
+- Reverted test-polluted catalogs (`EquipmentCatalog`/`PartCatalog` — Create/Wire test items referencing
+  uncommitted `Generated/`); left those test artifacts untracked + local.
+
+**Not done (flagged):** battle-end "New Text" placeholder labels — left for the real copy (didn't guess);
+pruning `deployment-grid` (local+remote) — left to an explicit call.
+
+**Next session starts with:** the gameplay **Play-mode verification pass** (NavMesh re-bake first, then the
+deployment loop / branching map / customization v2 / mirror equip / rolled-item visual) — see PROJECT_STATE
+"Needs human verification." D3D11 is the project default now (no `-force-d3d11` flag needed).
+
 ## 2026-06-21 — Equipment stats → runtime instances (Definition + Instance, ADR-019)
 **Goal this session:** move equipment stats off the ScriptableObject onto a runtime, saved DTO so one asset
 (e.g. a helmet) can be "of Health", "of Attack", etc. — reusable + roguelite-friendly.

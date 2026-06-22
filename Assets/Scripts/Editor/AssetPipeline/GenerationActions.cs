@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using CapsuleWars.Core;
@@ -24,34 +25,75 @@ namespace CapsuleWars.Editor.AssetPipeline
 
         // --- public entry points (called from the window on the main thread) ---
 
+        private static readonly Queue<AssetRequest> _imageBatch = new Queue<AssetRequest>();
+
         public static void GenerateImage(AssetRequest r)
         {
             if (!Begin("Grok image")) return;
-            string prompt = PromptTemplates.GrokImagePrompt(r);
-            if (string.IsNullOrEmpty(r.grokImagePrompt)) r.grokImagePrompt = prompt;
+            StartImage(r);
+        }
+
+        /// <summary>Queue several requests for image generation; they run sequentially (one at a time).</summary>
+        public static void GenerateImagesBatch(IEnumerable<AssetRequest> requests)
+        {
+            foreach (var r in requests) if (r != null) _imageBatch.Enqueue(r);
+            PumpImageBatch();
+        }
+
+        private static void PumpImageBatch()
+        {
+            if (Busy || _imageBatch.Count == 0) return;
+            var r = _imageBatch.Dequeue();
+            if (r == null) { PumpImageBatch(); return; }
+            if (!Begin($"Grok image (batch, {_imageBatch.Count} left)")) return;
+            StartImage(r);
+        }
+
+        // Composes the prompt from the shared StyleProfile + part template, runs the right Grok
+        // path (text→image, or reference-image edit if the profile opts in), saves the PNG, sets
+        // the Meshy prompt, and advances the stage. Assumes Begin() was already called.
+        private static void StartImage(AssetRequest r)
+        {
+            string prompt = StyleComposer.ComposeImagePrompt(r);
+            r.grokImagePrompt = prompt;
+
             string key = GenerationServices.Secrets.grokApiKey;
             string model = GenerationServices.GrokModel;
             string endpoint = GenerationServices.GrokEndpoint;
             string id = SafeId(r);
 
-            Task.Run(() => GrokImageService.GenerateAsync(prompt, key, model, endpoint))
-                .ContinueWith(t => GenerationHttp.OnMainThread(() =>
+            var profile = StyleComposer.ResolveProfile();
+            string aspect = profile != null ? profile.aspectRatio : "1:1";
+            string resolution = profile != null ? profile.resolution : "1k";
+            bool useRef = profile != null && profile.useReferenceImage && profile.referenceImage != null;
+            string refPath = useRef ? AssetDatabase.GetAssetPath(profile.referenceImage) : null;
+
+            Task.Run(async () =>
+            {
+                if (useRef)
                 {
-                    try
-                    {
-                        if (t.IsFaulted) throw GenerationHttp.Unwrap(t.Exception);
-                        string folder = AssetPipelineImporter.EnsureFolder(ImagesFolder);
-                        string path = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{id}.png");
-                        File.WriteAllBytes(path, t.Result);
-                        AssetDatabase.ImportAsset(path);
-                        r.chosenImage = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-                        r.imagePath = path;
-                        if (r.stage < PipelineStage.ImageChosen) r.stage = PipelineStage.ImageChosen;
-                        Persist(r);
-                        Done($"Image saved: {path}");
-                    }
-                    catch (Exception e) { Fail("Grok image", e); }
-                }));
+                    byte[] refBytes = File.ReadAllBytes(refPath);
+                    return await GrokImageService.EditAsync(prompt, refBytes, key, model, "", aspect, resolution);
+                }
+                return await GrokImageService.GenerateAsync(prompt, key, model, endpoint, aspect, resolution);
+            }).ContinueWith(t => GenerationHttp.OnMainThread(() =>
+            {
+                try
+                {
+                    if (t.IsFaulted) throw GenerationHttp.Unwrap(t.Exception);
+                    string folder = AssetPipelineImporter.EnsureFolder(ImagesFolder);
+                    string path = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{id}.png");
+                    File.WriteAllBytes(path, t.Result);
+                    AssetDatabase.ImportAsset(path);
+                    r.chosenImage = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                    r.imagePath = path;
+                    r.meshyPrompt = StyleComposer.ComposeMeshyPrompt(r);   // ready for the next stage
+                    if (r.stage < PipelineStage.ImageChosen) r.stage = PipelineStage.ImageChosen;
+                    Persist(r);
+                    Done($"Image saved: {path}");
+                }
+                catch (Exception e) { Fail("Grok image", e); }
+            }));
         }
 
         public static void GenerateModel(AssetRequest r)
@@ -157,6 +199,7 @@ namespace CapsuleWars.Editor.AssetPipeline
             Status = s;
             Debug.Log("[AssetPipeline] " + s);
             Changed?.Invoke();
+            PumpImageBatch();
         }
 
         private static void Fail(string what, Exception e)
@@ -166,6 +209,7 @@ namespace CapsuleWars.Editor.AssetPipeline
             Debug.LogError($"[AssetPipeline] {what} failed: {e.Message}");
             EditorUtility.DisplayDialog(what + " failed", e.Message, "OK");
             Changed?.Invoke();
+            PumpImageBatch();   // keep a batch going even if one item fails
         }
     }
 }

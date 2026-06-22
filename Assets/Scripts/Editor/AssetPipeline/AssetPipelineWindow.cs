@@ -91,6 +91,19 @@ namespace CapsuleWars.Editor.AssetPipeline
             {
                 GenerationKeysWindow.Open();
             }
+            if (GUILayout.Button("Style…", EditorStyles.toolbarButton, GUILayout.Width(55)))
+            {
+                var p = StyleComposer.ResolveProfile();
+                if (p == null) StyleSetupTool.CreateDefaults();
+                else { Selection.activeObject = p; EditorGUIUtility.PingObject(p); }
+            }
+            if (GenerationServices.ImageGenAvailable)
+            {
+                var pending = PendingImageRequests();
+                using (new EditorGUI.DisabledScope(GenerationActions.Busy || pending.Count == 0))
+                    if (GUILayout.Button($"Generate images ({pending.Count})", EditorStyles.toolbarButton, GUILayout.Width(145)))
+                        GenerationActions.GenerateImagesBatch(pending);
+            }
             GUILayout.FlexibleSpace();
             string mode = GenerationActions.Busy
                 ? GenerationActions.Status
@@ -250,7 +263,7 @@ namespace CapsuleWars.Editor.AssetPipeline
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Copy Grok prompt"))
             {
-                r.grokImagePrompt = PromptTemplates.GrokImagePrompt(r);
+                r.grokImagePrompt = StyleComposer.ComposeImagePrompt(r);
                 EditorGUIUtility.systemCopyBuffer = r.grokImagePrompt;
                 ShowNotification(new GUIContent("Grok prompt copied"));
             }
@@ -262,7 +275,7 @@ namespace CapsuleWars.Editor.AssetPipeline
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Copy Meshy prompt"))
             {
-                r.meshyPrompt = PromptTemplates.MeshyPrompt(r);
+                r.meshyPrompt = StyleComposer.ComposeMeshyPrompt(r);
                 EditorGUIUtility.systemCopyBuffer = r.meshyPrompt;
                 ShowNotification(new GUIContent("Meshy prompt copied"));
             }
@@ -385,6 +398,16 @@ namespace CapsuleWars.Editor.AssetPipeline
             _expanded.Remove(r);
             AssetDatabase.DeleteAsset(path);
             Refresh();
+        }
+
+        // Requests with a category set but no image yet — the batch "Generate images" targets these.
+        private List<AssetRequest> PendingImageRequests()
+        {
+            var list = new List<AssetRequest>();
+            foreach (var r in _requests)
+                if (r != null && r.category != AssetCategory.Undecided && r.chosenImage == null)
+                    list.Add(r);
+            return list;
         }
 
         private static string Slugify(string s)

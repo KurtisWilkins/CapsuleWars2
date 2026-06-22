@@ -43,7 +43,7 @@ credits). Prior passes (Branching Map, Customization v2) still await their Play-
   blocked until Assemble). **Spawn-on-place:** `BattlePartySpawner.SpawnOrMoveAt/Despawn/DespawnAll`
   spawns the real unit at each placed cell (idle in PreBattle), and those instances become the combat
   units on Assemble. `DeploymentCameraController` auto-computes framing from the grid. Renderer +
-  gizmo colour the enemy zone. All committed; gate/zone/grid logic unit-tested (160 green).
+  gizmo colour the enemy zone. All committed; gate/zone/grid logic unit-tested (166 green).
   **Placement fix:** the camera frames the board above a clear bottom band (`bottomViewportInset`) so the
   player-zone cells aren't hidden behind the HUD (clicks were being dropped as "over UI"); the legacy
   `DeploymentView` (redundant click handler) is disabled. **Enemy inspection:** tapping an enemy-zone cell
@@ -185,5 +185,9 @@ credits). Prior passes (Branching Map, Customization v2) still await their Play-
 - Run map: `Assets/Scripts/Run/Map/` (MapNode, RunMap, MapGenConfig, MapGenerator, BattleNodeReturn) +
   `RunController`/`RunState`/`RunSession`; UI: `Assets/Scripts/UI/Map/` (MapView, MapNodeView) +
   `Assets/Prefabs/Map/` (MapNode_View, Edge_Line). DTOs: `Assets/Scripts/Persistence/Dto/RunStateDTO.cs` (v2).
-- Tests: `Assets/Scripts/Tests/EditMode/` (162 green).
-- Branch: `claude/deployment-grid` (stacked off `claude/unit-factory`; none pushed).
+- Tests: `Assets/Scripts/Tests/EditMode/` (**166** green).
+- Branch: `claude/deployment-grid` — **pushed** and up to date with `origin/claude/deployment-grid`. `main`
+  (= `origin/main`) is **134 commits behind** it. The old per-slice stack (ADR-009) has **collapsed into this
+  branch**: all 5 local feature branches (incl. `claude/unit-factory`, never pushed) are fully contained — zero
+  unique commits. Remote has only `main`, `claude/deployment-grid`, `claude/capsule-wars-setup-pBoDq`. **Branch
+  consolidation is pending a decision** (recommend FF `main` → `deployment-grid` + go trunk-based — see TASKS).

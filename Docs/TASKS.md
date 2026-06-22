@@ -41,13 +41,20 @@
 - [ ] Persist body-part/palette edits (`UnitFactory.FromUnit` captures equipment only).
 - [ ] Persistent run-scoped inventory (owned-item ids in `RunStateDTO`) seeded on new game; the screen
       currently shows the `EquipmentCatalog` (now 6 items incl. 4 starters) ∪ serialized `starterItems`.
-- [ ] `BattleStartButton` is now redundant with Assemble (gated) — hide it during deployment or remove.
-- [ ] Replace deprecated `FindObjectsByType(FindObjectsSortMode)` calls (CS0618 warnings) in
-      DeploymentView/LegacyPromoteButton/RunBattleSetup.
-- [ ] Land `claude/unit-factory` → `main`, then merge the stacked feature branches in order.
-- [ ] Clean up battle-end UI placeholder "New Text" labels. Remaining M10 polish (see `Docs/17_BuildOrder.md`).
+- [ ] Clean up battle-end UI placeholder "New Text" labels (cosmetic; pre-existing). Remaining M10 polish.
+- [ ] **Branch consolidation — PENDING your decision (cleanup session).** `main` is 134 commits behind
+      `claude/deployment-grid`, which **is pushed** and **fully contains all 5 stale local branches** (incl.
+      `claude/unit-factory`, which was never pushed). Recommended: fast-forward `main` → `deployment-grid`,
+      push, delete the contained branches, work trunk-based — would supersede ADR-009. (Obsolete prior plan
+      "land unit-factory → main then merge the stack" is moot: nothing has unique commits.)
 
 ## Done (recent — prune periodically)
+- [x] **Repo hygiene (cleanup session 2026-06-22):** committed 10 orphaned `.meta` (committed scripts/folders
+      whose metas were never staged → GUID-regeneration risk on clone); removed dead `DeploymentView`
+      (inert scene component + script + meta — superseded by `DeploymentTray`, ADR-011/014). Verified two
+      backlog items were themselves stale: `BattleStartButton` is **already disabled** (commit `fdab6a5`), and
+      the "deprecated `FindObjectsByType` CS0618" item is a **false alarm** — `FindObjectsByType(FindObjectsSortMode)`
+      is the *current* API (zero CS0618; the deprecated `FindObjectsOfType` is unused). 166/166 EditMode green.
 - [x] **Equipment stats → runtime instances** (ADR-019): `Equipment_SO` = identity Definition (legacy stats kept
       for migration); new `EquipmentInstance` (def ref + modifiers + name + tier/seed) carries stats + is saved;
       `UnitStatusController` equips an instance (modifiers via the same stat math); `EquipmentRoller` +
@@ -104,4 +111,4 @@
 
 ## Notes
 - New ideas discovered mid-task go in Backlog, not into the current task.
-- Run the EditMode suite (`run_tests`) after C# changes; keep it green (currently 162).
+- Run the EditMode suite (`run_tests`) after C# changes; keep it green (currently **166**).

@@ -56,15 +56,16 @@ passes (Branching Map, Customization v2) still await their Play-mode checks.
   verification + arena tuning remain (below).
 
 ## Needs human verification (Claude can't see Play Mode)
-- **Asset Pipeline (NEW — run one sample end to end; `Tools ▸ CapsuleWars ▸ Asset Pipeline`):** open the
-  window → **+ New request** → it appears under **Requested** and persists as an asset (survives a domain
-  reload). Ask Claude to write concepts → pick one → **Copy Grok prompt** (lands on clipboard) → run Grok →
-  drop the image in **Chosen image** → **Copy Meshy prompt** → run Meshy → import the FBX to
-  `Assets/Generated/Meshy/{slot}/` → drop it in **Imported model** → set category/slot/socket → **Create /
-  Wire item** ⇒ a prefab + `Equipment_SO`/`BodyPart_SO` is created and added to the catalog. Then equip it
-  on a unit (customization) / spawn a unit using it ⇒ the mesh shows at the socket. (For a Weapon, also assign
-  a `WeaponClass_SO` + stat buffs on the created asset.) Confirm nothing pipeline-related ships in a player
-  build (it's all under Editor folders / `CapsuleWars.Editor`).
+- **Asset Pipeline live APIs — VERIFIED end-to-end (2026-06-21, via computer-use in the editor).** Ran the
+  "Mikey mouse hands" (BodyPart / RightHand) sample: **Grok Generate** → image saved + set as Chosen image
+  (`grok-imagine-image-quality`); **Meshy Generate** → polled to 100%, FBX imported + assigned
+  (`Assets/Generated/Meshy/RightHand/MikeyMouseHands.fbx`); **Create / Wire item** → created
+  `BodyPart_SO 'MikeyMouseHands'` and added it to `PartCatalog`. **Anthropic description**: integration is
+  correct (auth + request OK) but returned HTTP 400 *"credit balance is too low"* — **needs Anthropic account
+  credits**, not a code fix (or just let Claude write the description directly). Still worth a human check:
+  equip/spawn the created `BodyPart_SO` on a unit and confirm the Meshy mesh renders at the RightHand socket
+  (scale/orientation may need tuning), and confirm nothing pipeline-related ships in a player build (all under
+  Editor folders / `CapsuleWars.Editor`).
 - **Deployment placement + enemy inspection + Assemble — VERIFIED in Play (2026-06-21, D3D11).** Played the
   full run (draft → branching map → combat → deployment): placed both units on player-zone cells, clicked an
   enemy → stats panel showed (Tester Ted), **Assemble** confirmed (HUD hides, camera reframes, combat starts).

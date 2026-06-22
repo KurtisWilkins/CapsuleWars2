@@ -64,5 +64,50 @@ namespace CapsuleWars.Editor.AssetPipeline
             }
             return current;
         }
+
+        public static bool FileExists => File.Exists(AbsolutePath);
+
+        /// <summary>
+        /// Read only what's stored in the file (no environment fallback). Use this
+        /// for the editor UI so env-supplied keys are never written back to disk.
+        /// </summary>
+        public static SecretsConfig LoadFromFileOnly()
+        {
+            try
+            {
+                if (File.Exists(AbsolutePath))
+                    return JsonUtility.FromJson<SecretsConfig>(File.ReadAllText(AbsolutePath)) ?? new SecretsConfig();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[AssetPipeline] Could not read {RelativePath}: {e.Message}");
+            }
+            return new SecretsConfig();
+        }
+
+        /// <summary>
+        /// Write the keys to <c>Tools/Editor/SecretsConfig.json</c> (created if needed).
+        /// The path is OUTSIDE Assets/ (never included in a player build) and matched by
+        /// .gitignore (never committed). Plaintext, local-only — like a .env file.
+        /// </summary>
+        public void Save()
+        {
+            string path = AbsolutePath;
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            File.WriteAllText(path, JsonUtility.ToJson(this, true));
+            Debug.Log($"[AssetPipeline] Saved API keys to {RelativePath} (git-ignored, outside Assets — not shipped).");
+        }
+
+        public static void DeleteFile()
+        {
+            try
+            {
+                if (File.Exists(AbsolutePath)) File.Delete(AbsolutePath);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[AssetPipeline] Could not delete {RelativePath}: {e.Message}");
+            }
+        }
     }
 }

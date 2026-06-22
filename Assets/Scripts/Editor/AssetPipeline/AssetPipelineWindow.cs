@@ -78,6 +78,10 @@ namespace CapsuleWars.Editor.AssetPipeline
             if (GUILayout.Button(_showNew ? "− New request" : "+ New request", EditorStyles.toolbarButton, GUILayout.Width(110)))
                 _showNew = !_showNew;
             if (GUILayout.Button("Refresh", EditorStyles.toolbarButton, GUILayout.Width(70))) Refresh();
+            if (GUILayout.Button("API Keys…", EditorStyles.toolbarButton, GUILayout.Width(80)))
+            {
+                GenerationKeysWindow.Open();
+            }
             GUILayout.FlexibleSpace();
             string mode = GenerationServices.AnyAvailable ? "API: configured" : "Mode: assisted-manual";
             GUILayout.Label(mode, EditorStyles.miniLabel);

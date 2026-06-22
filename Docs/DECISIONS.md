@@ -268,4 +268,28 @@ strict ancestor, no merge commit, no work lost), pushed `main`, tagged the pre-m
 tracked in PROJECT_STATE "Needs human verification"). `main` has no release semantics here; that verification list
 is the gate before any build. The editor asset-pipeline tooling can't ship (Editor-only). 166/166 EditMode green.
 
+### ADR-021 — Customization is a paper-doll; one screen drives gear (stats) AND body parts (cosmetic) (extends ADR-005/012)
+**Decided:** replace the customization list-of-buttons with a **paper-doll**: a centered live preview flanked by
+framed equipment slots, a cosmetic body-slot row, an HP/DAMAGE/ARMOR footer + a Stats button (reusing
+`UnitInspectionPanel`), and a scrollable bag with **Gear / Body** tabs. Interaction: **tap** a bag item
+auto-equips to ITS own slot (the slot is read from the item, never chosen); **drag-and-drop** equips (wrong slot
+rejects with a red flash; dropping on the doll background auto-routes); **tap a filled slot** unequips. Slots and
+bag items are **generated at runtime** from `EquipmentSlot` + the preview's mounted `PartSlot`s, so the scene only
+provides empty layout containers. **Why:** the list UI didn't scale or communicate slots; a paper-doll is the
+genre-standard, reads at a glance, and works on mobile (tap) + desktop (drag) through the uGUI EventSystem
+(`InputSystemUIInputModule`). Reuses the equip backend entirely (`UnitStatusController.Equip` for gear,
+`UnitCustomization.ApplyParts` for parts) — no new stat math (ADR-007).
+**New persistence:** body-part edits now persist. `UnitCustomization` records `AppliedParts`/`AppliedPalette` +
+exposes `MountedSlots`; the screen's `Capture()` writes `dto.Parts` — but **only when a part was actually edited**
+(`partsDirty`), so a gear-only session doesn't freeze a definition-driven unit into explicit parts. Closes the
+old "persist body-part edits" backlog item. Load already round-trips `dto.Parts` (`UnitFactory.FromDTO`).
+**Widgets:** `PaperDollSlot`, `BagItemWidget`, `PaperDollDropZone` (uGUI `IPointerClick`/`IDrop`/`IDrag`), each
+self-building its visuals so they generate with no authored prefab; theme via `UIThemeApplier` + `UIThemePalette`
+(no new art style). **Scope held:** no bag economy / currency / "add slots" (backlog); no run-scoped inventory yet
+(bag = `EquipmentCatalog ∪ starterItems` and `PartCatalog`; equipped = highlighted, not consumed).
+**Status:** code complete, **169/169 EditMode green**, committed. In-editor scene assembly + wiring is a manual
+checklist (`Docs/CHECKLIST_PaperDoll.md`) — the MCP bridge in that session couldn't read refs / page the
+hierarchy / run editor code, so the panel couldn't be assembled blind safely. Behavior gate is the Play list in
+that checklist + PROJECT_STATE.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

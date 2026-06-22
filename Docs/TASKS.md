@@ -4,9 +4,15 @@
 > specific and self-contained. Move finished items to "Done (recent)".
 
 ## Next up (work top-down)
-- [ ] **START HERE — Play-mode verification pass (D3D11 is the project default; no `-force-d3d11` flag).** The
-      cleanup session landed everything on `main` with tests green; the gameplay below is code-complete but not
-      yet Play-verified. Re-bake the NavMesh FIRST, then walk the list (full per-item checklist in PROJECT_STATE).
+- [ ] **START HERE — assemble the paper-doll customization panel + Play-verify it.** Code is complete + 169 green
+      (ADR-021); the in-editor panel is NOT built (the MCP bridge couldn't do it blind this session). Follow
+      `Docs/CHECKLIST_PaperDoll.md`: under the customization panel create the layout containers (left/right gear
+      columns, body row, Gear/Body bag scroll, HP/DAMAGE/ARMOR footer, Stats + tab + close buttons), wire the
+      `CustomizationScreen` refs + the `UIThemePalette`, keep the panel bg transparent so the 3D preview shows,
+      then run the checklist's Play list (tap-route, drag-drop + wrong-slot reject, unequip, live stats, gear +
+      body-part round-trip).
+- [ ] **Play-mode verification pass for the rest of the gameplay** (D3D11 is the project default; no
+      `-force-d3d11` flag). Re-bake the NavMesh FIRST, then walk the list (full per-item checklist in PROJECT_STATE).
 - [ ] **Re-bake the NavMesh for the enlarged arena.** `Test_M3_Battle` → `Plane` → `NavMeshSurface` → **Bake**
       (Plane scaled to 4, centred (10.5,0,14)). Gates combat movement on the bigger board.
 - [ ] **Play-test deployment v2** (`Test_M3_Battle`, drafted run). Tap a bench unit → green player-zone cell ⇒
@@ -16,8 +22,6 @@
 - [ ] **Play-test the branching map** (`Test_M7_Map`). Start a run → map renders → pick a start → encounter →
       return → only edge-connected nodes clickable → climb + clear Boss → new segment stitches on; lose → ends.
       Tune MapView spacing if cramped; delete any leftover old Map Panel content if it peeks through.
-- [ ] **Play-test customization v2** (`Test_M7_Map`): Customize → picker on top + clickable → equip toggles show
-      the cube on the matching socket + highlight → close (saves) → cube shows on the combat unit; stats live.
 - [ ] **Equipment rolled-item + mirror equip (visual):** roll an item (`EquipmentRoller.Roll(def, config, tier,
       seed)`), equip → inspection shows stats + generated name while the mesh attaches; equip a mirrored part →
       shows on the correct side; a starter/old item keeps its stats after load.
@@ -31,13 +35,19 @@
 - [ ] Bench-item prefab polish: deployment + customization reuse `EquipButton.prefab`; make a dedicated
       unit-card prefab (icon + name) if desired.
 - [ ] Stripped "preview" unit prefab (no NavMeshAgent) for the customization screen.
-- [ ] Persist body-part/palette edits (`UnitFactory.FromUnit` captures equipment only).
 - [ ] Persistent run-scoped inventory (owned-item ids in `RunStateDTO`) seeded on new game; the screen
       currently shows the `EquipmentCatalog` (now 6 items incl. 4 starters) ∪ serialized `starterItems`.
 - [ ] *(Optional)* clear the remaining default "New Text" labels in `Test_M3_Idle` + `Test_M7_Map` (the battle
       scene's 4 were cleared; these are likely runtime-driven HUD/node labels — clear only if they show through).
 
 ## Done (recent — prune periodically)
+- [x] **Paper-doll customization — code (ADR-021):** reworked the customization screen into a paper-doll (gear
+      slots + cosmetic body slots, tap-route + drag-drop with wrong-slot reject + tap-unequip, HP/DAMAGE/ARMOR
+      footer, Gear/Body bag, Stats reuses `UnitInspectionPanel`). `UnitCustomization` exposes
+      `AppliedParts`/`AppliedPalette`/`MountedSlots`; new self-building widgets `PaperDollSlot`/`BagItemWidget`/
+      `PaperDollDropZone`; `CustomizationScreen` rewritten. **Body-part edits now persist** (`Capture` writes
+      `dto.Parts` when edited) — closes the old "persist body-part edits" backlog item. 169/169 green (`79ba7fe`).
+      In-editor scene assembly is the START-HERE checklist (bridge couldn't build it blind).
 - [x] **Final cleanup touches:** pruned `claude/deployment-grid` (local + remote; was identical to `main`, an
       ancestor — no commit loss); cleared the battle scene's 4 placeholder "New Text" labels. `main` is now the
       only branch.
@@ -106,4 +116,4 @@
 
 ## Notes
 - New ideas discovered mid-task go in Backlog, not into the current task.
-- Run the EditMode suite (`run_tests`) after C# changes; keep it green (currently **166**).
+- Run the EditMode suite (`run_tests`) after C# changes; keep it green (currently **169**).

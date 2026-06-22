@@ -3,23 +3,24 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-22 — cleanup/consolidation session; repo is now trunk-based on `main` (ADR-020)._
+_Last updated: 2026-06-22 — paper-doll customization (ADR-021); code-complete + 169 green, scene assembly pending (`Docs/CHECKLIST_PaperDoll.md`)._
 
 ## One-line status
-Repo consolidated to **trunk-based on `main`** (ADR-020, supersedes ADR-009): `main` fast-forwarded to carry all
-work through ADR-019; rollback tag `pre-trunk-main` exists. No feature work this session — git/docs/hygiene only
-(orphaned `.meta` committed, dead `DeploymentView` removed, docs synced to reality). **166/166 EditMode green.**
-The recent feature arc — all landed, compiling, tested — is the editor **Asset Creation Pipeline** (queue → Grok
-image → Meshy 3D → import/categorize → describe, plus shared style system, mirror/flip, archive/reject lifecycle)
-and the **equipment runtime-instance refactor** (stats on a saved `EquipmentInstance`, not the SO). **Gameplay
-still needs a Play-mode pass** (see "Needs human verification").
+**Customization is now a paper-doll** (ADR-021): **code complete, 169/169 EditMode green, committed (`79ba7fe`)**
+on `main` — centered live preview flanked by gear slots + a cosmetic body-slot row, HP/DAMAGE/ARMOR footer +
+Stats button, scrollable **Gear/Body** bag; **tap** auto-equips to the item's own slot, **drag-and-drop** equips
+(wrong slot rejects), **tap a filled slot** unequips. Reuses the equip backend (no new stat math); **body-part
+edits now persist**. The in-editor **scene assembly is a manual checklist** (`Docs/CHECKLIST_PaperDoll.md`) — the
+MCP bridge couldn't read refs / page the hierarchy / run editor code this session, so the panel couldn't be built
+blind safely. Repo is trunk-based on `main` (ADR-020); rollback tag `pre-trunk-main`. Other gameplay still needs a
+Play pass (see "Needs human verification").
 
 ## Repo / branch state
 - **Trunk: `main`** (= `origin/main`) — the only working branch now. Work on `main` or short-lived feature
   branches (ADR-020). `claude/deployment-grid` was pruned (local + remote). The remote still keeps
   `claude/capsule-wars-setup-pBoDq` (an old setup branch, fully contained in `main` — prunable).
 - Rollback point: tag **`pre-trunk-main`** (`852a520`, pushed) = `main` before the consolidation fast-forward.
-- Tests: `Assets/Scripts/Tests/EditMode/` — **166 green**. Run `run_tests` after any C# change.
+- Tests: `Assets/Scripts/Tests/EditMode/` — **169 green**. Run `run_tests` after any C# change.
 
 ## What currently works
 - Milestone base through ~M9 (draft → battle → recruit; combat, abilities, elements, synergies, status, stats;
@@ -36,8 +37,12 @@ still needs a Play-mode pass** (see "Needs human verification").
 - **Branching run map (code-complete):** seeded branching+infinite graph (`MapNode`/`RunMap`/`MapGenConfig`/
   `MapGenerator`), graph `RunState`, `RunController.TravelToNode` + stitch-on-clear + loss-only end,
   `MapView`/`MapNodeView`. `Test_M7_Map` assembled.
-- **Customization (v2):** screen/launcher self-promote to front + clickable; equip toggle + highlight; starter
-  items; `UnitEquipmentVisuals` shows equipped meshes on named sockets, live + on combat units.
+- **Customization (paper-doll, ADR-021) — code complete; scene assembly pending checklist:** centered live preview
+  flanked by gear slots + a cosmetic body-slot row, HP/DAMAGE/ARMOR footer + Stats (reuses `UnitInspectionPanel`),
+  scrollable Gear/Body bag. Tap auto-equips to the item's own slot; drag-and-drop equips (wrong slot rejects); tap
+  a filled slot unequips. Gear → `UnitStatusController.Equip`; body parts → `UnitCustomization.ApplyParts`; both
+  persist (`dto.Equipment` + `dto.Parts`, the latter only when a part was edited). `UnitEquipmentVisuals` still
+  shows equipped meshes on sockets, live + on combat units. **Assemble + wire per `Docs/CHECKLIST_PaperDoll.md`.**
 - **Asset Creation Pipeline (editor-only, `Assets/Scripts/Editor/AssetPipeline/`):** `AssetRequest` queue with a
   Lifecycle (Active/Archived/Rejected); the Asset Pipeline window (stage groups; Grok/Meshy prompt copy + live
   Generate; paste image/model; Create/Wire item; archive/reject/restore; mirror sided parts); `StyleProfile` +
@@ -55,8 +60,11 @@ still needs a Play-mode pass** (see "Needs human verification").
 3. **Branching map** (`Test_M7_Map`) — start a run → branching map renders → pick a start → encounter → return →
    only edge-connected nodes clickable → climb + clear the Boss → a new segment stitches on; lose → run ends.
    Tune MapView spacing if cramped; delete any leftover old Map Panel content if it peeks through.
-4. **Customization v2** (`Test_M7_Map`) — Customize → picker on top + clickable → equip toggles show the cube on
-   the matching socket + highlight → close (saves) → the cube shows on the combat unit; stats update live.
+4. **Paper-doll customization** (`Test_M7_Map`) — FIRST assemble + wire the panel per
+   `Docs/CHECKLIST_PaperDoll.md` (in-editor; the bridge couldn't build it blind). Then verify: tap a bag item
+   auto-equips to its own slot (mesh on socket + live HP/DAMAGE/ARMOR); drag-and-drop equips, wrong slot rejects
+   (red flash), background drop auto-routes; tap a filled slot unequips; Stats opens `UnitInspectionPanel`;
+   **gear AND body-part edits both round-trip** after Close+reopen; the combat unit shows the gear.
 5. **Equipment rolled item** — roll one (`EquipmentRoller.Roll(def, rollConfig, tier, seed)`), equip it →
    inspection shows its stats + generated name while the mesh attaches; a starter/old item keeps stats after load.
 6. **Mirror equip** — equip a mirrored (opposite-side) part and confirm it shows on the correct side.

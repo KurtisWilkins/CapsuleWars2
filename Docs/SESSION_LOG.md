@@ -6,6 +6,36 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-22 — Feature: paper-doll customization (ADR-021), code-complete + green
+**Goal:** rework the customization screen into a paper-doll equip layout — centered preview, flanking gear slots,
+cosmetic body-slot row, HP/DAMAGE/ARMOR footer + Stats button, scrollable Gear/Body bag; tap-to-route +
+drag-and-drop (wrong slot rejects) + tap-to-unequip; reuse the equip backend; mobile + desktop.
+
+**Built (committed `79ba7fe`, 169/169 EditMode green):**
+- `UnitCustomization` now records `AppliedParts`/`AppliedPalette` + exposes `MountedSlots` (was write-only into
+  mounts) so the screen can read the live body loadout back, edit it incrementally, and capture it. +3 EditMode
+  tests (`UnitCustomizationTests`).
+- New self-building uGUI widgets: `PaperDollSlot` (gear or body; tap-unequip + `IDropHandler` validate/reject),
+  `BagItemWidget` (gear or part; tap-route + drag), `PaperDollDropZone` (background auto-route). They build their
+  own icon/label visuals, so slots + bag generate at runtime with no authored prefab.
+- `CustomizationScreen` rewritten: keeps the proven backend (Show/Close/SpawnPreview/EnsureForeground/Capture),
+  swaps the view for the paper-doll. Gear routes via `UnitStatusController.Equip`; body parts via
+  `UnitCustomization.ApplyParts`; one bag with Gear/Body tabs; HP/DAMAGE/ARMOR footer live via `OnStatsChanged`;
+  Stats button reuses `UnitInspectionPanel`. Auto-creates the drop zone, drag ghost, foreground.
+- **Body-part persistence** (closes the old backlog item): `Capture()` writes `dto.Parts`, guarded by
+  `partsDirty` so gear-only edits don't freeze a definition unit's parts. Decision per ADR-021 (user chose to
+  include cosmetic slots + build persistence).
+
+**NOT done — scene assembly is a manual checklist (`Docs/CHECKLIST_PaperDoll.md`):** the MCP bridge this session
+could not read component refs (`manage_components` has no `get`), page the hierarchy (`get_hierarchy` returns only
+roots regardless of scope/target), or run editor code (`execute_code` overflows Windows' arg limit; `batch_execute`
+drops params). `create`/`set_property` work, but without read-back I couldn't identify the existing `panelRoot` to
+disable the old list UI, verify wiring, or see the 3D-preview-vs-overlay compositing — so building blind into the
+live map scene was unsafe. Left `Test_M7_Map` pristine (deleted the one stray test object, did not save).
+**Next session:** assemble per the checklist, then run its Play verification (tap-route, drag-drop + reject,
+unequip, live stats, gear + body-part round-trip).
+
+
 ## 2026-06-22 — Cleanup / consolidation: trunk-based on `main` (ADR-020) + repo hygiene
 **Goal this session:** no features — get git state, docs, and loose code hygiene into a clean, truthful, sustainable shape.
 

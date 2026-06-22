@@ -30,6 +30,33 @@ namespace CapsuleWars.Units.Customization
         [Tooltip("One mount per visual slot on the prefab. Add only the slots this unit exposes.")]
         [SerializeField] private List<SlotMount> mounts = new();
 
+        // The parts currently applied (non-null only), recorded every Apply/ApplyParts so callers
+        // (e.g. the customization screen) can read the live loadout back to edit it incrementally
+        // and capture it for persistence — UnitCustomization is otherwise write-only into the mounts.
+        private readonly List<PartAssignment> appliedParts = new();
+        private Palette_SO appliedPalette;
+
+        /// <summary>
+        /// The part assignments currently applied to this unit (non-null parts only). Read back by the
+        /// customization screen to show the current body loadout, edit it, and persist it (dto.Parts).
+        /// </summary>
+        public IReadOnlyList<PartAssignment> AppliedParts => appliedParts;
+
+        /// <summary>The palette last passed to <see cref="ApplyParts"/> (so edits re-apply with the same tint).</summary>
+        public Palette_SO AppliedPalette => appliedPalette;
+
+        /// <summary>
+        /// The <see cref="PartSlot"/>s this prefab actually exposes a mount for — i.e. the slots that can
+        /// show a part. The customization screen renders cosmetic slots only for these.
+        /// </summary>
+        public IEnumerable<PartSlot> MountedSlots
+        {
+            get
+            {
+                for (int i = 0; i < mounts.Count; i++) yield return mounts[i].Slot;
+            }
+        }
+
         private void Awake()
         {
             // Apply in Awake (not Start) so meshes are present before the
@@ -61,12 +88,18 @@ namespace CapsuleWars.Units.Customization
         /// </summary>
         public void ApplyParts(IReadOnlyList<PartAssignment> parts, Palette_SO palette)
         {
+            // Record the applied set for read-back (capture/incremental editing). Re-applying a
+            // smaller set is how a slot gets "unequipped": the missing slot is cleared below.
+            appliedParts.Clear();
+            appliedPalette = palette;
+
             // Reset all mounts first so unassigned slots end up empty.
             foreach (var mount in mounts) mount.Clear();
             if (parts == null) return;
 
             for (int i = 0; i < parts.Count; i++)
             {
+                if (parts[i].part != null) appliedParts.Add(parts[i]);
                 var mount = FindMount(parts[i].slot);
                 if (mount == null) continue;
                 mount.Apply(parts[i].part, palette);

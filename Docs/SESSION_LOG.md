@@ -6,6 +6,39 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-21 — Image mirror/flip for paired parts
+**Goal this session:** one-click horizontal mirror of an approved sided-part image → a linked opposite-side
+AssetRequest, so I don't regenerate identical R/L pairs (flip the 2D image, not the mesh, to keep normals).
+
+**Done (committed + pushed on `claude/deployment-grid`; 162/162 EditMode green):**
+- `MirrorUtil.cs` — sidedness via **slot** (both feet map to PartType.Foot, so slot not PartType):
+  `TryGetOpposite(category, slot)` → opposite slot + side words. EquipmentSlot RightHand↔LeftHand;
+  PartSlot hand/foot L↔R.
+- `MirrorAction.cs` — `MirrorRequest(src, interactive)`: flip PNG (`Texture2D.LoadImage` → reverse each row →
+  `EncodeToPNG`; pure horizontal, preserves resolution/grayscale/bg) → save `Assets/Generated/Images/{id}_{Side}.png`
+  (never the original) → find-or-create `{id}_{Side}.asset` (opposite slot, side word swapped via whole-word
+  regex, flipped image, `mirrorOf` link, stage=ImageChosen, `meshyPrompt` via StyleComposer, grokImagePrompt
+  cleared). Idempotent (deterministic id → re-runs update, no duplicates). Symmetry warning (modal on the window
+  button; non-modal console warning + refusal on the `asymmetric` flag for the MenuItem).
+- `AssetRequest.cs` — `+mirrorOf` (AssetRequest link) `+asymmetric` (bool).
+- `AssetPipelineWindow.cs` — "Mirror to opposite side (Side → Side)" button on sided requests (enabled when a
+  Chosen image exists) + a "mirror of" link. Plus `[MenuItem]` "Tools ▸ CapsuleWars ▸ Mirror Selected Request"
+  (non-modal; operates on selection else the single eligible request) for bridge/automation triggering.
+
+**Verified myself (via the MCP bridge — computer-use is unreliable here; OS touch-keyboard / "Click to Do"
+overlays keep stealing editor focus):** triggered the mirror on the RightHand "Mikey mouse hands" via
+`execute_menu_item`; console logged the symmetry warning + "Created mirror 'MikeyMouseHands_Left'". `Read` both
+PNGs — confirmed a clean **horizontal** mirror (fist flipped L↔R, vertical unchanged), same resolution, still
+grayscale, plain white bg. `Read` the new asset — `targetSlot`=LeftHand(1), `mirrorOf` set, flipped image
+attached, stage=ImageChosen, `meshyPrompt` populated, requestText side-swapped. 162/162 EditMode green.
+
+**Needs human verification:** equip/show the mirrored part on the *opposite* side in Play/customization (Play
+visual — I can't see Play mode, and the OS overlays block editor clicks here). The in-editor window-button flow
+is the same logic I drove via the menu item.
+
+**Next session starts with:** the Play-mode equip check for the mirror, plus the still-open style consistency
+tuning + earlier Play-mode checks (branching map, customization v2). See TASKS.
+
 ## 2026-06-21 — Shared Grok art-style system + live API verification
 **Goal this session:** (a) finish wiring the Grok/Meshy/Claude APIs and verify them live; (b) build a shared
 art-style system so every generated part keeps one cartoony look.

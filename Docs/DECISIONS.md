@@ -197,4 +197,22 @@ edit path is best-effort (edits modify the source image) and off by default.
 assets. Verified live: composed prompt = base+template+concept+finish+avoid, Grok generated with the new params,
 Meshy prompt auto-populated. Keys stay in the git-ignored `SecretsConfig.json`.
 
+### ADR-017 — Image mirror/flip for paired parts (flip the 2D image, not the mesh)
+**Decided:** sided parts (right/left hand, right/left foot) get a one-click **"Mirror to opposite side"** in the
+Asset Pipeline window. It horizontally flips the approved PNG and finds-or-creates a **linked opposite-side
+`AssetRequest`** (`mirrorOf`), ready for Meshy. Flip is done at the **2D image stage on purpose** — mirroring the
+image gives Meshy a clean opposite-side 3D model, whereas negative-scaling the mesh in Unity flips normals and
+breaks lighting. New `MirrorUtil` (sidedness via **slot**, since both feet map to one `PartType`) +
+`MirrorAction` (flip = `Texture2D.LoadImage` → reverse each row's columns → `EncodeToPNG`; pure horizontal,
+preserves resolution/grayscale/background). The mirror request: opposite slot, side word swapped (whole-word
+regex), flipped image attached, `stage = ImageChosen`, `meshyPrompt` regenerated via `StyleComposer`,
+`grokImagePrompt` cleared (no Grok regen). `AssetRequest` gains `mirrorOf` + `asymmetric`.
+**Why:** avoids regenerating an identical opposite part + keeps the pair visually identical. Idempotent
+(deterministic `{id}_{Side}` id → re-runs update the same asset/PNG, never pile up) and the original is never
+overwritten. A symmetry **warning** fires before flipping (modal on the window button; non-modal console warning
++ refusal on the `asymmetric` flag for the MenuItem) so nothing flips silently.
+**Implication:** the window button is the interactive path; a non-modal `[MenuItem]`
+"Tools ▸ CapsuleWars ▸ Mirror Selected Request" exists for automation/bridge testing. Editor-only; no
+runtime/build impact. Verified via the bridge: clean horizontal mirror + correct linked left-hand request.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

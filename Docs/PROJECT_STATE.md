@@ -3,10 +3,13 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-21, after the shared Grok art-style system + live API integration — branch `claude/deployment-grid`_
+_Last updated: 2026-06-21, after the image mirror/flip step for paired parts — branch `claude/deployment-grid`_
 
 ## One-line status
-**Shared Grok art-style system (NEW):** consistency is now structural. A single `StyleProfile` SO + per-part
+**Mirror/flip for paired parts (NEW):** sided requests (R/L hand or foot) get a **"Mirror to opposite side"**
+button that horizontally flips the approved image and creates a linked opposite-side `AssetRequest`
+(`mirrorOf`, flipped image, opposite slot, Meshy prompt ready) — verified via the bridge (clean horizontal
+mirror, correct left-hand request). Built on the **shared Grok art-style system:** consistency is now structural. A single `StyleProfile` SO + per-part
 `PartTemplate` SOs (`Assets/Editor/AssetPipeline/Style/`) compose every Grok prompt as base + part criteria +
 concept + finish + avoid (`StyleComposer`), so editing the StyleProfile restyles all future generations. The
 Grok call sends fixed `aspect_ratio`/`resolution` (+ opt-in reference-image edit path), auto-sets the Meshy
@@ -56,6 +59,15 @@ credits). Prior passes (Branching Map, Customization v2) still await their Play-
   verification + arena tuning remain (below).
 
 ## Needs human verification (Claude can't see Play Mode)
+- **Mirror/flip — Play-mode equip check (the rest is verified).** I verified via the bridge: flipping the
+  RightHand "Mikey mouse hands" produced a clean **horizontal** mirror (same resolution, grayscale, plain bg)
+  and a linked **LeftHand** request (`mirrorOf`, flipped image, `targetSlot`=LeftHand, Meshy prompt ready).
+  Manual checklist to confirm in-editor: open **Tools ▸ CapsuleWars ▸ Asset Pipeline**, expand an approved
+  right-hand request (has a Chosen image) → **Mirror to opposite side** → accept the symmetry warning → a NEW
+  left-hand request appears linked as "mirror of", flipped image attached, Meshy prompt ready, at ImageChosen;
+  open both images and confirm a clean horizontal mirror (same resolution, still grayscale, plain background, no
+  rotation). **Still human-only:** equip/show the mirrored part on the *opposite* side in Play/customization,
+  then exit Play. (Re-running the mirror updates the same `{id}_Left/Right` asset — no duplicates.)
 - **Shared style consistency (visual check + tuning).** Run **Tools ▸ CapsuleWars ▸ Create Default Style +
   Templates** (done — 1 `StyleProfile` + 8 `PartTemplate`s under `Assets/Editor/AssetPipeline/Style/`). Review
   + tune the `StyleProfile` (cartoony spine / finish / avoid / `aspect_ratio` / `resolution`) and each

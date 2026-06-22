@@ -48,6 +48,11 @@
 - [ ] Clean up battle-end UI placeholder "New Text" labels. Remaining M10 polish (see `Docs/17_BuildOrder.md`).
 
 ## Done (recent — prune periodically)
+- [x] **Image mirror/flip for paired parts** (ADR-017): "Mirror to opposite side" on sided requests (R/L hand
+      or foot) — `MirrorUtil` (sidedness via slot) + `MirrorAction` (horizontal PNG flip → linked opposite-side
+      `AssetRequest` with `mirrorOf`, opposite slot, flipped image, Meshy prompt; idempotent deterministic id;
+      original never overwritten; symmetry warning). Window button + non-modal MenuItem. `AssetRequest` +
+      `mirrorOf`/`asymmetric`. Verified via bridge (clean horizontal mirror + correct left-hand request); 162 green.
 - [x] **Shared Grok art-style system + live API** (ADR-016): `StyleProfile` (single source of truth) +
       `PartTemplate`s + `StyleComposer` (base + part criteria + concept + finish + avoid); `StyleSetupTool`
       seeder (1 profile + 8 templates); `GrokImageService` aspect/resolution + opt-in `/v1/images/edits`;

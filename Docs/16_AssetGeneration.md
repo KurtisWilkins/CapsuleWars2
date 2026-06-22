@@ -26,6 +26,17 @@ default (set an override only if your account needs a version); Anthropic model 
   (Weapon/Armor) or `BodyPart_SO` (BodyPart) and adds it to `EquipmentCatalog_SO` / `PartCatalog_SO`.
 - Claude works the queue over the MCP bridge by writing concepts/prompts/description into the `AssetRequest`.
 
+### Shared art-style system (ADR-016)
+- **Single source of truth:** one `StyleProfile` SO (`Assets/Editor/AssetPipeline/Style/`) holds the cartoony
+  spine + finish rules + avoid list + fixed `aspect_ratio`/`resolution` + opt-in reference image. `PartTemplate`
+  SOs hold each part type's criteria + floating-limb cut (Helmet / RightHand / LeftHand / Foot / Torso / Weapon
+  / Armor / Generic). Seed both via **Tools ▸ CapsuleWars ▸ Create Default Style + Templates**.
+- **`StyleComposer`** builds every Grok prompt as `base + part criteria + concept + finish + avoid` (template
+  resolved from category+slot), so editing the `StyleProfile` restyles all future generations — nothing
+  re-types the style. Window toolbar: **Style…** (seed/ping the profile) + **Generate images (N)** (batch).
+- xAI has **no seed** param (June 2026); consistency = shared prompt + fixed framing + grayscale/isolated rules.
+  The `/v1/images/edits` reference-image path is opt-in/best-effort. Image model `grok-imagine-image-quality`.
+
 ## Goals
 1. **Meshy AI** — generate new low-poly capsule-style limb variants, weapons, enemy parts.
 2. **Image generation API** (Grok or similar) — generate ability icons with consistent style.

@@ -3,17 +3,17 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-21, after the Asset Creation Pipeline + queue (editor tool) — branch `claude/deployment-grid`_
+_Last updated: 2026-06-21, after the shared Grok art-style system + live API integration — branch `claude/deployment-grid`_
 
 ## One-line status
-**Asset Pipeline (NEW):** an editor-only, queue-driven workflow to design body parts / weapons / armor for the
-capsule soldiers — **Tools ▸ CapsuleWars ▸ Asset Pipeline** (`Assets/Scripts/Editor/AssetPipeline/`).
-`AssetRequest` SOs persist the queue; the window groups requests by stage, copies art-direction-locked
-Grok/Meshy prompts to the clipboard (assisted-manual — no APIs configured; `IGenerationService`/`SecretsConfig`
-seam for later), takes pasted-back image/model, and **Create / Wire item** emits an `Equipment_SO`/`BodyPart_SO`
-into the catalog. **162/162 EditMode green; compiles clean; window opens with no exceptions.** Deployment
-placement + Assemble were **verified in Play** this session (EnemyInspectionPanel raycast bug fixed). Prior
-passes (Branching Map, Customization v2) still await their Play-mode checks.
+**Shared Grok art-style system (NEW):** consistency is now structural. A single `StyleProfile` SO + per-part
+`PartTemplate` SOs (`Assets/Editor/AssetPipeline/Style/`) compose every Grok prompt as base + part criteria +
+concept + finish + avoid (`StyleComposer`), so editing the StyleProfile restyles all future generations. The
+Grok call sends fixed `aspect_ratio`/`resolution` (+ opt-in reference-image edit path), auto-sets the Meshy
+prompt, and a batch button generates all pending images. **Verified live this session via computer-use:** Grok
++ Meshy + Create/Wire all run end-to-end; the composed prompt is correct; 162/162 EditMode green. **The whole
+asset pipeline (queue + Grok/Meshy/Create-Wire) is working with real keys** (Anthropic description needs account
+credits). Prior passes (Branching Map, Customization v2) still await their Play-mode checks.
 
 ## What currently works
 - Milestone base through ~M9 (draft → battle → recruit; combat, abilities, elements, synergies,
@@ -56,6 +56,15 @@ passes (Branching Map, Customization v2) still await their Play-mode checks.
   verification + arena tuning remain (below).
 
 ## Needs human verification (Claude can't see Play Mode)
+- **Shared style consistency (visual check + tuning).** Run **Tools ▸ CapsuleWars ▸ Create Default Style +
+  Templates** (done — 1 `StyleProfile` + 8 `PartTemplate`s under `Assets/Editor/AssetPipeline/Style/`). Review
+  + tune the `StyleProfile` (cartoony spine / finish / avoid / `aspect_ratio` / `resolution`) and each
+  `PartTemplate`'s criteria. Then generate **two different parts** (e.g. a Helmet and a Right Hand) and confirm
+  both come out in the same grayscale/isolated/flat-bg cartoony style; edit `StyleProfile.basePrompt`, regen
+  one, and confirm the change carries. Note: xAI has **no seed** (consistency = shared prompt + fixed framing);
+  the reference-image toggle is opt-in/best-effort. **Composition + a live Grok generate with the new params
+  were verified this session** (the RightHand prompt composed correctly + saved an image); the *visual* sameness
+  across parts is the human check.
 - **Asset Pipeline live APIs — VERIFIED end-to-end (2026-06-21, via computer-use in the editor).** Ran the
   "Mikey mouse hands" (BodyPart / RightHand) sample: **Grok Generate** → image saved + set as Chosen image
   (`grok-imagine-image-quality`); **Meshy Generate** → polled to 100%, FBX imported + assigned

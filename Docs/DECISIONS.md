@@ -176,4 +176,25 @@ their I2 `descTermKey` pattern — zero runtime change); weapons still need a `W
 assigned on the created asset; generated models live in `Assets/Generated/` (LFS). End-to-end run on a real
 imported model is human-verified (Claude can't see the editor UI / Play mode).
 
+### ADR-016 — Shared Grok art-style system (StyleProfile + PartTemplates), live Grok API
+**Decided:** make art-style consistency **structural, not manual**. A single `StyleProfile` SO
+(`Assets/Scripts/Editor/AssetPipeline/Style/`) is the source of truth for the cartoony look (base spine,
+finish rules, avoid list, fixed `aspect_ratio`/`resolution`, opt-in reference image). `PartTemplate` SOs hold
+ONLY each part type's criteria + floating-limb cut (Helmet/RightHand/LeftHand/Foot/Torso/Weapon/Armor/Generic).
+`StyleComposer` always builds the Grok prompt as **base + part criteria + concept + finish + avoid**, resolving
+the template from the request's category+slot — so nothing re-types the style and **editing the StyleProfile
+restyles every future generation**. `StyleSetupTool` seeds 1 profile + 8 templates (re-run safe). The Grok call
+(`GrokImageService`) now sends `aspect_ratio`/`resolution` and has an opt-in `/v1/images/edits` reference-image
+path; `GenerationActions` composes via `StyleComposer`, passes the framing, sets the Meshy prompt after the
+image saves, and runs a **sequential batch** ("Generate all pending images"). Default image model
+`grok-imagine-image-quality`.
+**Why:** every generated part must read as one game; a shared, referenced style + grayscale/isolated/flat-bg
+rules + fixed framing make parts Meshy-ready and coherent. **xAI has no `seed` param (June 2026)**, so
+seed-reproducibility isn't possible — consistency comes from the shared prompt + framing. The reference-image
+edit path is best-effort (edits modify the source image) and off by default.
+**Implication:** the StyleProfile + PartTemplate `.asset`s live under `Assets/Editor/AssetPipeline/Style/`
+(editor-only, not shipped) and are the things the designer tunes; re-running the seeder won't overwrite tuned
+assets. Verified live: composed prompt = base+template+concept+finish+avoid, Grok generated with the new params,
+Meshy prompt auto-populated. Keys stay in the git-ignored `SecretsConfig.json`.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

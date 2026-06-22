@@ -6,6 +6,42 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-21 — Shared Grok art-style system + live API verification
+**Goal this session:** (a) finish wiring the Grok/Meshy/Claude APIs and verify them live; (b) build a shared
+art-style system so every generated part keeps one cartoony look.
+
+**Done (committed on `claude/deployment-grid`; 162/162 EditMode green):**
+- **Live APIs wired + verified via computer-use.** Fixed the Grok model (`grok-2-image` → **`grok-imagine-image-quality`**,
+  confirmed from xAI docs) and hardened Meshy (image-to-3d doesn't take `ai_model` → omit by default; request
+  `target_formats:[fbx,glb]`). Ran the "Mikey mouse hands" sample end-to-end: **Grok** image saved, **Meshy** FBX
+  imported, **Create/Wire** made a `BodyPart_SO` + added it to `PartCatalog`. **Anthropic** description: code is
+  correct but the account returned HTTP 400 "credit balance too low" — needs credits (or let Claude write it).
+- **Shared style system (ADR-016).** New `Assets/Scripts/Editor/AssetPipeline/Style/`:
+  - `StyleProfile.cs` (SO) — single source of truth: base spine, finish rules, avoid list, `aspect_ratio`/
+    `resolution`, opt-in `referenceImage`. `PartTemplate.cs` (SO + `PartType` enum) — per-part criteria + limb cut.
+  - `StyleComposer.cs` — resolves the active profile + the template (from category+slot) and composes
+    `base + criteria + limbCut + concept + finish + "Avoid: " + avoid`. Falls back to `PromptTemplates` if no profile.
+  - `StyleSetupTool.cs` — **Tools ▸ CapsuleWars ▸ Create Default Style + Templates** seeds 1 profile + 8 templates
+    (Helmet/RightHand/LeftHand/Foot/Torso/Weapon/Armor/Generic); re-run safe (won't overwrite tuned assets).
+  - `GrokImageService` — added `aspect_ratio`/`resolution`; added `EditAsync` for `/v1/images/edits` (opt-in ref image).
+  - `GenerationActions.GenerateImage` — composes via `StyleComposer`, passes framing, optional ref-image edit,
+    sets `r.meshyPrompt` after the image saves; added `GenerateImagesBatch` (sequential, pumped from Done/Fail).
+  - `AssetPipelineWindow` — Copy-prompt uses the composer; toolbar **Style…** + **Generate images (N)** batch.
+  - Seeded `StyleProfile` + 8 `PartTemplate` `.asset`s committed under `Assets/Editor/AssetPipeline/Style/`.
+
+**Key facts:** xAI image API = `grok-imagine-image-quality` @ `/v1/images/generations` (params model/prompt/n/
+response_format/aspect_ratio/resolution); **NO seed**; reference image only via `/v1/images/edits` (best-effort).
+Keys live in git-ignored `Tools/Editor/SecretsConfig.json` (edited via the keys window).
+
+**Verified this session:** composed Grok prompt is correct (read the `MikeyMouseHands.asset`: base + RightHand
+criteria + limb cut + concept + finish + avoid), a live Grok generate with the new params saved an image, and
+`meshyPrompt` auto-populated. Compiles clean; 162/162 EditMode.
+
+**Needs human verification:** the *visual* sameness across two different parts (Helmet vs Right Hand) + tuning
+the StyleProfile/templates; and checking the generated Meshy mesh's scale at the socket. (Details in PROJECT_STATE.)
+
+**Next session starts with:** tuning the shared style + the cross-part consistency check (top of TASKS).
+
 ## 2026-06-21 — Asset Creation Pipeline + queue (editor tool) [+ Assemble-click fix verified]
 **Goal this session:** build a repeatable, visible queue to design body parts / weapons / armor for the
 capsule soldiers (request → concepts → Grok image prompt → Meshy 3D prompt → import → categorize + wire →

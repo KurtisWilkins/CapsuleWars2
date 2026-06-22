@@ -4,11 +4,13 @@
 > specific and self-contained. Move finished items to "Done (recent)".
 
 ## Next up (work top-down)
-- [ ] **Run one sample asset through the Asset Pipeline** (`Tools ▸ CapsuleWars ▸ Asset Pipeline`). + New
-      request → ask Claude for concepts → pick → Copy Grok prompt → run Grok → drop image → Copy Meshy prompt
-      → run Meshy → import FBX to `Assets/Generated/Meshy/{slot}/` → drop model → set category/slot/socket →
-      **Create / Wire item** → equip/spawn on a unit and confirm the mesh shows at the socket. (Full checklist
-      in PROJECT_STATE "Needs human verification".)
+- [ ] **Tune the shared style + confirm cross-part consistency.** Review/tune `StyleProfile` + the 8
+      `PartTemplate`s under `Assets/Editor/AssetPipeline/Style/`, then generate **two different parts** (e.g.
+      Helmet + Right Hand) and confirm they come out in the same grayscale/isolated cartoony style; edit
+      `StyleProfile.basePrompt`, regen one, confirm it carries. (Pipeline Grok+Meshy+Create/Wire already verified
+      live; Anthropic description needs account credits. Full checklist in PROJECT_STATE.)
+- [ ] **Check the generated Meshy mesh on a unit** — equip/spawn the created `BodyPart_SO` and confirm the
+      model's scale/orientation at the socket (generated models sometimes need a scale tweak).
 - [ ] **Play-test the branching map** (`Test_M7_Map`, `-force-d3d11`). Scene is assembled (ScrollRect +
       `MapView` wired, node label font set). Start a run → branching map renders → pick a start → encounter →
       return → only connected nodes clickable → climb → clear Boss → new segment stitches on; lose → run ends.
@@ -46,6 +48,14 @@
 - [ ] Clean up battle-end UI placeholder "New Text" labels. Remaining M10 polish (see `Docs/17_BuildOrder.md`).
 
 ## Done (recent — prune periodically)
+- [x] **Shared Grok art-style system + live API** (ADR-016): `StyleProfile` (single source of truth) +
+      `PartTemplate`s + `StyleComposer` (base + part criteria + concept + finish + avoid); `StyleSetupTool`
+      seeder (1 profile + 8 templates); `GrokImageService` aspect/resolution + opt-in `/v1/images/edits`;
+      `GenerationActions` composes + sets meshyPrompt + sequential batch; window Style + batch buttons.
+      Verified live (composed prompt correct, Grok generate with new params OK, meshyPrompt auto-set). 162 green.
+- [x] **Live generation APIs verified end-to-end** (computer-use): Grok image + Meshy 3D + Create/Wire all work
+      with real keys; Anthropic description integration correct but account out of credits. Grok model fixed to
+      `grok-imagine-image-quality`; Meshy hardened (omit ai_model, request fbx/glb).
 - [x] **Asset Creation Pipeline + queue** (ADR-015): editor-only `Assets/Scripts/Editor/AssetPipeline/` —
       `AssetRequest` SO (stage-by-stage queue, persisted), **Asset Pipeline** EditorWindow (grouped by stage;
       copy Grok/Meshy prompts, paste image+model, Create/Wire item, edit description), `PromptTemplates`

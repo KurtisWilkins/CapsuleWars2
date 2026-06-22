@@ -6,6 +6,53 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-21 — Asset Creation Pipeline + queue (editor tool) [+ Assemble-click fix verified]
+**Goal this session:** build a repeatable, visible queue to design body parts / weapons / armor for the
+capsule soldiers (request → concepts → Grok image prompt → Meshy 3D prompt → import → categorize + wire →
+AI description → Done). Also: finish verifying the deployment **Assemble** button from the prior session.
+
+**Done (committed on `claude/deployment-grid`; 162/162 EditMode green):**
+- **Assemble-click bug fixed + Play-verified** (`165cf1f`). The buttons weren't responding because the
+  `EnemyInspectionPanel` (added last session for enemy stat inspection) has a **root background Image with
+  raycastTarget on**, whose rect overlapped the HUD's right-side Clear/Assemble buttons and ate their clicks
+  even while the panel content was hidden (left-side bench buttons worked — that was the tell). Fix: disabled
+  `raycastTarget` on that root Image. Verified in Play (D3D11): placement, enemy inspection, and Assemble →
+  combat all work.
+- **Asset Pipeline (ADR-015)** (`2b1a706`), editor-only under `Assets/Scripts/Editor/AssetPipeline/`
+  (`CapsuleWars.Editor` asmdef):
+  - `AssetRequest.cs` — ScriptableObject, one per asset; `AssetCategory` {Undecided,Weapon,EquipmentArmor,
+    BodyPart} + `PipelineStage` {Requested…Done} + `ConceptOption`; holds every stage's artifact. Persisted
+    under the `Assets/Editor/AssetPipeline/Requests/` Editor folder (stripped from builds; created on first use).
+  - `AssetPipelineWindow.cs` — **Tools ▸ CapsuleWars ▸ Asset Pipeline**. Queue grouped by stage; + New,
+    advance/rollback, category/slot/socket, **Copy Grok prompt** / **Copy Meshy prompt** (clipboard), paste
+    Chosen image + Imported model, edit Description, **Create / Wire item**, Ping/Open/Delete. Generate buttons
+    show only if a key is configured.
+  - `PromptTemplates.cs` — concept brief + Grok image prompt (single clean asset, plain bg, for image→3D) +
+    Meshy image-to-3D prompt, all with the Rayman/AssetHunts low-poly style locked in.
+  - `AssetPipelineImporter.cs` — makes a prefab under `Assets/Generated/Meshy/{slot}/`, then creates an
+    `Equipment_SO` (Weapon = hand slot + WeaponClass; Armor = other slots) or `BodyPart_SO` (cosmetic) with
+    mesh/visualPrefab set via `SerializedObject`, and adds it to `EquipmentCatalog_SO` / `PartCatalog_SO`.
+  - `IGenerationService.cs` + `SecretsConfig.cs` — API seam. No keys configured → assisted-manual; keys at
+    `Tools/Editor/SecretsConfig.json` (git-ignored) or env vars light up Generate buttons later.
+  - Docs updated: `16_AssetGeneration.md` (status → implemented assisted-manual), PROJECT_STATE, TASKS, DECISIONS.
+
+**Discovery facts (for next time):** items = `Equipment_SO` (private fields + getters; set via SerializedObject;
+slot=EquipmentSlot, weaponClass, attachSocketName, visualPrefab/visualMesh) and `BodyPart_SO` (PartSlot, mesh,
+cosmetic — ADR-005). Equipped visuals render via `UnitEquipmentVisuals` named sockets; catalogs resolve ids at
+spawn. Baseline art = AssetHunts "Capsule" kit fbx (`Assets/AssetHunts!/GameDev Essential Kit - Capsule/Source
+File/`), Rayman low-poly. No Grok/Meshy/Anthropic keys present.
+
+**Compiled?** Yes — clean (no CS errors), 162/162 EditMode pass, window opens with no exceptions (verified via
+`execute_menu_item`). The interactive create/copy/wire flow needs a human (Claude can't see editor UI).
+
+**Needs human verification:** run one sample asset through the whole pipeline (full checklist in PROJECT_STATE
+"Needs human verification") — including **Create / Wire item** on a real imported model and confirming the
+created item equips + shows on a unit. Note: `AssetPipelineImporter`'s SerializedObject field names + catalog
+wiring are unverified at runtime (matched against source, not executed).
+
+**Next session starts with:** the Asset Pipeline sample run above; remaining older play-tests (branching map
+`Test_M7_Map`; customization v2; re-bake NavMesh for the enlarged arena) are still open in TASKS.
+
 ## 2026-06-21 — GPU crash fixed: force Direct3D11 on Windows
 **Goal this session:** the editor kept crashing in Play with "d3d12: Unrecoverable GPU device error!" —
 find the cause and fix it.

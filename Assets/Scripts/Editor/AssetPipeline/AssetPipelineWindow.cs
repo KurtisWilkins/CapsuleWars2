@@ -30,6 +30,8 @@ namespace CapsuleWars.Editor.AssetPipeline
         private string _newTitle = "";
         private string _newText = "";
         private AssetCategory _newCategory = AssetCategory.Undecided;
+        private bool _bulkMode;
+        private string _bulkText = "";
 
         [MenuItem("Tools/CapsuleWars/Asset Pipeline")]
         public static void Open()
@@ -91,20 +93,55 @@ namespace CapsuleWars.Editor.AssetPipeline
         private void DrawNewRequestForm()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("New request", EditorStyles.boldLabel);
-            _newTitle = EditorGUILayout.TextField("Title", _newTitle);
-            EditorGUILayout.LabelField("What do you want to build?");
-            _newText = EditorGUILayout.TextArea(_newText, GUILayout.MinHeight(48));
-            _newCategory = (AssetCategory)EditorGUILayout.EnumPopup("Category", _newCategory);
 
             EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(_bulkMode ? "New requests (bulk)" : "New request", EditorStyles.boldLabel);
             GUILayout.FlexibleSpace();
-            using (new EditorGUI.DisabledScope(string.IsNullOrWhiteSpace(_newTitle)))
-            {
-                if (GUILayout.Button("Create request", GUILayout.Width(120))) CreateRequest();
-            }
+            _bulkMode = GUILayout.Toggle(_bulkMode, "Bulk (one per line)", EditorStyles.miniButton, GUILayout.Width(130));
             EditorGUILayout.EndHorizontal();
+
+            _newCategory = (AssetCategory)EditorGUILayout.EnumPopup("Category (applied to all)", _newCategory);
+
+            if (_bulkMode)
+            {
+                EditorGUILayout.LabelField("One request per line.  Optional details after a pipe:  Title | request text",
+                    EditorStyles.miniLabel);
+                _bulkText = EditorGUILayout.TextArea(_bulkText, GUILayout.MinHeight(110));
+
+                int count = CountBulkLines(_bulkText);
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                using (new EditorGUI.DisabledScope(count == 0))
+                {
+                    if (GUILayout.Button(count > 0 ? $"Create {count} request{(count == 1 ? "" : "s")}" : "Create requests", GUILayout.Width(160)))
+                        CreateBulk();
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+            else
+            {
+                _newTitle = EditorGUILayout.TextField("Title", _newTitle);
+                EditorGUILayout.LabelField("What do you want to build?");
+                _newText = EditorGUILayout.TextArea(_newText, GUILayout.MinHeight(48));
+
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                using (new EditorGUI.DisabledScope(string.IsNullOrWhiteSpace(_newTitle)))
+                {
+                    if (GUILayout.Button("Create request", GUILayout.Width(120))) CreateRequest();
+                }
+                EditorGUILayout.EndHorizontal();
+            }
             EditorGUILayout.EndVertical();
+        }
+
+        private static int CountBulkLines(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return 0;
+            int n = 0;
+            foreach (var line in text.Split('\n'))
+                if (!string.IsNullOrWhiteSpace(line)) n++;
+            return n;
         }
 
         private void DrawStageSection(PipelineStage stage)
@@ -246,22 +283,52 @@ namespace CapsuleWars.Editor.AssetPipeline
 
         // --- actions ---
 
+        private AssetRequest CreateRequestAsset(string title, string text, AssetCategory category, string folder)
+        {
+            var r = CreateInstance<AssetRequest>();
+            r.id = Slugify(title);
+            r.title = title.Trim();
+            r.requestText = text;
+            r.category = category;
+            r.stage = PipelineStage.Requested;
+            string path = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{(string.IsNullOrEmpty(r.id) ? "request" : r.id)}.asset");
+            AssetDatabase.CreateAsset(r, path);   // registered immediately so the next GenerateUniqueAssetPath dedupes
+            return r;
+        }
+
         private void CreateRequest()
         {
             string folder = AssetPipelineImporter.EnsureFolder(RequestsFolder);
-            var r = CreateInstance<AssetRequest>();
-            r.id = Slugify(_newTitle);
-            r.title = _newTitle.Trim();
-            r.requestText = _newText;
-            r.category = _newCategory;
-            r.stage = PipelineStage.Requested;
-            string path = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{(string.IsNullOrEmpty(r.id) ? "request" : r.id)}.asset");
-            AssetDatabase.CreateAsset(r, path);
+            var r = CreateRequestAsset(_newTitle, _newText, _newCategory, folder);
             AssetDatabase.SaveAssets();
 
             _newTitle = ""; _newText = ""; _newCategory = AssetCategory.Undecided; _showNew = false;
             Refresh();
             _expanded.Add(r);
+        }
+
+        private void CreateBulk()
+        {
+            string folder = AssetPipelineImporter.EnsureFolder(RequestsFolder);
+            int created = 0;
+            foreach (var raw in _bulkText.Split('\n'))
+            {
+                string line = raw.Trim();
+                if (string.IsNullOrEmpty(line)) continue;
+
+                string title = line, text = "";
+                int bar = line.IndexOf('|');
+                if (bar >= 0) { title = line.Substring(0, bar).Trim(); text = line.Substring(bar + 1).Trim(); }
+                if (string.IsNullOrEmpty(title)) continue;
+
+                CreateRequestAsset(title, text, _newCategory, folder);
+                created++;
+            }
+            AssetDatabase.SaveAssets();
+
+            _bulkText = ""; _bulkMode = false; _newCategory = AssetCategory.Undecided; _showNew = false;
+            Refresh();
+            ShowNotification(new GUIContent($"Created {created} request{(created == 1 ? "" : "s")}"));
         }
 
         private void Advance(AssetRequest r)

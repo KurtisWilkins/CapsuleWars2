@@ -1,13 +1,19 @@
 # Asset Generation Pipeline
 
 ## Status
-**Assisted-manual pipeline implemented** (ADR-015). The queue + prompt workflow ship in the editor as
-**Tools ▸ CapsuleWars ▸ Asset Pipeline** (`Assets/Scripts/Editor/AssetPipeline/`). No image/3D APIs are
-configured yet, so the tool **writes the Grok/Meshy prompts and you run them**, then paste results back; the
-`IGenerationService` + `SecretsConfig` seam lets "Generate" buttons activate once a key is added. The
-auto-generation API calls below remain the post-launch target.
+**Implemented (ADR-015), now with live API automation.** The queue + prompt workflow ship in the editor as
+**Tools ▸ CapsuleWars ▸ Asset Pipeline** (`Assets/Scripts/Editor/AssetPipeline/`). It runs **assisted-manual by
+default** (Copy-prompt → run Grok/Meshy yourself → paste results), and — once keys are entered in
+**Tools ▸ CapsuleWars ▸ Generation API Keys** — the **Generate** buttons call the real APIs:
+- **Grok** (`GrokImageService`, xAI images endpoint) → saves the PNG and sets it as the Chosen image.
+- **Meshy** (`MeshyModelService`, image-to-3D, async poll) → downloads the FBX/GLB, imports it, sets Imported model.
+- **Claude** (`AnthropicDescriptionService`, Messages API) → writes the item description.
+Calls run on a background thread (`GenerationHttp`) and marshal asset writes back to the main thread
+(`GenerationActions`). Models + endpoints are overridable (keys window "Advanced" / the JSON) in case API
+shapes drift. ⚠ The live calls were written against documented API shapes but not yet run end-to-end with real
+keys — verify each service once and adjust the model/endpoint if a request 4xxs.
 
-### Implemented now (assisted-manual)
+### Implemented now
 - `AssetRequest` ScriptableObject (one per asset) holds every stage's artifact + a `PipelineStage`; persists
   under `Assets/Editor/AssetPipeline/Requests/` so the queue survives sessions.
 - **Asset Pipeline** EditorWindow: queue grouped by stage; add / advance / rollback; **Copy Grok prompt** /

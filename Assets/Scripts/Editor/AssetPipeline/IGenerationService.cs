@@ -33,5 +33,15 @@ namespace CapsuleWars.Editor.AssetPipeline
         public static bool DescriptionGenAvailable => Secrets.HasAnthropic;
 
         public static bool AnyAvailable => ImageGenAvailable || ModelGenAvailable || DescriptionGenAvailable;
+
+        // Resolved model/endpoint (SecretsConfig override, else the service default).
+        public static string GrokModel => Or(Secrets.grokModel, GrokImageService.DefaultModel);
+        public static string MeshyAiModel => Or(Secrets.meshyAiModel, MeshyModelService.DefaultAiModel);
+        public static string AnthropicModel => Or(Secrets.anthropicModel, AnthropicDescriptionService.DefaultModel);
+        public static string GrokEndpoint => Or(Secrets.grokEndpoint, GrokImageService.DefaultEndpoint);
+        public static string MeshyEndpoint => Or(Secrets.meshyEndpoint, MeshyModelService.DefaultCreateEndpoint);
+        public static string AnthropicEndpoint => Or(Secrets.anthropicEndpoint, AnthropicDescriptionService.DefaultEndpoint);
+
+        private static string Or(string a, string b) => string.IsNullOrEmpty(a) ? b : a;
     }
 }

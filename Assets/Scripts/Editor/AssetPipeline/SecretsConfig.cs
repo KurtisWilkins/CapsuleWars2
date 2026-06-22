@@ -18,6 +18,15 @@ namespace CapsuleWars.Editor.AssetPipeline
         public string meshyApiKey;
         public string anthropicApiKey;
 
+        // Optional overrides (blank = use the code defaults in each service). Lets you fix a
+        // changed model name or endpoint without editing code.
+        public string grokModel;
+        public string meshyAiModel;
+        public string anthropicModel;
+        public string grokEndpoint;
+        public string meshyEndpoint;
+        public string anthropicEndpoint;
+
         /// <summary>Path relative to the project root (the folder above Assets/).</summary>
         public const string RelativePath = "Tools/Editor/SecretsConfig.json";
 

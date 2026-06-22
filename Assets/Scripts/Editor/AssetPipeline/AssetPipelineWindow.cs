@@ -41,7 +41,14 @@ namespace CapsuleWars.Editor.AssetPipeline
             w.Refresh();
         }
 
-        private void OnEnable() => Refresh();
+        private void OnEnable()
+        {
+            Refresh();
+            GenerationActions.Changed += Repaint;
+        }
+
+        private void OnDisable() => GenerationActions.Changed -= Repaint;
+
         private void OnFocus() => Refresh();
 
         private void Refresh()
@@ -85,7 +92,9 @@ namespace CapsuleWars.Editor.AssetPipeline
                 GenerationKeysWindow.Open();
             }
             GUILayout.FlexibleSpace();
-            string mode = GenerationServices.AnyAvailable ? "API: configured" : "Mode: assisted-manual";
+            string mode = GenerationActions.Busy
+                ? GenerationActions.Status
+                : (GenerationServices.AnyAvailable ? "API: configured" : "Mode: assisted-manual");
             GUILayout.Label(mode, EditorStyles.miniLabel);
             EditorGUILayout.EndHorizontal();
         }
@@ -245,8 +254,9 @@ namespace CapsuleWars.Editor.AssetPipeline
                 EditorGUIUtility.systemCopyBuffer = r.grokImagePrompt;
                 ShowNotification(new GUIContent("Grok prompt copied"));
             }
-            if (GenerationServices.ImageGenAvailable && GUILayout.Button("Generate", GUILayout.Width(80)))
-                NotImplemented("Grok image generation");
+            using (new EditorGUI.DisabledScope(GenerationActions.Busy))
+                if (GenerationServices.ImageGenAvailable && GUILayout.Button("Generate", GUILayout.Width(80)))
+                    GenerationActions.GenerateImage(r);
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
@@ -256,8 +266,9 @@ namespace CapsuleWars.Editor.AssetPipeline
                 EditorGUIUtility.systemCopyBuffer = r.meshyPrompt;
                 ShowNotification(new GUIContent("Meshy prompt copied"));
             }
-            if (GenerationServices.ModelGenAvailable && GUILayout.Button("Generate", GUILayout.Width(80)))
-                NotImplemented("Meshy 3D generation");
+            using (new EditorGUI.DisabledScope(GenerationActions.Busy))
+                if (GenerationServices.ModelGenAvailable && GUILayout.Button("Generate", GUILayout.Width(80)))
+                    GenerationActions.GenerateModel(r);
             EditorGUILayout.EndHorizontal();
         }
 
@@ -275,8 +286,9 @@ namespace CapsuleWars.Editor.AssetPipeline
             EditorGUILayout.Space(2);
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Description", EditorStyles.miniBoldLabel);
-            if (GenerationServices.DescriptionGenAvailable && GUILayout.Button("Generate", GUILayout.Width(80)))
-                NotImplemented("Anthropic description generation");
+            using (new EditorGUI.DisabledScope(GenerationActions.Busy))
+                if (GenerationServices.DescriptionGenAvailable && GUILayout.Button("Generate", GUILayout.Width(80)))
+                    GenerationActions.GenerateDescription(r);
             EditorGUILayout.EndHorizontal();
             r.description = EditorGUILayout.TextArea(r.description, GUILayout.MinHeight(48));
         }
@@ -374,11 +386,6 @@ namespace CapsuleWars.Editor.AssetPipeline
             AssetDatabase.DeleteAsset(path);
             Refresh();
         }
-
-        private static void NotImplemented(string what) =>
-            EditorUtility.DisplayDialog("Not implemented yet",
-                $"{what} isn't wired up yet. Use \"Copy prompt\" and run it manually for now.\n" +
-                "Add an IGenerationService implementation to enable this button.", "OK");
 
         private static string Slugify(string s)
         {

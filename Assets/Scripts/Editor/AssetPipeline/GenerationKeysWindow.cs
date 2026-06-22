@@ -16,7 +16,11 @@ namespace CapsuleWars.Editor.AssetPipeline
         private string _grok = "";
         private string _meshy = "";
         private string _anthropic = "";
+        private string _grokModel = "";
+        private string _meshyModel = "";
+        private string _anthropicModel = "";
         private bool _reveal;
+        private bool _showAdvanced;
         private bool _loaded;
 
         [MenuItem("Tools/CapsuleWars/Generation API Keys")]
@@ -36,6 +40,9 @@ namespace CapsuleWars.Editor.AssetPipeline
             _grok = cfg.grokApiKey ?? "";
             _meshy = cfg.meshyApiKey ?? "";
             _anthropic = cfg.anthropicApiKey ?? "";
+            _grokModel = cfg.grokModel ?? "";
+            _meshyModel = cfg.meshyAiModel ?? "";
+            _anthropicModel = cfg.anthropicModel ?? "";
             _loaded = true;
         }
 
@@ -57,6 +64,18 @@ namespace CapsuleWars.Editor.AssetPipeline
             _meshy = KeyField("Meshy 3D key", _meshy, GenerationServices.ModelGenAvailable);
             _anthropic = KeyField("Anthropic key (descriptions)", _anthropic, GenerationServices.DescriptionGenAvailable);
 
+            EditorGUILayout.Space(4);
+            _showAdvanced = EditorGUILayout.Foldout(_showAdvanced, "Advanced — model overrides (optional)");
+            if (_showAdvanced)
+            {
+                EditorGUI.indentLevel++;
+                _grokModel = EditorGUILayout.TextField(new GUIContent("Grok model", $"Blank = {GrokImageService.DefaultModel}"), _grokModel);
+                _meshyModel = EditorGUILayout.TextField(new GUIContent("Meshy AI model", $"Blank = {MeshyModelService.DefaultAiModel}"), _meshyModel);
+                _anthropicModel = EditorGUILayout.TextField(new GUIContent("Anthropic model", $"Blank = {AnthropicDescriptionService.DefaultModel}"), _anthropicModel);
+                EditorGUILayout.LabelField("Leave blank to use the default. Endpoints can be overridden in the JSON file directly.", EditorStyles.miniLabel);
+                EditorGUI.indentLevel--;
+            }
+
             EditorGUILayout.Space(2);
             EditorGUILayout.LabelField(
                 SecretsConfig.FileExists ? "Status: secrets file exists." : "Status: no secrets file yet (using env vars if set).",
@@ -66,12 +85,13 @@ namespace CapsuleWars.Editor.AssetPipeline
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Save"))
             {
-                var cfg = new SecretsConfig
-                {
-                    grokApiKey = _grok.Trim(),
-                    meshyApiKey = _meshy.Trim(),
-                    anthropicApiKey = _anthropic.Trim()
-                };
+                var cfg = SecretsConfig.LoadFromFileOnly();   // keep any endpoint overrides already in the file
+                cfg.grokApiKey = _grok.Trim();
+                cfg.meshyApiKey = _meshy.Trim();
+                cfg.anthropicApiKey = _anthropic.Trim();
+                cfg.grokModel = _grokModel.Trim();
+                cfg.meshyAiModel = _meshyModel.Trim();
+                cfg.anthropicModel = _anthropicModel.Trim();
                 cfg.Save();
                 GenerationServices.Reload();
                 ShowNotification(new GUIContent("Keys saved"));
@@ -88,6 +108,7 @@ namespace CapsuleWars.Editor.AssetPipeline
                     {
                         SecretsConfig.DeleteFile();
                         _grok = _meshy = _anthropic = "";
+                        _grokModel = _meshyModel = _anthropicModel = "";
                         GenerationServices.Reload();
                     }
                 }

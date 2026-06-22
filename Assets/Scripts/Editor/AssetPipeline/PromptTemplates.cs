@@ -84,6 +84,20 @@ namespace CapsuleWars.Editor.AssetPipeline
             return sb.ToString();
         }
 
+        /// <summary>Prompt for the description step (sent to Anthropic, or used as a manual brief).</summary>
+        public static string DescriptionBrief(AssetRequest r)
+        {
+            var c = r.ChosenConcept;
+            string subject = c != null ? $"{c.name} — {Clean(c.visualDesc)}" : Clean(r.requestText);
+            var sb = new StringBuilder();
+            sb.AppendLine($"Write a short in-game item description for a CapsuleWars {CategoryNoun(r.category)} called \"{r.title}\".");
+            sb.AppendLine($"What it is: {subject}.");
+            sb.AppendLine("Two short parts: (1) one or two sentences of flavor; (2) one sentence on its battle role/function.");
+            sb.AppendLine("Tone: punchy, fits a light-hearted capsule-soldier auto-battler. Plain text, no markdown/headings,");
+            sb.AppendLine("about 45 words total. Return ONLY the description text.");
+            return sb.ToString();
+        }
+
         private static string Clean(string s) => string.IsNullOrEmpty(s) ? "" : s.Replace("\r", " ").Replace("\n", " ").Trim();
     }
 }

@@ -206,6 +206,7 @@ namespace CapsuleWars.Editor.AssetPipeline
                 DrawConcepts(r);
                 DrawPrompts(r);
                 DrawImportFields(r);
+                DrawMirror(r);
                 DrawDescription(r);
 
                 EditorGUILayout.Space(2);
@@ -292,6 +293,41 @@ namespace CapsuleWars.Editor.AssetPipeline
             r.importedModel = (GameObject)EditorGUILayout.ObjectField("Imported model", r.importedModel, typeof(GameObject), false);
             if (r.generatedPrefab != null)
                 EditorGUILayout.ObjectField("Generated prefab", r.generatedPrefab, typeof(GameObject), false);
+        }
+
+        // Sided parts (R/L hand or foot) get a one-click horizontal-flip → linked opposite-side request.
+        private void DrawMirror(AssetRequest r)
+        {
+            if (!MirrorUtil.TryGetOpposite(r.category, r.targetSlot, out _, out string sideWord, out string oppWord))
+            {
+                if (r.mirrorOf != null)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField("Mirror of", EditorStyles.miniLabel, GUILayout.Width(60));
+                    if (GUILayout.Button(r.mirrorOf.title, EditorStyles.miniButton)) EditorGUIUtility.PingObject(r.mirrorOf);
+                    EditorGUILayout.EndHorizontal();
+                }
+                return;
+            }
+
+            EditorGUILayout.Space(2);
+            EditorGUILayout.BeginHorizontal();
+            using (new EditorGUI.DisabledScope(r.chosenImage == null))
+            {
+                if (GUILayout.Button($"Mirror to opposite side  ({sideWord} → {oppWord})"))
+                {
+                    var res = MirrorAction.MirrorRequest(r, interactive: true);
+                    if (res.ok) ShowNotification(new GUIContent("Mirrored → " + (res.mirror != null ? res.mirror.id : oppWord)));
+                    else if (res.message != "Cancelled.") EditorUtility.DisplayDialog("Mirror", res.message, "OK");
+                    Refresh();
+                    GUIUtility.ExitGUI();
+                }
+            }
+            if (r.mirrorOf != null && GUILayout.Button("◂ mirror of", GUILayout.Width(90)))
+                EditorGUIUtility.PingObject(r.mirrorOf);
+            EditorGUILayout.EndHorizontal();
+            if (r.chosenImage == null)
+                EditorGUILayout.LabelField("(needs a Chosen image to mirror)", EditorStyles.miniLabel);
         }
 
         private void DrawDescription(AssetRequest r)

@@ -94,6 +94,12 @@ namespace CapsuleWars.Editor.AssetPipeline
         [Header("5. Description")]
         [TextArea(4, 14)] public string description;
 
+        [Header("Mirror")]
+        [Tooltip("If this request was produced by 'Mirror to opposite side', the original sided request it mirrors.")]
+        public AssetRequest mirrorOf;
+        [Tooltip("Set if a plain horizontal mirror would break this part (text, logo, one-sided detail) — the mirror action warns harder.")]
+        public bool asymmetric;
+
         [Header("Notes")]
         [TextArea(2, 6)] public string notes;
 

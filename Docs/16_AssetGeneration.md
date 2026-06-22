@@ -48,6 +48,9 @@ Both feed an Editor-only workflow; nothing runs at game runtime.
 
 ## Configuration
 - API keys live in `Tools/Editor/SecretsConfig.json` — git-ignored. Optional fallback to env vars.
+  **Edit them in-editor** via **Tools ▸ CapsuleWars ▸ Generation API Keys** (also the "API Keys…" button in
+  the Asset Pipeline toolbar): masked fields, Save/Reveal/Delete. The file is outside `Assets/` (never in a
+  build) and only the Editor-only assembly reads it, so keys never ship. Saving a key enables its Generate button.
 - Rate limits respected via per-job throttle.
 - Cost ceiling: per-session token/dollar cap configurable in Editor preferences.
 

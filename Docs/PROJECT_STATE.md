@@ -3,15 +3,17 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-21, after forcing D3D11 (GPU-crash fix) + deployment placement fix + enemy inspection — branch `claude/deployment-grid`_
+_Last updated: 2026-06-21, after the Asset Creation Pipeline + queue (editor tool) — branch `claude/deployment-grid`_
 
 ## One-line status
-**Deployment placement fix (NEW):** the full-width bottom HUD bar covered the player-zone cells, so those
-clicks were dropped as "over UI". Fixed by framing the board into the upper screen (new
-`DeploymentCameraController.bottomViewportInset`, default 0.22) above a clear bottom band, and disabling
-the redundant legacy `DeploymentView` click handler. Also added **click an enemy (its zone) to inspect its
-stats** (shared `UnitInspectionPanel`, read-only, top-right, doesn't block placement). **162/162 EditMode
-green.** Prior passes (Branching Map, Deployment v2, Customization v2) still await their Play-mode checks.
+**Asset Pipeline (NEW):** an editor-only, queue-driven workflow to design body parts / weapons / armor for the
+capsule soldiers — **Tools ▸ CapsuleWars ▸ Asset Pipeline** (`Assets/Scripts/Editor/AssetPipeline/`).
+`AssetRequest` SOs persist the queue; the window groups requests by stage, copies art-direction-locked
+Grok/Meshy prompts to the clipboard (assisted-manual — no APIs configured; `IGenerationService`/`SecretsConfig`
+seam for later), takes pasted-back image/model, and **Create / Wire item** emits an `Equipment_SO`/`BodyPart_SO`
+into the catalog. **162/162 EditMode green; compiles clean; window opens with no exceptions.** Deployment
+placement + Assemble were **verified in Play** this session (EnemyInspectionPanel raycast bug fixed). Prior
+passes (Branching Map, Customization v2) still await their Play-mode checks.
 
 ## What currently works
 - Milestone base through ~M9 (draft → battle → recruit; combat, abilities, elements, synergies,
@@ -41,22 +43,34 @@ green.** Prior passes (Branching Map, Deployment v2, Customization v2) still awa
   to the catalog across slots). Equipped items render as meshes on **named sockets** via the new
   `UnitEquipmentVisuals` on `Unit_Sample_Prefab` (sockets RightHand/LeftHand/Helmet/Chest); visuals
   follow equipment live in the preview and on combat units (driven by `OnStatsChanged`).
+- **Asset Creation Pipeline (NEW, editor-only):** `Assets/Scripts/Editor/AssetPipeline/` — `AssetRequest` SO
+  (per-asset queue record, persisted under `Assets/Editor/AssetPipeline/Requests/`), **Asset Pipeline**
+  `EditorWindow` (queue grouped by `PipelineStage`; add/advance/rollback, copy Grok/Meshy prompts, paste
+  image+model, category/slot/socket, **Create / Wire item**, edit description), `PromptTemplates`
+  (Rayman/AssetHunts-locked), `AssetPipelineImporter` (prefab under `Assets/Generated/Meshy/{slot}/` +
+  `Equipment_SO`/`BodyPart_SO` + catalog add via `SerializedObject`), and an `IGenerationService`/`SecretsConfig`
+  seam (no keys → assisted-manual). Compiles clean; window opens cleanly. End-to-end run = human-verify (above).
 
 ## In progress
 - Nothing mid-edit. The deployment feature is code-complete + scene-wired; only the Play-mode
   verification + arena tuning remain (below).
 
 ## Needs human verification (Claude can't see Play Mode)
-- **Deployment placement fix + enemy inspection (`Test_M3_Battle`, `-force-d3d11`, drafted run):**
-  1. **Placement:** the board frames above the bottom HUD; select a bench unit → click any **player-zone
-     cell** ⇒ the unit places there. If the HUD still overlaps the near cells, raise `Main Camera` →
-     `DeploymentCameraController.bottomViewportInset` (0.22→~0.3) or nudge `framingOffset`; the legacy
-     `DeploymentView` on `Deployment` should be **disabled** (done). (Fallback if needed: set the HUD bar
-     background Image `raycastTarget = false`.)
-  2. **Enemy inspection:** click an **enemy** (its far-zone cell) ⇒ the top-right stats panel shows its
-     name + HP/ATK/DEF/SPD (matching combat); Close (or click a player cell) hides it and **placement still
-     works** — the panel is top-right and never covers the player zone. Tune the `EnemyInspectionPanel`
-     RectTransform if its position/scale needs adjusting (instantiated via MCP).
+- **Asset Pipeline (NEW — run one sample end to end; `Tools ▸ CapsuleWars ▸ Asset Pipeline`):** open the
+  window → **+ New request** → it appears under **Requested** and persists as an asset (survives a domain
+  reload). Ask Claude to write concepts → pick one → **Copy Grok prompt** (lands on clipboard) → run Grok →
+  drop the image in **Chosen image** → **Copy Meshy prompt** → run Meshy → import the FBX to
+  `Assets/Generated/Meshy/{slot}/` → drop it in **Imported model** → set category/slot/socket → **Create /
+  Wire item** ⇒ a prefab + `Equipment_SO`/`BodyPart_SO` is created and added to the catalog. Then equip it
+  on a unit (customization) / spawn a unit using it ⇒ the mesh shows at the socket. (For a Weapon, also assign
+  a `WeaponClass_SO` + stat buffs on the created asset.) Confirm nothing pipeline-related ships in a player
+  build (it's all under Editor folders / `CapsuleWars.Editor`).
+- **Deployment placement + enemy inspection + Assemble — VERIFIED in Play (2026-06-21, D3D11).** Played the
+  full run (draft → branching map → combat → deployment): placed both units on player-zone cells, clicked an
+  enemy → stats panel showed (Tester Ted), **Assemble** confirmed (HUD hides, camera reframes, combat starts).
+  Bug found + fixed in the process: the `EnemyInspectionPanel` root Image (raycastTarget on) overlapped the
+  right-side Clear/Assemble buttons and ate their clicks while hidden → fixed by disabling that raycastTarget
+  (committed). Remaining tuning is optional (`bottomViewportInset`/`framingOffset`, panel rect).
   Built: under **Map Panel** → `MapScrollView` (ScrollRect, dark bg) → masked `Viewport` → `Content`
   (bottom-centre anchor/pivot); `MapView` added to Map Panel with `scrollRect`/`content`/`nodePrefab`
   (MapNode_View)/`edgePrefab` (Edge_Line) wired; node Label font = LiberationSans.

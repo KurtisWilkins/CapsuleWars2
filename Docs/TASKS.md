@@ -4,11 +4,11 @@
 > specific and self-contained. Move finished items to "Done (recent)".
 
 ## Next up (work top-down)
-- [ ] **Play-test the deployment placement fix + enemy inspection** (`Test_M3_Battle`, `-force-d3d11`,
-      drafted run). Select a bench unit → click a **player-zone cell** ⇒ it places (board now frames above
-      the HUD via `DeploymentCameraController.bottomViewportInset`; raise it / nudge `framingOffset` if the
-      HUD still overlaps). Click an **enemy** ⇒ top-right stats panel shows; doesn't block placement.
-      (Full notes in PROJECT_STATE.)
+- [ ] **Run one sample asset through the Asset Pipeline** (`Tools ▸ CapsuleWars ▸ Asset Pipeline`). + New
+      request → ask Claude for concepts → pick → Copy Grok prompt → run Grok → drop image → Copy Meshy prompt
+      → run Meshy → import FBX to `Assets/Generated/Meshy/{slot}/` → drop model → set category/slot/socket →
+      **Create / Wire item** → equip/spawn on a unit and confirm the mesh shows at the socket. (Full checklist
+      in PROJECT_STATE "Needs human verification".)
 - [ ] **Play-test the branching map** (`Test_M7_Map`, `-force-d3d11`). Scene is assembled (ScrollRect +
       `MapView` wired, node label font set). Start a run → branching map renders → pick a start → encounter →
       return → only connected nodes clickable → climb → clear Boss → new segment stitches on; lose → run ends.
@@ -46,6 +46,14 @@
 - [ ] Clean up battle-end UI placeholder "New Text" labels. Remaining M10 polish (see `Docs/17_BuildOrder.md`).
 
 ## Done (recent — prune periodically)
+- [x] **Asset Creation Pipeline + queue** (ADR-015): editor-only `Assets/Scripts/Editor/AssetPipeline/` —
+      `AssetRequest` SO (stage-by-stage queue, persisted), **Asset Pipeline** EditorWindow (grouped by stage;
+      copy Grok/Meshy prompts, paste image+model, Create/Wire item, edit description), `PromptTemplates`
+      (style-locked), `AssetPipelineImporter` (prefab + `Equipment_SO`/`BodyPart_SO` + catalog), and an
+      `IGenerationService`/`SecretsConfig` API seam (assisted-manual; no keys). 162/162 green; window opens clean.
+- [x] **Assemble-click bug + deployment Play-verification** (D3D11): the `EnemyInspectionPanel` root Image
+      (raycastTarget on) overlapped the right-side Clear/Assemble buttons and ate their clicks while hidden →
+      disabled that raycastTarget. Verified in Play: placement, enemy inspection, and Assemble→combat all work.
 - [x] **Deployment placement fix + enemy inspection** (ADR-014): camera `bottomViewportInset`/`framingOffset`
       frame the board above the bottom HUD (player-zone clicks were dropped as "over UI"); legacy
       `DeploymentView` disabled; enemy-zone cell tap → shared `UnitInspectionPanel` (read-only, top-right),

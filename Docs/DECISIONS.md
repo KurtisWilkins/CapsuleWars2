@@ -152,4 +152,28 @@ active click handler (`DeploymentTray`).
 **Implication:** `bottomViewportInset`/`framingOffset` + the `EnemyInspectionPanel` RectTransform are
 serialized/scene-tunable; verify in Play mode.
 
+### ADR-015 — Asset creation pipeline + queue (editor-only, assisted-manual with an API seam)
+**Decided:** a repeatable workflow to design body parts / weapons / armor for the capsule soldiers, managed as
+a **visible queue with explicit stages** (`Requested → ConceptsReady → ConceptChosen → ImagePrompt →
+ImageChosen → MeshyPrompt → ModelImported → Reviewed → Categorized → Described → Done`). Built **editor-only**
+(`Assets/Scripts/Editor/AssetPipeline/`, `CapsuleWars.Editor` asmdef): an `AssetRequest` ScriptableObject (one
+per asset, holds every stage's artifact; persisted under the `Assets/Editor/AssetPipeline/Requests/` Editor
+folder so the queue survives sessions and never ships in a build); an **Asset Pipeline** `EditorWindow`
+(Tools ▸ CapsuleWars ▸ Asset Pipeline) listing requests grouped by stage with add/advance/rollback,
+copy-prompt buttons, paste-result object fields, category/slot/socket, **Create / Wire item**, and an editable
+description; `PromptTemplates` (Rayman/AssetHunts style locked into the concept/Grok/Meshy prompts); and
+`AssetPipelineImporter` which makes a prefab under `Assets/Generated/Meshy/{slot}/` and creates an
+`Equipment_SO` (Weapon = hand slot + WeaponClass; Armor = other slots) or `BodyPart_SO` (cosmetic) — private
+fields set via `SerializedObject` — then adds it to `EquipmentCatalog_SO` / `PartCatalog_SO`.
+**Why:** the player wanted a managed, stage-by-stage way to spin up unique art that **drops straight into the
+existing item + attach-point system** (ADR-005/012). No Grok/Meshy/Anthropic keys are configured, so the
+pipeline is **assisted-manual** (Claude writes the prompts + description into the `AssetRequest` over the MCP
+bridge; the user runs Grok/Meshy and pastes results back). An `IGenerationService` + git-ignored
+`SecretsConfig.json` (`Tools/Editor/`, env-var fallback) seam makes "Generate" buttons light up automatically
+if a key is added later — realizing Docs/16_AssetGeneration.md's design.
+**Implication:** the AI **description lives on the `AssetRequest`** (runtime `Equipment_SO`/`BodyPart_SO` keep
+their I2 `descTermKey` pattern — zero runtime change); weapons still need a `WeaponClass_SO` + stat buffs
+assigned on the created asset; generated models live in `Assets/Generated/` (LFS). End-to-end run on a real
+imported model is human-verified (Claude can't see the editor UI / Play mode).
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

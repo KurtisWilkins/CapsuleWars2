@@ -1,7 +1,22 @@
 # Asset Generation Pipeline
 
 ## Status
-**Post-MVP.** Stubs in `Assets/Scripts/Generation/` from M0; full implementation post-launch.
+**Assisted-manual pipeline implemented** (ADR-015). The queue + prompt workflow ship in the editor as
+**Tools ▸ CapsuleWars ▸ Asset Pipeline** (`Assets/Scripts/Editor/AssetPipeline/`). No image/3D APIs are
+configured yet, so the tool **writes the Grok/Meshy prompts and you run them**, then paste results back; the
+`IGenerationService` + `SecretsConfig` seam lets "Generate" buttons activate once a key is added. The
+auto-generation API calls below remain the post-launch target.
+
+### Implemented now (assisted-manual)
+- `AssetRequest` ScriptableObject (one per asset) holds every stage's artifact + a `PipelineStage`; persists
+  under `Assets/Editor/AssetPipeline/Requests/` so the queue survives sessions.
+- **Asset Pipeline** EditorWindow: queue grouped by stage; add / advance / rollback; **Copy Grok prompt** /
+  **Copy Meshy prompt** (clipboard); paste **Chosen image** + **Imported model**; set category/slot/socket;
+  **Create / Wire item**; edit description.
+- `PromptTemplates` bakes the locked Rayman/AssetHunts style into the concept/Grok/Meshy prompts.
+- `AssetPipelineImporter` builds a prefab under `Assets/Generated/Meshy/{slot}/` + creates an `Equipment_SO`
+  (Weapon/Armor) or `BodyPart_SO` (BodyPart) and adds it to `EquipmentCatalog_SO` / `PartCatalog_SO`.
+- Claude works the queue over the MCP bridge by writing concepts/prompts/description into the `AssetRequest`.
 
 ## Goals
 1. **Meshy AI** — generate new low-poly capsule-style limb variants, weapons, enemy parts.

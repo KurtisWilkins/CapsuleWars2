@@ -189,7 +189,7 @@ namespace CapsuleWars.UI.Customization
 
             dto.Equipment.Clear();
             foreach (var eq in preview.Status.Equipment)
-                if (eq.item != null) dto.Equipment.Add(new UnitEquipmentDTO(eq.slot, eq.item.EquipmentId));
+                if (eq.instance?.definition != null) dto.Equipment.Add(UnitEquipmentDTO.From(eq.slot, eq.instance));
 
             RunSession.Save();
         }

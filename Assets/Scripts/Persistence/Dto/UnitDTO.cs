@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using CapsuleWars.Core;
+using CapsuleWars.Data.Equipment;
+using CapsuleWars.Data.StatusEffects;
 
 namespace CapsuleWars.Persistence.Dto
 {
@@ -15,15 +17,54 @@ namespace CapsuleWars.Persistence.Dto
         public UnitPartDTO(PartSlot slot, string partId) { this.slot = slot; this.partId = partId; }
     }
 
-    /// <summary>One serialized slot→equipment assignment (by stable equipment id).</summary>
+    /// <summary>
+    /// One serialized equipped item: the slot + its definition id (<see cref="equipmentId"/>) plus the
+    /// runtime-assigned stat <see cref="modifiers"/>, generated <see cref="displayName"/>, and roll metadata
+    /// (<see cref="tier"/>, <see cref="seed"/>) — the saved form of an <see cref="EquipmentInstance"/> (ADR-019).
+    /// Backward compatible: pre-ADR-019 saves have only slot+equipmentId (empty modifiers) → migrated to the
+    /// definition's legacy default stats on load (see <see cref="ToInstance"/>).
+    /// </summary>
     [Serializable]
     public class UnitEquipmentDTO
     {
         public EquipmentSlot slot;
         public string equipmentId;
+        public List<StatBuff> modifiers = new List<StatBuff>();
+        public string displayName;
+        public int tier;
+        public int seed;
 
         public UnitEquipmentDTO() { }
         public UnitEquipmentDTO(EquipmentSlot slot, string equipmentId) { this.slot = slot; this.equipmentId = equipmentId; }
+
+        /// <summary>Capture an equipped runtime instance into a serializable DTO.</summary>
+        public static UnitEquipmentDTO From(EquipmentSlot slot, EquipmentInstance instance)
+        {
+            var dto = new UnitEquipmentDTO(slot, instance?.definition != null ? instance.definition.EquipmentId : null);
+            if (instance != null)
+            {
+                if (instance.modifiers != null) dto.modifiers = new List<StatBuff>(instance.modifiers);
+                dto.displayName = instance.displayName;
+                dto.tier = instance.tier;
+                dto.seed = instance.seed;
+            }
+            return dto;
+        }
+
+        /// <summary>
+        /// Rebuild a runtime instance: resolve the definition via <paramref name="db"/>, use the saved
+        /// <see cref="modifiers"/>, or — if none (old/starter save) — fall back to the definition's legacy
+        /// default stats so nothing loses stats. Null if the definition id can't be resolved.
+        /// </summary>
+        public EquipmentInstance ToInstance(IEquipmentDatabase db)
+        {
+            var def = db != null ? db.GetEquipment(equipmentId) : null;
+            if (def == null) return null;
+            var mods = (modifiers != null && modifiers.Count > 0)
+                ? new List<StatBuff>(modifiers)
+                : def.BuildDefaultModifiers();
+            return new EquipmentInstance(def, mods, displayName, tier, seed);
+        }
     }
 
     /// <summary>

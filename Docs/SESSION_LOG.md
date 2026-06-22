@@ -6,6 +6,38 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-21 — Equipment stats → runtime instances (Definition + Instance, ADR-019)
+**Goal this session:** move equipment stats off the ScriptableObject onto a runtime, saved DTO so one asset
+(e.g. a helmet) can be "of Health", "of Attack", etc. — reusable + roguelite-friendly.
+
+**Done (committed + pushed on `claude/deployment-grid`; 166/166 EditMode green):**
+- `Data/Equipment/EquipmentInstance.cs` (NEW) — `definition` (Equipment_SO) + `modifiers (List<StatBuff>)` +
+  `displayName` + `tier` + `seed`; `FromDefinitionDefault` for migration. In Data so Units + Persistence both see it.
+- `Equipment_SO.cs` — reframed as the **Definition** (identity); `statBuffs`/`rarity` now LEGACY default stats +
+  `BuildDefaultModifiers()` (StatBuffs × rarity).
+- `UnitStatusController.cs` — `EquippedItem { slot, instance }` + `item` getter (`=> instance.definition`, keeps
+  visual/label readers unchanged); `Equip(slot, EquipmentInstance)` + compat `Equip(slot, Equipment_SO)` (builds a
+  default instance); `ComputeMods` sums `instance.modifiers` (same SumBuffs path → combat unchanged).
+- `Persistence/Dto/UnitDTO.cs` — `UnitEquipmentDTO` +`modifiers`/`displayName`/`tier`/`seed` + `From(slot,instance)`
+  + `ToInstance(db)` (empty modifiers → default from the definition's legacy stats; additive, SaveVersion 1).
+- `Persistence/UnitFactory.cs` — round-trips instances (FromUnit captures, ApplyEquipment rebuilds + migrates).
+- `CustomizationScreen.cs` — capture writes the full instance.
+- `Data/Equipment/EquipmentRollConfig.cs` + `EquipmentRoller.cs` (NEW) — data-driven pool (stat ranges/weights/
+  name suffixes + per-tier rules); `Explicit(...)` and seeded `Roll(def, config, tier, seed)` (deterministic) +
+  dominant-stat name gen.
+- Tests: `EquipmentRollerTests.cs` (NEW) — two instances of one definition → different MaxHp/Atk; roll determinism;
+  tier scaling; name gen. Existing 6 `EquipmentStatTests` stay green via the compat overload.
+
+**Verified myself (EditMode, no Play needed):** 166/166 green, incl. the headline two-instances-one-helmet test;
+clean compile. The mesh still attaches by construction (`UnitEquipmentVisuals` reads `eq.item` = the definition,
+unchanged).
+
+**Needs human verification:** optional Play/customization visual — equip a rolled item, confirm the inspection
+panel shows its stats + generated name while the mesh attaches; and a starter/old item keeps stats after load.
+
+**Next session starts with:** the open Play-mode checks (this refactor's visual, mirror equip-on-opposite-side,
+style consistency, branching map, customization v2). See TASKS.
+
 ## 2026-06-21 — Archive / Reject (lifecycle) for the pipeline queue
 **Goal this session:** move done/dead AssetRequests out of the active queue (Archive = completed/wired, Reject =
 abandoned) without deleting anything, keeping them recoverable.

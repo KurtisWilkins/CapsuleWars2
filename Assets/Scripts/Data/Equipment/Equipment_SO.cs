@@ -8,10 +8,13 @@ using UnityEngine;
 namespace CapsuleWars.Data.Equipment
 {
     /// <summary>
-    /// One equippable item. Lives in a single slot, contributes stat
-    /// buffs to its wearer (multiplied by rarity), and optionally carries
-    /// an element affinity and weapon class.
-    /// 3D mesh swap is deferred to M10 polish; M6 ships the stat model.
+    /// The equipment <b>Definition</b>: the fixed IDENTITY of a piece — id, name/desc keys, icon,
+    /// slot, weapon class, element, and visual (mesh/prefab + attach socket). As of ADR-019, stats
+    /// are NOT the runtime source of truth here: an <see cref="EquipmentInstance"/> carries the stat
+    /// modifiers assigned/rolled at runtime. The same definition can back many instances.
+    ///
+    /// <see cref="statBuffs"/> + <see cref="rarity"/> remain as LEGACY default stats (migration
+    /// source) so existing/authored items don't silently lose stats — see <see cref="BuildDefaultModifiers"/>.
     /// </summary>
     [CreateAssetMenu(fileName = "Equipment", menuName = "CapsuleWars/Equipment/Equipment", order = 91)]
     public class Equipment_SO : ScriptableObject
@@ -31,11 +34,13 @@ namespace CapsuleWars.Data.Equipment
         [Tooltip("Slot this item occupies on a unit.")]
         [SerializeField] private EquipmentSlot slot;
 
-        [Tooltip("Rarity tier. Multiplies the item's stat buffs (and tints UI).")]
+        [Tooltip("LEGACY: rarity tier whose multiplier scaled the baked stat buffs (migration source). " +
+                 "Runtime stats now live on EquipmentInstance. Still tints UI.")]
         [SerializeField] private Rarity_SO rarity;
 
-        [Header("Stats")]
-        [Tooltip("Stat modifiers granted by this item. Multiplied by rarity.StatMultiplier before application.")]
+        [Header("Legacy default stats (migration source — runtime stats live on EquipmentInstance)")]
+        [Tooltip("LEGACY baked stats. No longer the runtime source of truth (see EquipmentInstance); kept so " +
+                 "existing items/saves migrate into a default instance instead of losing stats. New items roll modifiers.")]
         [SerializeField] private List<StatBuff> statBuffs = new();
 
         [Header("Optional")]
@@ -73,5 +78,23 @@ namespace CapsuleWars.Data.Equipment
         public IReadOnlyList<Material> VisualMaterials => visualMaterials;
 
         public float RarityMultiplier => rarity != null ? rarity.StatMultiplier : 1f;
+
+        /// <summary>
+        /// LEGACY default stats for migration/compat: the authored <see cref="statBuffs"/> with the
+        /// rarity multiplier folded into each amount. Used to build a default
+        /// <see cref="EquipmentInstance"/> when an item/save has no rolled modifiers, so baked stats
+        /// aren't lost. New items get their stats from a rolled instance instead.
+        /// </summary>
+        public List<StatBuff> BuildDefaultModifiers()
+        {
+            float mult = RarityMultiplier;
+            var result = new List<StatBuff>(statBuffs.Count);
+            for (int i = 0; i < statBuffs.Count; i++)
+            {
+                var b = statBuffs[i];
+                result.Add(new StatBuff { stat = b.stat, modType = b.modType, amount = b.amount * mult });
+            }
+            return result;
+        }
     }
 }

@@ -148,12 +148,21 @@ namespace CapsuleWars.Units.Controllers
             OnStatsChanged?.Invoke();
         }
 
-        public void Equip(EquipmentSlot slot, Equipment_SO item)
+        /// <summary>Equip a runtime instance — its modifiers feed the modified-stat getters.</summary>
+        public void Equip(EquipmentSlot slot, EquipmentInstance instance)
         {
             RemoveSlot(slot);
-            equipment.Add(new EquippedItem { slot = slot, item = item });
+            equipment.Add(new EquippedItem { slot = slot, instance = instance });
             OnStatsChanged?.Invoke();
         }
+
+        /// <summary>
+        /// Compat/migration overload: equip a definition directly. Builds a default instance from the
+        /// definition's LEGACY baked stats (StatBuffs × rarity), so existing callers and old saves keep
+        /// their stats while stats move onto instances.
+        /// </summary>
+        public void Equip(EquipmentSlot slot, Equipment_SO definition)
+            => Equip(slot, EquipmentInstance.FromDefinitionDefault(definition));
 
         public void UnequipSlot(EquipmentSlot slot)
         {
@@ -268,12 +277,13 @@ namespace CapsuleWars.Units.Controllers
                 SumBuffs(active[i].Effect.StatBuffs, type, ref flatMod, ref percentMod, 1f);
             }
 
-            // Equipment (rarity multiplier scales the buff amounts)
+            // Equipment — the equipped instance's runtime modifiers (tier/rarity is already baked into
+            // the rolled magnitudes, or folded in by the default-instance migration; no extra multiplier).
             for (int i = 0; i < equipment.Count; i++)
             {
-                var item = equipment[i].item;
-                if (item == null) continue;
-                SumBuffs(item.StatBuffs, type, ref flatMod, ref percentMod, item.RarityMultiplier);
+                var inst = equipment[i].instance;
+                if (inst == null) continue;
+                SumBuffs(inst.modifiers, type, ref flatMod, ref percentMod, 1f);
             }
 
             // Class synergy buffs (pushed in by SynergyResolver)
@@ -317,12 +327,16 @@ namespace CapsuleWars.Units.Controllers
         }
     }
 
-    /// <summary>One slot → equipment assignment, serializable for the inspector.</summary>
+    /// <summary>One slot → equipped runtime instance, serializable for the inspector.</summary>
     [Serializable]
     public struct EquippedItem
     {
         public EquipmentSlot slot;
-        public Equipment_SO item;
+        public EquipmentInstance instance;
+
+        /// <summary>The definition (identity/visuals) backing this instance. Null-safe — kept so
+        /// existing visual/label readers (UnitEquipmentVisuals, inspection, customization) work unchanged.</summary>
+        public Equipment_SO item => instance?.definition;
     }
 
     /// <summary>

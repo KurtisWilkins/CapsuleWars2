@@ -231,4 +231,25 @@ chosen so each side can be kept/dropped independently. No folder move (the windo
 via computer-use: archive → leaves Active / shows under Archived with timestamp / item intact → restore → back at
 its stage.
 
+### ADR-019 — Equipment stats move to runtime instances (Definition + Instance)
+**Decided:** stats no longer live on the equipment ScriptableObject. `Equipment_SO` becomes the **Definition**
+(identity: id, slot, weapon class, element, icon, mesh/prefab + attach socket); a new `EquipmentInstance`
+(`Data.Equipment`, `[Serializable]`) holds the runtime stats — `definition` ref + `modifiers (List<StatBuff>)` +
+`displayName` + `tier` + `seed`. The unit equips an **instance**; `UnitStatusController.ComputeMods` sums the
+instance's modifiers through the *same* `SumBuffs` path as before, so combat is unchanged. `EquipmentRoller` +
+`EquipmentRollConfig` (data-driven stat pool, per-tier rules, name suffixes) build instances either explicitly or
+by a **seeded, deterministic roll**, generating a name from the dominant stat ("… of Health"). One definition
+now backs many stat variants.
+**Why:** baking stats on the SO meant one asset per variant; moving stats to a saved instance makes equipment
+reusable + roguelite-friendly (roll loot at runtime) without new assets.
+**Implication / compat:** `Equipment_SO.statBuffs`/`rarity` are kept as **legacy default stats** +
+`BuildDefaultModifiers()`; a compat `UnitStatusController.Equip(Equipment_SO)` overload and
+`UnitEquipmentDTO.ToInstance` build a *default instance* from them when no rolled modifiers exist (old saves,
+starter items) — so nothing silently loses stats. `UnitEquipmentDTO` gained `modifiers`/`displayName`/`tier`/`seed`
+(additive; SaveVersion stays 1). `EquippedItem.item` is now a getter (`=> instance.definition`) so
+`UnitEquipmentVisuals`/inspection/customization read the definition (mesh/labels) unchanged. The class stays named
+`Equipment_SO` (it *is* the Definition) to avoid churning ~15 files + the asset pipeline + every `.asset`. The
+asset pipeline is untouched (Definitions authored/imported as before; the importer no longer needs to set stats).
+Verified by EditMode test: two instances of one definition → different stats; roller determinism + name + tier. 166/166 green.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

@@ -48,6 +48,11 @@
 - [ ] Clean up battle-end UI placeholder "New Text" labels. Remaining M10 polish (see `Docs/17_BuildOrder.md`).
 
 ## Done (recent — prune periodically)
+- [x] **Equipment stats → runtime instances** (ADR-019): `Equipment_SO` = identity Definition (legacy stats kept
+      for migration); new `EquipmentInstance` (def ref + modifiers + name + tier/seed) carries stats + is saved;
+      `UnitStatusController` equips an instance (modifiers via the same stat math); `EquipmentRoller` +
+      `EquipmentRollConfig` build explicit/seeded rolls with generated names. Compat overload + default-instance
+      DTO migration keep old items/saves. 166/166 EditMode green (incl. two-instances-one-helmet test).
 - [x] **Archive/Reject lifecycle for the pipeline queue** (ADR-018): `AssetRequest.Lifecycle`
       (Active/Archived/Rejected) + reason/date, separate from Stage; window view bar (counts) + lifecycle filter;
       per-request Archive/Reject/Restore (+ Complete & Archive on Done); reason field; Delete reworded as the only

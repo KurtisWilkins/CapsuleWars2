@@ -3,10 +3,18 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-21, after archive/reject (lifecycle) for the pipeline queue — branch `claude/deployment-grid`_
+_Last updated: 2026-06-21, after the equipment runtime-instance refactor (ADR-019) — branch `claude/deployment-grid`_
 
 ## One-line status
-**Archive/Reject lifecycle (NEW):** AssetRequests gain a `Lifecycle` (Active/Archived/Rejected) separate from
+**Equipment stats → runtime instances (NEW, ADR-019):** `Equipment_SO` is now the **Definition** (identity only;
+its `statBuffs`/`rarity` are legacy migration-source). A new `EquipmentInstance` (definition ref + rolled
+`modifiers` + generated name + tier/seed) carries the stats and is what's saved; `UnitStatusController` equips an
+instance and its modifiers flow through the same stat math (combat unchanged). `EquipmentRoller` +
+`EquipmentRollConfig` build instances explicitly or by a seeded, data-driven roll ("Helmet of Health"). A compat
+`Equip(Equipment_SO)` overload + default-instance DTO migration keep old items/saves' stats. **166/166 EditMode
+green** — incl. a test proving two instances of ONE helmet give different `MaxHp`/`Atk`. Customization/asset
+pipeline untouched.
+**Archive/Reject lifecycle:** AssetRequests gain a `Lifecycle` (Active/Archived/Rejected) separate from
 Stage. The pipeline window has a **view bar** (`Active (N) · Archived (N) · Rejected (N)`, default Active) and
 per-request **Archive / Reject / Restore** (+ Complete & Archive on Done) with a reason + timestamp; Restore
 returns to the preserved stage; **Delete** stays the only destructive (confirm) action. Archiving never deletes
@@ -66,6 +74,15 @@ credits). Prior passes (Branching Map, Customization v2) still await their Play-
   verification + arena tuning remain (below).
 
 ## Needs human verification (Claude can't see Play Mode)
+- **Equipment runtime instances (ADR-019) — core VERIFIED by EditMode test; Play visual optional.** The headline
+  (two `EquipmentInstance`s from one `Equipment_SO` → different `MaxHp`/`Atk` via `UnitStatusController`) is an
+  automated test (166/166 green), and the same definition still drives the mesh (the `.item` getter is unchanged
+  for `UnitEquipmentVisuals`). Optional human check: in customization/Play, equip a rolled item and confirm the
+  inspection panel shows its stats + generated name while the helmet **mesh still attaches**; and that a
+  pre-existing/starter item keeps its stats after load (default-instance migration). To roll an item in code:
+  `EquipmentRoller.Roll(definition, rollConfig, tier, seed)` (seed = reproducible) or
+  `EquipmentRoller.Explicit(definition, modifiers)`; then `status.Equip(slot, instance)`. Author an
+  `EquipmentRollConfig` via **Create ▸ CapsuleWars ▸ Equipment ▸ Roll Config** to define the stat pool.
 - **Archive/Reject lifecycle — VERIFIED via computer-use (2026-06-21).** Archived the wired "Test Helmet"
   (Categorized) → it left Active (4→3), appeared under **Archived** with an "Archived — <time>" stamp + Reason
   field, its `Generated/Items/Equipment` + `Meshy/Helmet` assets stayed intact; **Restore to Active** returned it

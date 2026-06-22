@@ -54,8 +54,8 @@ namespace CapsuleWars.Persistence
             {
                 var equipped = status.Equipment;
                 for (int i = 0; i < equipped.Count; i++)
-                    if (equipped[i].item != null)
-                        dto.Equipment.Add(new UnitEquipmentDTO(equipped[i].slot, equipped[i].item.EquipmentId));
+                    if (equipped[i].instance?.definition != null)
+                        dto.Equipment.Add(UnitEquipmentDTO.From(equipped[i].slot, equipped[i].instance));
             }
 
             return dto;
@@ -151,8 +151,8 @@ namespace CapsuleWars.Persistence
 
             for (int i = 0; i < dto.Equipment.Count; i++)
             {
-                var item = equipmentDatabase.GetEquipment(dto.Equipment[i].equipmentId);
-                if (item != null) status.Equip(dto.Equipment[i].slot, item);
+                var instance = dto.Equipment[i].ToInstance(equipmentDatabase);
+                if (instance != null) status.Equip(dto.Equipment[i].slot, instance);
             }
         }
     }

@@ -3,7 +3,7 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-21, after the Deployment placement fix + enemy inspection — branch `claude/deployment-grid`_
+_Last updated: 2026-06-21, after forcing D3D11 (GPU-crash fix) + deployment placement fix + enemy inspection — branch `claude/deployment-grid`_
 
 ## One-line status
 **Deployment placement fix (NEW):** the full-width bottom HUD bar covered the player-zone cells, so those
@@ -93,6 +93,11 @@ green.** Prior passes (Branching Map, Deployment v2, Customization v2) still awa
 - Battle-end UI shows placeholder "New Text" labels (pre-existing) — cosmetic cleanup.
 
 ## Known issues / blockers
+- **GPU crash FIXED (2026-06-21):** the Editor/Standalone **Graphics API for Windows is now Direct3D11 only**
+  (Auto off, D3D12 removed) in `ProjectSettings.asset`. Root cause was Unity's **D3D12 on the Qualcomm Adreno
+  X1-85 (Snapdragon X ARM64) driver 31.0.133.1** → unrecoverable device-removed crashes (5 in one session).
+  Verified: editor title shows `<DX11>`, Play no longer crashes. **`-force-d3d11` is no longer needed** — the
+  older verification notes below that mention that flag are obsolete (D3D11 is the project default now).
 - CoplayDev MCP bridge drops on every domain reload (recompile / entering Play) and cycles ports — reconnect.
 - Game-view MCP screenshots are blank; use `manage_camera capture_source=scene_view` or computer-use on the Game/Simulator window.
 - MCP object/component ref fields must use object form (`{"instanceID":N}` / `{"path":"..."}`); bare ints fail.

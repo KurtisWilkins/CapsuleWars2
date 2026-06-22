@@ -6,6 +6,26 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-21 — GPU crash fixed: force Direct3D11 on Windows
+**Goal this session:** the editor kept crashing in Play with "d3d12: Unrecoverable GPU device error!" —
+find the cause and fix it.
+
+**Done (committed on `claude/deployment-grid`):**
+- **Diagnosis (from crash logs):** `%LOCALAPPDATA%\Temp\Unity\Editor\Crashes\` had 5 dumps today; the
+  current Editor.log shows the GPU is a **Qualcomm Adreno X1-85 (Snapdragon X ARM64), driver 31.0.133.1**,
+  running **Direct3D 12**. The crash modules are the Qualcomm D3D12 driver DLLs + `D3D12Core.dll` → an
+  unrecoverable D3D12 device-removed. It even crashed on the *draft screen* (no game code) → environmental,
+  not our code.
+- **Fix:** Project Settings → Player → Other Settings → **unchecked Auto Graphics API for Windows** and
+  **removed Direct3D12** (Direct3D11 only). Restarted the Editor → title bar now `<DX11>`. Re-ran the
+  playthrough: Play no longer crashes at the point it previously died. Committed `ProjectSettings.asset`.
+  `-force-d3d11` is no longer needed.
+
+**Verified via computer-use Play mode:** editor on DX11, Play runs without the crash.
+
+**Next session starts with:** the (now-unblocked) deployment placement playthrough — draft a party → battle →
+drop a unit on a player cell; plus the branching-map play-test.
+
 ## 2026-06-21 — deployment placement fix + enemy stat inspection
 **Goal this session:** placing a unit on a cell didn't work (HUD covered the player-zone cells); also add
 clicking an enemy to see its stats.

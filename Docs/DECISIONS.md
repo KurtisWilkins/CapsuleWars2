@@ -215,4 +215,20 @@ overwritten. A symmetry **warning** fires before flipping (modal on the window b
 "Tools ▸ CapsuleWars ▸ Mirror Selected Request" exists for automation/bridge testing. Editor-only; no
 runtime/build impact. Verified via the bridge: clean horizontal mirror + correct linked left-hand request.
 
+### ADR-018 — Archive / Reject (lifecycle) for the asset pipeline queue
+**Decided:** add a `Lifecycle` enum (Active/Archived/Rejected) to `AssetRequest`, **separate from `PipelineStage`**
+(don't overload Stage). The pipeline window filters by a `_view` (default Active) shown as a view bar with live
+counts, then groups by Stage as before. Per-request **Archive**, **Reject** (any stage), **Restore to Active**,
+and a **Complete & Archive** shortcut on Done items; archived/rejected items show an editable reason + a stamped
+`lifecycleDate`. Stage is never changed by these, so **Restore returns the request to its prior stage**. Real
+**Delete** stays the only destructive action (confirm dialog).
+**Why:** done/dead requests clutter the working queue; the user wants them out of the active view but recoverable,
+without deleting anything. A separate Lifecycle field keeps Stage meaningful + Restore trivial.
+**Implication:** lifecycle changes are pure field flips on the editor-only `AssetRequest` — **no `AssetDatabase.DeleteAsset`
+and no touch to `createdItem`/prefab/catalog**, so the produced game asset is never deleted/unwired by archiving.
+Mirror pairs are **not** auto-paired (archiving one side leaves the other; the `mirrorOf` link stays visible) —
+chosen so each side can be kept/dropped independently. No folder move (the window finds requests by type). Verified
+via computer-use: archive → leaves Active / shows under Archived with timestamp / item intact → restore → back at
+its stage.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

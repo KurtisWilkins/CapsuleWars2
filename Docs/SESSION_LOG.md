@@ -6,6 +6,32 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-21 — Archive / Reject (lifecycle) for the pipeline queue
+**Goal this session:** move done/dead AssetRequests out of the active queue (Archive = completed/wired, Reject =
+abandoned) without deleting anything, keeping them recoverable.
+
+**Done (committed + pushed on `claude/deployment-grid`; 162/162 EditMode green):**
+- `AssetRequest.cs` — `enum Lifecycle { Active, Archived, Rejected }` + `lifecycle` / `lifecycleReason` /
+  `lifecycleDate`. **Separate from `PipelineStage`** (Stage is preserved, so Restore returns to it).
+- `AssetPipelineWindow.cs` — a **view bar** (`Active (N) · Archived (N) · Rejected (N)`, default Active) filters
+  the listing by lifecycle, then groups by Stage as before; per-request **Archive / Reject / Restore to Active**
+  (+ **Complete & Archive** on Done items), an editable **Reason** + stamped date on archived/rejected items,
+  and the existing **Delete** reworded as the only destructive (confirm) action. `SetLifecycle`/`Restore` just
+  flip the field + `SaveAssets` — **no `DeleteAsset`, no touch to `createdItem`/prefab/catalog**.
+- Mirror pairs are NOT auto-paired (archiving one side leaves the other; link stays visible) — flagged in the plan.
+
+**Self-tested via computer-use (clicks worked this session — the OS overlays didn't interfere):** archived the
+wired "Test Helmet" (Categorized) → it left Active (4→3), appeared under **Archived (1)** with an
+"Archived — 2026-06-21 20:55" stamp + Reason field, and its `Generated/Items/Equipment` + `Meshy/Helmet` assets
+stayed intact; **Restore to Active** returned it to Categorized (Active back to 4). Live counts + the
+"No Archived requests" empty message both correct. Window opens with no exceptions; 162/162 EditMode green.
+
+**Needs human verification:** optional Play sanity check that an archived item's produced asset still equips on a
+unit (it's untouched by archiving). Reject + Complete-&-Archive share the verified `SetLifecycle` path.
+
+**Next session starts with:** the still-open Play-mode checks (mirror equip-on-opposite-side, style consistency
+tuning, branching map, customization v2). See TASKS.
+
 ## 2026-06-21 — Image mirror/flip for paired parts
 **Goal this session:** one-click horizontal mirror of an approved sided-part image → a linked opposite-side
 AssetRequest, so I don't regenerate identical R/L pairs (flip the 2D image, not the mesh, to keep normals).

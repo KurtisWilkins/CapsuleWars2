@@ -35,6 +35,19 @@ namespace CapsuleWars.Editor.AssetPipeline
         Done = 10
     }
 
+    /// <summary>
+    /// Working state of a request, separate from its pipeline <see cref="PipelineStage"/>:
+    /// Active = in the working queue; Archived = completed/wired, kept as a record out of the
+    /// active view; Rejected = abandoned, kept for reference. Stage is preserved so Restore
+    /// returns it to where it was. Lifecycle changes never delete the produced game asset.
+    /// </summary>
+    public enum Lifecycle
+    {
+        Active = 0,
+        Archived = 1,
+        Rejected = 2
+    }
+
     /// <summary>One generated concept idea the designer can pick between.</summary>
     [Serializable]
     public class ConceptOption
@@ -93,6 +106,15 @@ namespace CapsuleWars.Editor.AssetPipeline
 
         [Header("5. Description")]
         [TextArea(4, 14)] public string description;
+
+        [Header("Lifecycle")]
+        [Tooltip("Active = in the working queue; Archived = done/wired (kept as a record); Rejected = abandoned. " +
+                 "Changing this never deletes the produced game asset. Stage is preserved for Restore.")]
+        public Lifecycle lifecycle = Lifecycle.Active;
+        [Tooltip("Optional short note on why it was archived/rejected.")]
+        public string lifecycleReason;
+        [Tooltip("When it was archived/rejected (stamped automatically).")]
+        public string lifecycleDate;
 
         [Header("Mirror")]
         [Tooltip("If this request was produced by 'Mirror to opposite side', the original sided request it mirrors.")]

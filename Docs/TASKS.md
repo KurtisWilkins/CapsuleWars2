@@ -48,6 +48,11 @@
 - [ ] Clean up battle-end UI placeholder "New Text" labels. Remaining M10 polish (see `Docs/17_BuildOrder.md`).
 
 ## Done (recent — prune periodically)
+- [x] **Archive/Reject lifecycle for the pipeline queue** (ADR-018): `AssetRequest.Lifecycle`
+      (Active/Archived/Rejected) + reason/date, separate from Stage; window view bar (counts) + lifecycle filter;
+      per-request Archive/Reject/Restore (+ Complete & Archive on Done); reason field; Delete reworded as the only
+      destructive action. Archiving never deletes the produced item (no `DeleteAsset` in the path). Self-tested via
+      computer-use (archive → Archived view → restore to prior stage; item intact). 162 green.
 - [x] **Image mirror/flip for paired parts** (ADR-017): "Mirror to opposite side" on sided requests (R/L hand
       or foot) — `MirrorUtil` (sidedness via slot) + `MirrorAction` (horizontal PNG flip → linked opposite-side
       `AssetRequest` with `mirrorOf`, opposite slot, flipped image, Meshy prompt; idempotent deterministic id;

@@ -24,6 +24,7 @@ namespace CapsuleWars.Editor.AssetPipeline
         private readonly Dictionary<PipelineStage, bool> _stageFoldout = new Dictionary<PipelineStage, bool>();
         private readonly HashSet<AssetRequest> _expanded = new HashSet<AssetRequest>();
         private Vector2 _scroll;
+        private Lifecycle _view = Lifecycle.Active;   // which lifecycle the queue is showing
 
         // New-request form state.
         private bool _showNew;
@@ -66,12 +67,15 @@ namespace CapsuleWars.Editor.AssetPipeline
         private void OnGUI()
         {
             DrawToolbar();
+            DrawViewBar();
             if (_showNew) DrawNewRequestForm();
 
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
-            if (_requests.Count == 0)
+            int inView = _requests.Count(r => r.lifecycle == _view);
+            if (inView == 0)
             {
-                EditorGUILayout.HelpBox("No requests yet. Click \"+ New request\" to add one.", MessageType.Info);
+                string hint = _view == Lifecycle.Active ? " Click \"+ New request\" to add one." : "";
+                EditorGUILayout.HelpBox($"No {_view} requests.{hint}", MessageType.Info);
             }
             else
             {
@@ -79,6 +83,28 @@ namespace CapsuleWars.Editor.AssetPipeline
                     DrawStageSection(stage);
             }
             EditorGUILayout.EndScrollView();
+        }
+
+        private void DrawViewBar()
+        {
+            int active = _requests.Count(r => r.lifecycle == Lifecycle.Active);
+            int archived = _requests.Count(r => r.lifecycle == Lifecycle.Archived);
+            int rejected = _requests.Count(r => r.lifecycle == Lifecycle.Rejected);
+
+            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+            GUILayout.Label("View:", EditorStyles.miniLabel, GUILayout.Width(36));
+            DrawViewToggle(Lifecycle.Active, $"Active ({active})");
+            DrawViewToggle(Lifecycle.Archived, $"Archived ({archived})");
+            DrawViewToggle(Lifecycle.Rejected, $"Rejected ({rejected})");
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void DrawViewToggle(Lifecycle v, string label)
+        {
+            bool on = _view == v;
+            if (GUILayout.Toggle(on, label, EditorStyles.toolbarButton, GUILayout.Width(110)) && !on)
+                _view = v;
         }
 
         private void DrawToolbar()
@@ -168,7 +194,7 @@ namespace CapsuleWars.Editor.AssetPipeline
 
         private void DrawStageSection(PipelineStage stage)
         {
-            var items = _requests.Where(r => r.stage == stage).ToList();
+            var items = _requests.Where(r => r.lifecycle == _view && r.stage == stage).ToList();
             if (items.Count == 0) return;
 
             if (!_stageFoldout.ContainsKey(stage)) _stageFoldout[stage] = true;
@@ -216,8 +242,9 @@ namespace CapsuleWars.Editor.AssetPipeline
                 {
                     if (GUILayout.Button("Open item", GUILayout.Width(80))) EditorGUIUtility.PingObject(r.createdItem);
                 }
-                if (GUILayout.Button("Delete", GUILayout.Width(60))) { DeleteRequest(r); GUIUtility.ExitGUI(); }
                 EditorGUILayout.EndHorizontal();
+
+                DrawLifecycleActions(r);
             }
 
             if (EditorGUI.EndChangeCheck()) EditorUtility.SetDirty(r);
@@ -342,6 +369,54 @@ namespace CapsuleWars.Editor.AssetPipeline
             r.description = EditorGUILayout.TextArea(r.description, GUILayout.MinHeight(48));
         }
 
+        // Archive / Reject / Restore + the (only) destructive Delete. Lifecycle changes never
+        // touch the produced game asset (createdItem / prefab / catalog) — they just flip a field.
+        private void DrawLifecycleActions(AssetRequest r)
+        {
+            EditorGUILayout.Space(2);
+
+            if (r.lifecycle != Lifecycle.Active)
+            {
+                EditorGUILayout.LabelField($"{r.lifecycle}" + (string.IsNullOrEmpty(r.lifecycleDate) ? "" : $" — {r.lifecycleDate}"),
+                    EditorStyles.miniBoldLabel);
+                r.lifecycleReason = EditorGUILayout.TextField("Reason", r.lifecycleReason);
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Restore to Active")) { Restore(r); GUIUtility.ExitGUI(); }
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Delete", GUILayout.Width(60))) { DeleteRequest(r); GUIUtility.ExitGUI(); }
+                EditorGUILayout.EndHorizontal();
+                return;
+            }
+
+            EditorGUILayout.BeginHorizontal();
+            if (r.stage == PipelineStage.Done)
+            {
+                if (GUILayout.Button("Complete & Archive")) { SetLifecycle(r, Lifecycle.Archived); GUIUtility.ExitGUI(); }
+            }
+            else if (GUILayout.Button("Archive")) { SetLifecycle(r, Lifecycle.Archived); GUIUtility.ExitGUI(); }
+            if (GUILayout.Button("Reject")) { SetLifecycle(r, Lifecycle.Rejected); GUIUtility.ExitGUI(); }
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Delete", GUILayout.Width(60))) { DeleteRequest(r); GUIUtility.ExitGUI(); }
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void SetLifecycle(AssetRequest r, Lifecycle to)
+        {
+            r.lifecycle = to;
+            r.lifecycleDate = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+            EditorUtility.SetDirty(r);
+            AssetDatabase.SaveAssets();
+            Refresh();
+        }
+
+        private void Restore(AssetRequest r)
+        {
+            r.lifecycle = Lifecycle.Active;   // Stage was never changed, so it returns to where it was.
+            EditorUtility.SetDirty(r);
+            AssetDatabase.SaveAssets();
+            Refresh();
+        }
+
         // --- actions ---
 
         private AssetRequest CreateRequestAsset(string title, string text, AssetCategory category, string folder)
@@ -427,7 +502,9 @@ namespace CapsuleWars.Editor.AssetPipeline
         private void DeleteRequest(AssetRequest r)
         {
             if (!EditorUtility.DisplayDialog("Delete request",
-                    $"Delete the pipeline request \"{r.title}\"?\n\n(This removes only the request record, not any created item/prefab.)",
+                    $"Permanently delete the pipeline request \"{r.title}\"?\n\n" +
+                    "This is the ONLY action that removes a request — Archive/Reject just hide it and are reversible. " +
+                    "Deletion removes only the request record; the produced item / prefab / model are NOT deleted.",
                     "Delete", "Cancel"))
                 return;
             string path = AssetDatabase.GetAssetPath(r);

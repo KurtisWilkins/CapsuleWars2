@@ -3,10 +3,17 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-21, after the image mirror/flip step for paired parts — branch `claude/deployment-grid`_
+_Last updated: 2026-06-21, after archive/reject (lifecycle) for the pipeline queue — branch `claude/deployment-grid`_
 
 ## One-line status
-**Mirror/flip for paired parts (NEW):** sided requests (R/L hand or foot) get a **"Mirror to opposite side"**
+**Archive/Reject lifecycle (NEW):** AssetRequests gain a `Lifecycle` (Active/Archived/Rejected) separate from
+Stage. The pipeline window has a **view bar** (`Active (N) · Archived (N) · Rejected (N)`, default Active) and
+per-request **Archive / Reject / Restore** (+ Complete & Archive on Done) with a reason + timestamp; Restore
+returns to the preserved stage; **Delete** stays the only destructive (confirm) action. Archiving never deletes
+the produced game asset (no `DeleteAsset` in the lifecycle path). **Self-tested via computer-use:** archived a
+Categorized request → left Active, showed under Archived with timestamp, produced model/prefab intact → restored
+to its original stage. 162/162 green.
+**Mirror/flip for paired parts:** sided requests (R/L hand or foot) get a **"Mirror to opposite side"**
 button that horizontally flips the approved image and creates a linked opposite-side `AssetRequest`
 (`mirrorOf`, flipped image, opposite slot, Meshy prompt ready) — verified via the bridge (clean horizontal
 mirror, correct left-hand request). Built on the **shared Grok art-style system:** consistency is now structural. A single `StyleProfile` SO + per-part
@@ -59,6 +66,12 @@ credits). Prior passes (Branching Map, Customization v2) still await their Play-
   verification + arena tuning remain (below).
 
 ## Needs human verification (Claude can't see Play Mode)
+- **Archive/Reject lifecycle — VERIFIED via computer-use (2026-06-21).** Archived the wired "Test Helmet"
+  (Categorized) → it left Active (4→3), appeared under **Archived** with an "Archived — <time>" stamp + Reason
+  field, its `Generated/Items/Equipment` + `Meshy/Helmet` assets stayed intact; **Restore to Active** returned it
+  to Categorized (4 again); live counts + empty-view message correct. Reject + Complete-&-Archive use the same
+  `SetLifecycle` path. Nothing left to verify here, but if you want: confirm an Archived item's `createdItem`
+  still equips on a unit in Play (Play visual — the asset is untouched by archiving, so this is just a sanity check).
 - **Mirror/flip — Play-mode equip check (the rest is verified).** I verified via the bridge: flipping the
   RightHand "Mikey mouse hands" produced a clean **horizontal** mirror (same resolution, grayscale, plain bg)
   and a linked **LeftHand** request (`mirrorOf`, flipped image, `targetSlot`=LeftHand, Meshy prompt ready).

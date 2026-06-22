@@ -14,7 +14,9 @@ namespace CapsuleWars.Editor.AssetPipeline
     public static class MeshyModelService
     {
         public const string DefaultCreateEndpoint = "https://api.meshy.ai/openapi/v1/image-to-3d";
-        public const string DefaultAiModel = "meshy-5";
+        // Empty = don't send ai_model (use Meshy's server default / latest). image-to-3d doesn't
+        // document an ai_model field; set an override only if your account needs a specific version.
+        public const string DefaultAiModel = "";
 
         private const int MaxPolls = 240;     // ~20 min at 5s
         private const int PollDelayMs = 5000;
@@ -26,13 +28,16 @@ namespace CapsuleWars.Editor.AssetPipeline
             string createUrl = string.IsNullOrEmpty(endpoint) ? DefaultCreateEndpoint : endpoint;
             string dataUri = "data:image/png;base64," + Convert.ToBase64String(imagePng);
 
-            string createBody = JsonUtility.ToJson(new CreateReq
-            {
-                image_url = dataUri,
-                ai_model = string.IsNullOrEmpty(aiModel) ? DefaultAiModel : aiModel,
-                should_texture = true,
-                enable_pbr = false
-            });
+            // Built by hand so optional fields can be omitted (JsonUtility always emits every field).
+            // The data URI contains only JSON-string-safe characters, so no escaping is needed.
+            string model = string.IsNullOrEmpty(aiModel) ? DefaultAiModel : aiModel;
+            var bodyBuilder = new StringBuilder();
+            bodyBuilder.Append("{\"image_url\":\"").Append(dataUri).Append('"')
+                       .Append(",\"should_texture\":true,\"enable_pbr\":false")
+                       .Append(",\"target_formats\":[\"fbx\",\"glb\"]");
+            if (!string.IsNullOrEmpty(model)) bodyBuilder.Append(",\"ai_model\":\"").Append(model).Append('"');
+            bodyBuilder.Append('}');
+            string createBody = bodyBuilder.ToString();
 
             // 1. Create the task.
             string taskId;
@@ -79,7 +84,6 @@ namespace CapsuleWars.Editor.AssetPipeline
 
         public struct ModelResult { public byte[] data; public string ext; }
 
-        [Serializable] private class CreateReq { public string image_url; public string ai_model; public bool should_texture; public bool enable_pbr; }
         [Serializable] private class CreateResp { public string result; }
         [Serializable] private class TaskResp { public string status; public int progress; public ModelUrls model_urls; }
         [Serializable] private class ModelUrls { public string fbx; public string glb; public string obj; public string usdz; }

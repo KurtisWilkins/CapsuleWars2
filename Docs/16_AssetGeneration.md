@@ -10,8 +10,10 @@ default** (Copy-prompt → run Grok/Meshy yourself → paste results), and — o
 - **Claude** (`AnthropicDescriptionService`, Messages API) → writes the item description.
 Calls run on a background thread (`GenerationHttp`) and marshal asset writes back to the main thread
 (`GenerationActions`). Models + endpoints are overridable (keys window "Advanced" / the JSON) in case API
-shapes drift. ⚠ The live calls were written against documented API shapes but not yet run end-to-end with real
-keys — verify each service once and adjust the model/endpoint if a request 4xxs.
+shapes drift. Verified against the June 2026 docs: Grok image model = **`grok-imagine-image-quality`** (the old
+`grok-2-image` 404s); Meshy `image-to-3d` requests `target_formats:["fbx","glb"]` and omits `ai_model` by
+default (set an override only if your account needs a version); Anthropic model = `claude-sonnet-4-6`.
+⚠ Verify each service once with real keys and adjust the model/endpoint override if a request still 4xxs.
 
 ### Implemented now
 - `AssetRequest` ScriptableObject (one per asset) holds every stage's artifact + a `PipelineStage`; persists

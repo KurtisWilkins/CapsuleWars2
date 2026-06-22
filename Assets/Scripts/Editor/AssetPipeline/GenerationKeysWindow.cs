@@ -70,7 +70,7 @@ namespace CapsuleWars.Editor.AssetPipeline
             {
                 EditorGUI.indentLevel++;
                 _grokModel = EditorGUILayout.TextField(new GUIContent("Grok model", $"Blank = {GrokImageService.DefaultModel}"), _grokModel);
-                _meshyModel = EditorGUILayout.TextField(new GUIContent("Meshy AI model", $"Blank = {MeshyModelService.DefaultAiModel}"), _meshyModel);
+                _meshyModel = EditorGUILayout.TextField(new GUIContent("Meshy AI model", "Blank = Meshy server default (recommended). Set e.g. latest or meshy-6 only if needed."), _meshyModel);
                 _anthropicModel = EditorGUILayout.TextField(new GUIContent("Anthropic model", $"Blank = {AnthropicDescriptionService.DefaultModel}"), _anthropicModel);
                 EditorGUILayout.LabelField("Leave blank to use the default. Endpoints can be overridden in the JSON file directly.", EditorStyles.miniLabel);
                 EditorGUI.indentLevel--;

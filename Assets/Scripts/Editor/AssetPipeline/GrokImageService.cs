@@ -13,7 +13,7 @@ namespace CapsuleWars.Editor.AssetPipeline
     public static class GrokImageService
     {
         public const string DefaultEndpoint = "https://api.x.ai/v1/images/generations";
-        public const string DefaultModel = "grok-2-image";
+        public const string DefaultModel = "grok-imagine-image-quality";
 
         public static async Task<byte[]> GenerateAsync(string prompt, string apiKey, string model, string endpoint)
         {

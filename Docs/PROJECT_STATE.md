@@ -15,8 +15,9 @@ and the **equipment runtime-instance refactor** (stats on a saved `EquipmentInst
 still needs a Play-mode pass** (see "Needs human verification").
 
 ## Repo / branch state
-- **Trunk: `main`** (= `origin/main`). Work on `main` or short-lived feature branches (ADR-020).
-  `claude/deployment-grid` (local + remote) is kept as a synced pointer at the same commit — prunable when ready.
+- **Trunk: `main`** (= `origin/main`) — the only working branch now. Work on `main` or short-lived feature
+  branches (ADR-020). `claude/deployment-grid` was pruned (local + remote). The remote still keeps
+  `claude/capsule-wars-setup-pBoDq` (an old setup branch, fully contained in `main` — prunable).
 - Rollback point: tag **`pre-trunk-main`** (`852a520`, pushed) = `main` before the consolidation fast-forward.
 - Tests: `Assets/Scripts/Tests/EditMode/` — **166 green**. Run `run_tests` after any C# change.
 
@@ -71,7 +72,8 @@ still needs a Play-mode pass** (see "Needs human verification").
 - MCP object/component ref fields need object form (`{"instanceID":N}` / `{"path":"..."}`); bare ints fail.
 - Working tree carries untracked **test artifacts** under `Assets/Generated/` + `Assets/Editor/AssetPipeline/Requests/`
   (Mikey/TestHelmet pipeline tests) — throwaway, intentionally not committed.
-- Cosmetic backlog: battle-end UI "New Text" placeholder labels (need the real copy).
+- Cosmetic: the battle scene's placeholder "New Text" labels were cleared; `Test_M3_Idle` + `Test_M7_Map`
+  still have default "New Text" labels (likely runtime-driven HUD/node text) — clear if any show through.
 
 ## Key paths
 - Stats (NO StatCalculator — ADR-007): `Assets/Scripts/Units/Controllers/UnitStatusController.cs`. Equipment:

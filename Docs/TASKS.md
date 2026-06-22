@@ -34,11 +34,13 @@
 - [ ] Persist body-part/palette edits (`UnitFactory.FromUnit` captures equipment only).
 - [ ] Persistent run-scoped inventory (owned-item ids in `RunStateDTO`) seeded on new game; the screen
       currently shows the `EquipmentCatalog` (now 6 items incl. 4 starters) ∪ serialized `starterItems`.
-- [ ] Clean up battle-end UI placeholder "New Text" labels (cosmetic; pre-existing). Remaining M10 polish.
-- [ ] *(Optional)* prune `claude/deployment-grid` (local + remote) now that `main` is the trunk and they're
-      identical — left as an explicit call (it's the most outward-facing delete).
+- [ ] *(Optional)* clear the remaining default "New Text" labels in `Test_M3_Idle` + `Test_M7_Map` (the battle
+      scene's 4 were cleared; these are likely runtime-driven HUD/node labels — clear only if they show through).
 
 ## Done (recent — prune periodically)
+- [x] **Final cleanup touches:** pruned `claude/deployment-grid` (local + remote; was identical to `main`, an
+      ancestor — no commit loss); cleared the battle scene's 4 placeholder "New Text" labels. `main` is now the
+      only branch.
 - [x] **Trunk consolidation (ADR-020, supersedes ADR-009):** fast-forwarded `main` → `deployment-grid` (clean FF,
       no work lost), pushed `main`, tagged `pre-trunk-main` (852a520) as rollback, deleted the 5 contained local
       branches. Now trunk-based on `main`; `deployment-grid` kept as a synced pointer (prunable).

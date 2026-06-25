@@ -76,8 +76,9 @@ namespace CapsuleWars.UI.CameraControl
                  "aren't hidden behind it. The HUD is a 230px band in a 720x1280 CanvasScaler (match 0.5) ≈ 0.18 of the " +
                  "reference but up to ~0.32 on a wide/landscape view, so default 0.30 covers the worst case.")]
         [SerializeField, Range(0f, 0.45f)] private float bottomViewportInset = 0.30f;
-        [Tooltip("Extra world-space nudge added to the computed framing position, for fine-tuning what's on screen.")]
-        [SerializeField] private Vector3 framingOffset = Vector3.zero;
+        [Tooltip("Extra world-space nudge added to the computed DEPLOYMENT framing position, for fine-tuning what's " +
+                 "on screen (e.g. z+ moves the camera toward the board to recenter it). Not applied to the battle frame.")]
+        [SerializeField] private Vector3 framingOffset = new Vector3(0f, 0f, 6f);
         [Tooltip("Seconds for the camera transition in/out of the deployment framing.")]
         [SerializeField, Min(0.01f)] private float transitionSeconds = 0.6f;
 
@@ -134,7 +135,7 @@ namespace CapsuleWars.UI.CameraControl
         public void FrameDeployment()
         {
             if (computeFramingFromGrid &&
-                TryComputeBoardFraming(deploymentTiltDegrees, bottomViewportInset, deploymentFov, out var pos, out var rot, out var fov))
+                TryComputeBoardFraming(deploymentTiltDegrees, bottomViewportInset, deploymentFov, framingOffset, out var pos, out var rot, out var fov))
                 BeginTransition(pos, rot, fov);
             else
                 BeginTransition(deploymentPosition, Quaternion.Euler(deploymentEuler), deploymentFov);
@@ -148,7 +149,7 @@ namespace CapsuleWars.UI.CameraControl
         public void FrameBattle()
         {
             if (computeBattleFromGrid &&
-                TryComputeBoardFraming(battleTiltDegrees, 0f, battleFov, out var pos, out var rot, out var fov))
+                TryComputeBoardFraming(battleTiltDegrees, 0f, battleFov, Vector3.zero, out var pos, out var rot, out var fov))
                 BeginTransition(pos, rot, fov);
             else
                 BeginTransition(authoredPosition, authoredRotation, authoredFov);
@@ -162,7 +163,7 @@ namespace CapsuleWars.UI.CameraControl
         /// up to leave a clear band at the bottom (for the deployment HUD; pass 0 for battle). Returns
         /// false if no grid source is available.
         /// </summary>
-        private bool TryComputeBoardFraming(float tiltDegrees, float bottomInset, float fovParam,
+        private bool TryComputeBoardFraming(float tiltDegrees, float bottomInset, float fovParam, Vector3 offset,
                                             out Vector3 pos, out Quaternion rot, out float fov)
         {
             pos = default; rot = Quaternion.identity; fov = 0f;
@@ -189,7 +190,7 @@ namespace CapsuleWars.UI.CameraControl
             center.z -= depth * bottomInset * 0.5f;
 
             float tilt = tiltDegrees * Mathf.Deg2Rad;
-            pos = center + new Vector3(0f, dist * Mathf.Sin(tilt), -dist * Mathf.Cos(tilt)) + framingOffset;
+            pos = center + new Vector3(0f, dist * Mathf.Sin(tilt), -dist * Mathf.Cos(tilt)) + offset;
             rot = Quaternion.Euler(tiltDegrees, 0f, 0f);
             return true;
         }

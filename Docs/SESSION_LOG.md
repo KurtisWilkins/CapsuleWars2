@@ -6,6 +6,17 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-23 — Deployment layout auto-restores between combats (ADR-023)
+**Ask:** the player shouldn't have to re-deploy units every combat — auto-deploy the last layout, still editable.
+**Found:** the save side was already done — `RunState.Placements` is written by the deployment UI and round-trips
+to disk; nothing clears it between combats (only the user's bench-tap / Clear do). The gap was purely RESTORE: in
+spawn-on-place mode nothing replayed the saved layout, so each combat started with an empty board.
+**Did (commit `2a0bede`, 172/172 green):** added `DeploymentTray.RestoreSavedPlacements()` (called in `Start`):
+re-places each saved placement for a current party member via the normal `PlaceToken` + `SpawnOrMoveAt` path,
+leaves them off the bench, drops stale (not-in-party) placements; benched units unchanged. Additive, reuses tested
+primitives, no combat logic touched. **Play-verify (human):** deploy in one combat → fight → next combat the same
+units are pre-deployed; bench/Clear still change them; survives app restart (saved to disk).
+
 ## 2026-06-23 — Battle/deployment camera fix (ADR-022)
 **Goal:** focused fix of `DeploymentCameraController` in `Test_M3_Battle` — three problems: (1) only the front
 player row was reachable (other two hidden behind the HUD), (2) Assemble snapped to a bad angle with no control,

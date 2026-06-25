@@ -44,6 +44,10 @@
       scene's 4 were cleared; these are likely runtime-driven HUD/node labels — clear only if they show through).
 
 ## Done (recent — prune periodically)
+- [x] **Deployment layout persists + auto-restores (ADR-023, 2026-06-23):** `DeploymentTray.RestoreSavedPlacements()`
+      replays `RunState.Placements` (already saved) on combat entry — your last layout re-deploys; stale/not-in-party
+      placements dropped; bench/Clear still edit. Reuses tested primitives; 172/172 green (`2a0bede`). Play-verify:
+      deploy → fight → next combat is pre-deployed.
 - [x] **Battle-camera fix (ADR-022, 2026-06-23):** `DeploymentCameraController` — deployment frame clears the HUD
       (tilt 78→84, inset 0.22→0.30), `FrameBattle` computes a ~45° TFT board view (was: snap to authored pose),
       `allowControlDuringBattle` enables free pan/zoom in combat, zoom moves along the view direction (clamped),

@@ -3,7 +3,7 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-23 — battle-camera fix (ADR-022) in `Test_M3_Battle`: clear-HUD deploy frame, 45° battle frame, free pan/zoom in combat; 172 green._
+_Last updated: 2026-06-23 — deployment layout persists + auto-restores between combats (ADR-023); battle-camera fix (ADR-022); 172 green._
 
 ## One-line status
 **Customization is now a paper-doll** (ADR-021): **code complete, 169/169 EditMode green, committed (`79ba7fe`)**
@@ -33,7 +33,8 @@ still wants visual tuning (the builder is re-runnable). Repo is trunk-based on `
   (the stat math; ADR-007). EditMode-tested (two instances of one SO → different stats).
 - **Deployment phase (v2):** 7×9 grid (cellSize 3.5), near player zone (rows 0–2) + far enemy zone (rows 6–8);
   `DeploymentTray` HUD; `DeploymentPhaseController` gate (combat blocked until Assemble); spawn-on-place via
-  `BattlePartySpawner`; enemy-zone cell tap → shared `UnitInspectionPanel`.
+  `BattlePartySpawner`; enemy-zone cell tap → shared `UnitInspectionPanel`. **Placements persist + auto-restore
+  on re-entry (ADR-023):** your last layout re-deploys each combat (still editable via bench-tap / Clear).
 - **Battle/deployment camera (ADR-022):** `DeploymentCameraController` auto-frames the board clear of the HUD for
   deployment (tilt 84, inset 0.30), eases to a computed **~45° TFT-style** view on Assemble (not the authored
   pose), and allows **free pan/zoom during combat** (`allowControlDuringBattle`; zoom moves along the view

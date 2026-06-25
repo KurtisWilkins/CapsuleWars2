@@ -316,4 +316,15 @@ F5/F6 hotkeys to reframe live after nudging a serialized knob — this is a feel
 (see PROJECT_STATE "Needs human verification" for the knobs-per-symptom table). No combat logic touched; ADR-014's
 framing intent stands, this tunes it and removes the battle lock.
 
+### ADR-023 — Deployment layout persists + auto-restores between combats (extends ADR-006/011)
+**Decided:** the player's unit placements carry across combats. `RunState.Placements` was already saved (written
+by the deployment UI on place/bench, round-tripped to disk via the DTO), but in spawn-on-place deployment mode
+nothing replayed it — every combat started with an empty board. `DeploymentTray.Start` now calls
+`RestoreSavedPlacements()`: each saved placement for a CURRENT party member is re-placed via the normal path
+(`DeploymentManager.PlaceToken` + `BattlePartySpawner.SpawnOrMoveAt`) and left off the bench; units with no saved
+cell stay benched; placements for units no longer in the party are dropped. **Why:** re-deploying the same layout
+every fight was tedious; auto-restoring the last layout — still fully editable via bench-tap / Clear — is the
+convenient default. **Status:** code done, **172/172 EditMode green** (`2a0bede`); reuses tested primitives + the
+existing placement round-trip test. Play-verify: deploy → fight → next combat auto-deploys the same layout; edits stick.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

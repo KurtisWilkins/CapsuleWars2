@@ -70,8 +70,34 @@ namespace CapsuleWars.UI.Deployment
                 if (gridRenderer != null) gridRenderer.Build(manager);
                 manager.OnPlacementsChanged += HandlePlacementsChanged;
             }
+            RestoreSavedPlacements();   // auto-deploy the player's last saved layout
             RebuildBench();
             UpdateSelectionLabel();
+        }
+
+        // Re-deploy the player's last saved layout (RunState.Placements) so they don't have to
+        // place units every combat: each saved placement for a CURRENT party member is re-placed
+        // via the normal place path (token + live preview) and left off the bench. Units with no
+        // saved cell stay benched; placements for units no longer in the party are dropped. The
+        // player can still bench/move any unit or hit Clear to start over.
+        private void RestoreSavedPlacements()
+        {
+            if (manager == null || !RunSession.IsActive) return;
+            var placements = RunSession.Current.Placements;
+            if (placements == null || placements.Count == 0) return;
+
+            var partyIds = new HashSet<string>();
+            foreach (var u in RunSession.Current.Party)
+                if (u != null && !string.IsNullOrEmpty(u.Id)) partyIds.Add(u.Id);
+
+            // Snapshot first — ClearPlacement mutates the dictionary we're iterating.
+            var saved = new List<KeyValuePair<string, GridCoord>>(placements);
+            foreach (var kv in saved)
+            {
+                if (!partyIds.Contains(kv.Key)) { RunSession.Current.ClearPlacement(kv.Key); continue; }
+                if (manager.PlaceToken(kv.Key, kv.Value) && spawner != null)
+                    spawner.SpawnOrMoveAt(kv.Key, kv.Value);
+            }
         }
 
         private void OnDestroy()

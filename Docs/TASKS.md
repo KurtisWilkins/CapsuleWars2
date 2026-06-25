@@ -4,8 +4,13 @@
 > specific and self-contained. Move finished items to "Done (recent)".
 
 ## Next up (work top-down)
-- [ ] **START HERE — Play-mode verification pass for the gameplay** (D3D11 is the project default; no
-      `-force-d3d11` flag). Re-bake the NavMesh FIRST, then walk the list (full per-item checklist in PROJECT_STATE).
+- [ ] **START HERE — Play-verify + tune the battle camera** (`Test_M3_Battle`, ADR-022; this just landed). Re-bake
+      the NavMesh FIRST (item below). Then: deployment shows all 3 player rows above the HUD + every cell clickable;
+      pan/zoom work in deployment; Assemble → ~45° board view; battle → pan + zoom (zoom dollies toward the board) +
+      stays in bounds. Dial the feel live — nudge a field on Main Camera's `DeploymentCameraController`, press F5
+      (deploy frame) / F6 (battle frame) or right-click → Re-apply. Knobs-per-symptom table in PROJECT_STATE.
+- [ ] **Play-mode verification pass for the rest of the gameplay** (D3D11 default; no `-force-d3d11`). Walk the
+      full per-item checklist in PROJECT_STATE.
 - [ ] **Finish the paper-doll checks + tune its layout** (`Test_M7_Map`; built + Play-verified 2026-06-23 —
       tap-equip/unequip + drag-drop all confirmed). Re-run `Tools/Paper-Doll/Build In Open Scene` after tuning
       anchors in `PaperDollBuilder` if needed. Still to confirm by hand: visual layout polish; wrong-slot drag
@@ -39,6 +44,11 @@
       scene's 4 were cleared; these are likely runtime-driven HUD/node labels — clear only if they show through).
 
 ## Done (recent — prune periodically)
+- [x] **Battle-camera fix (ADR-022, 2026-06-23):** `DeploymentCameraController` — deployment frame clears the HUD
+      (tilt 78→84, inset 0.22→0.30), `FrameBattle` computes a ~45° TFT board view (was: snap to authored pose),
+      `allowControlDuringBattle` enables free pan/zoom in combat, zoom moves along the view direction (clamped),
+      bounds widened, editor-only F5/F6 + ContextMenu tuning aid. Scene values updated + saved; added
+      `DeploymentCameraTests` (Clamp + forward-zoom). 172/172 green. Commit `aab0146`. Play feel = human-gated.
 - [x] **Paper-doll panel assembled + Play-verified (ADR-021, 2026-06-23):** built `Test_M7_Map`'s customization
       panel via the re-runnable `PaperDollBuilder` editor tool (containers + footer + Gear/Body bag + buttons,
       old list UI removed, all 13 refs wired by `SerializedObject`). Play-verified end-to-end via computer-use:
@@ -119,4 +129,4 @@
 
 ## Notes
 - New ideas discovered mid-task go in Backlog, not into the current task.
-- Run the EditMode suite (`run_tests`) after C# changes; keep it green (currently **169**).
+- Run the EditMode suite (`run_tests`) after C# changes; keep it green (currently **172**).

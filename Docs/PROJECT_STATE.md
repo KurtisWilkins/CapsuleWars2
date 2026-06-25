@@ -3,7 +3,7 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-23 — paper-doll customization (ADR-021) assembled in `Test_M7_Map` + Play-verified; 169 green._
+_Last updated: 2026-06-23 — battle-camera fix (ADR-022) in `Test_M3_Battle`: clear-HUD deploy frame, 45° battle frame, free pan/zoom in combat; 172 green._
 
 ## One-line status
 **Customization is now a paper-doll** (ADR-021): **code complete, 169/169 EditMode green, committed (`79ba7fe`)**
@@ -33,8 +33,11 @@ still wants visual tuning (the builder is re-runnable). Repo is trunk-based on `
   (the stat math; ADR-007). EditMode-tested (two instances of one SO → different stats).
 - **Deployment phase (v2):** 7×9 grid (cellSize 3.5), near player zone (rows 0–2) + far enemy zone (rows 6–8);
   `DeploymentTray` HUD; `DeploymentPhaseController` gate (combat blocked until Assemble); spawn-on-place via
-  `BattlePartySpawner`; grid-fit `DeploymentCameraController`; enemy-zone cell tap → shared `UnitInspectionPanel`.
-  (The old pre-spawn `DeploymentView` handler was removed this session.)
+  `BattlePartySpawner`; enemy-zone cell tap → shared `UnitInspectionPanel`.
+- **Battle/deployment camera (ADR-022):** `DeploymentCameraController` auto-frames the board clear of the HUD for
+  deployment (tilt 84, inset 0.30), eases to a computed **~45° TFT-style** view on Assemble (not the authored
+  pose), and allows **free pan/zoom during combat** (`allowControlDuringBattle`; zoom moves along the view
+  direction). Editor F5/F6 + ContextMenu reframe live for tuning. Feel is human-gated (knobs below).
 - **Branching run map (code-complete):** seeded branching+infinite graph (`MapNode`/`RunMap`/`MapGenConfig`/
   `MapGenerator`), graph `RunState`, `RunController.TravelToNode` + stitch-on-clear + loss-only end,
   `MapView`/`MapNodeView`. `Test_M7_Map` assembled.
@@ -58,6 +61,19 @@ still wants visual tuning (the builder is re-runnable). Repo is trunk-based on `
    cell ⇒ the real unit appears (scale-in); tap a placed cell to bench it; **Clear**; **Assemble** ⇒ those exact
    units start combat (no dupes; not before Assemble). (Placement + enemy inspection + Assemble were Play-verified
    2026-06-21; re-confirm after the NavMesh bake.)
+2b. **Battle/deployment camera (ADR-022, `Test_M3_Battle`) — the focus of this fix.** Verify in Play:
+   - **Deployment:** all THREE player rows (0,1,2) sit ABOVE the HUD and every cell is clickable/placeable; no taps
+     dropped over the bottom band. Pan (WASD/drag) + zoom work during deployment.
+   - **Assemble:** the camera eases to a ~45° board view (not the old bad angle).
+   - **Battle:** pan (WASD/drag/touch) + zoom (scroll/pinch) both work; zoom dollies toward the board; the camera
+     stays in bounds and can frame the fight.
+   - **Tune by eye (editor):** nudge a field on Main Camera's `DeploymentCameraController`, then **F5** (re-frame
+     deployment) / **F6** (re-frame battle), or right-click the component → Re-apply. Knobs per symptom: rows still
+     under the HUD → ↑ `bottomViewportInset` (0.30→0.36) and/or ↑ `deploymentTiltDegrees` (84→88); too flat →
+     ↓ `deploymentTiltDegrees` (84→80); battle too steep/shallow → `battleTiltDegrees` (45 ±5); can't see the whole
+     board in battle → ↓ `battleTiltDegrees` / ↑ `battleFov` / widen bounds; camera snaps back when panning →
+     widen `boundsMin`/`boundsMax`; zoom too fast or flies off → `scrollZoomSpeed`/`pinchZoomSpeed`,
+     `minHeight`/`maxHeight`.
 3. **Branching map** (`Test_M7_Map`) — start a run → branching map renders → pick a start → encounter → return →
    only edge-connected nodes clickable → climb + clear the Boss → a new segment stitches on; lose → run ends.
    Tune MapView spacing if cramped; delete any leftover old Map Panel content if it peeks through.

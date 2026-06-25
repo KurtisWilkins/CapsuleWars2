@@ -295,4 +295,25 @@ Play-verified via computer-use: opens for a live unit; slots/body-slots/bag gene
 human checks: visual layout polish, wrong-slot drag reject, Stats button, body-part bag equip, persistence
 round-trip. (`Docs/CHECKLIST_PaperDoll.md` retained as the assembly/verification reference.)
 
+### ADR-022 — Battle camera: free pan/zoom during combat + computed 45° frame (revisits ADR-014)
+**Decided:** the deployment/battle camera (`DeploymentCameraController` on `Test_M3_Battle`'s Main Camera) now
+(1) **frames the board clear of the deployment HUD**, (2) **eases to a computed ~45° board view on Assemble**
+instead of snapping to the authored scene pose, and (3) **allows pan + zoom during combat** (TFT-style), not just
+deployment. **Why:** ADR-014 framed the board above the HUD with `bottomViewportInset`/`framingOffset`, but at
+78° tilt the three player rows foreshortened into the bottom band (a 230px HUD that reaches ~0.32 of height on a
+wide view under the 720×1280 / match-0.5 CanvasScaler) and `restrictToDeployment` locked the camera the instant
+combat started, dropping the player at a bad angle with no control.
+**Changes:** steeper deployment tilt (default 78→**84**) so rows spread vertically; `bottomViewportInset` 0.22→
+**0.30**; `TryComputeBoardFraming` generalized to `(tilt, inset, fov)` so deployment and battle share it;
+`FrameBattle` computes a frame at `battleTiltDegrees` (default **45**, `battleFov`, `computeBattleFromGrid`) with
+the authored pose as fallback; new **`allowControlDuringBattle`** (default true) overrides `restrictToDeployment`
+for the combat phase (control still off during the transition lerp); **zoom moves along the camera's view**
+(`transform.forward`), clamped by height, instead of only changing `p.y` — so it dollies toward the board at any
+pitch; world bounds widened (min −10,−30 / max 35,40) so the 45° pose + panning stay in range.
+**Tuning aid (editor-only, never ships):** `#if UNITY_EDITOR` ContextMenu "Re-apply deployment/battle frame" +
+F5/F6 hotkeys to reframe live after nudging a serialized knob — this is a feel task dialed by eye.
+**Status:** code + scene done, **172/172 EditMode green** (`Clamp` now covered). Play-mode feel is human-gated
+(see PROJECT_STATE "Needs human verification" for the knobs-per-symptom table). No combat logic touched; ADR-014's
+framing intent stands, this tunes it and removes the battle lock.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

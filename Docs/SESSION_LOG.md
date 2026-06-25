@@ -6,6 +6,30 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-23 — Battle/deployment camera fix (ADR-022)
+**Goal:** focused fix of `DeploymentCameraController` in `Test_M3_Battle` — three problems: (1) only the front
+player row was reachable (other two hidden behind the HUD), (2) Assemble snapped to a bad angle with no control,
+(3) no pan/zoom to watch the fight.
+
+**Measured first (scene YAML, since the "Click to Do" overlay blocked computer-use clicks):** the HUD
+`DeploymentHUD` is a bottom-anchored 230px band with an **opaque raycast-target Image** over the whole strip, in a
+**720×1280 / match-0.5** CanvasScaler → ~0.18 of height in the reference but **~0.32 on a wide/landscape view**,
+while `bottomViewportInset` was a fixed 0.22 → near rows fall under the band. Battle pose was the authored Awake
+pose; `restrictToDeployment` locked all input once combat started.
+
+**Changed (commit `aab0146`, 172/172 EditMode green):**
+- Deployment: `deploymentTiltDegrees` 78→84 + `bottomViewportInset` 0.22→0.30 (script defaults + scene overrides).
+- `TryComputeBoardFraming` generalized to `(tilt, inset, fov)`; `FrameBattle` computes a `battleTiltDegrees`
+  (45) frame with the authored pose as fallback (`computeBattleFromGrid`).
+- `allowControlDuringBattle` (default true) overrides `restrictToDeployment` for combat (still locked during the
+  transition lerp). Zoom now moves along `transform.forward` (clamped by height) instead of only `p.y`. Bounds
+  widened (−10,−30 / 35,40) so the 45° pose + panning fit.
+- Editor-only tuning aid (`#if UNITY_EDITOR`, never ships): ContextMenu "Re-apply deployment/battle frame" + F5/F6.
+- Added `DeploymentCameraTests` (Clamp XZ+height + forward-zoom floor); added `CapsuleWars.UI` to the test asmdef.
+
+**Not done (human-gated — it's a feel task I can't see):** Play-verify the three behaviors + dial the knobs.
+Knobs-per-symptom table is in PROJECT_STATE / the START-HERE task. No combat logic touched.
+
 ## 2026-06-23 — Paper-doll panel BUILT in `Test_M7_Map` + Play-verified (ADR-021)
 **Goal:** actually assemble the paper-doll scene (the prior session left it as a checklist because the bridge
 couldn't read refs / the computer-use capture was blank — turned out to be remote/RDP).

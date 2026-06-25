@@ -34,6 +34,26 @@
 - [ ] **Swap placeholder item visuals:** `EquipVisual_Cube` is a stand-in. Assign real `visualPrefab`/`visualMesh`
       per item; optionally re-parent `Socket_*` empties under hand/head bones for animated attachment.
 
+### Themed encounters — continue the system (Slice A landed; see `Docs/18_ThemedEncounters.md` + ADR-024)
+- [ ] **Slice B — biome theming + NavMesh carve.** A visual skin over the terrain data; the model is untouched.
+      Build: a `BiomeTheme` SO (`TerrainType → prop prefab + material`, ground/skybox); a `TerrainView` scene
+      component that, on deployment build, iterates `DeploymentManager.Terrain.Cells` / `grid.TerrainCells` and
+      instantiates the themed prop at `config.CellToWorld(coord)` (mirrors `DeploymentGridRenderer`); and a NavMesh
+      carve — a `NavMeshObstacle` (carving) box ≈`cellSize` on every **Impassable** cell so the baked arena NavMesh
+      is cut at runtime (no re-bake). **Contract consumed:** `grid.TerrainCells` (non-Passable only),
+      `config.CellToWorld` + `cellSize`. Read-only; never writes the model. **Play-verify:** obstacles render +
+      units path around Impassable cells.
+- [ ] **Slice C — encounter builder (iterative).** Turn a map node into a fight. Build: an `EncounterDefinition`
+      SO (roster spec by `NodeType` + depth, an obstacle `TerrainLayout` or seeded generator, a placement strategy)
+      + a builder that stamps the layout (`TerrainLayout.ApplyTo`), generates the roster (extends
+      `RandomUnitGenerator` — note stats/class/abilities are still TODO there), and places enemies on **Passable**
+      cells within `config.InEnemyZone` avoiding `IsImpassable` (Hazard per strategy); + a new `EnemyEncounterSpawner`
+      (mirror of player-only `BattlePartySpawner` — enemies are scene-placed static today). **Contract consumed:**
+      `grid.GetTerrain/IsImpassable/IsHazard`, `config.InEnemyZone`, `TerrainLayout`. Generate from
+      `RunState.Seed + nodeId` for reproducibility (no extra save unless terrain becomes non-deterministic). Attach
+      at `MapNode.Type` (Combat/Elite/Boss) via `RunController`/`RunBattleSetup`. Likely wants an enemy-zone analogue
+      of `DeploymentManager.FirstFreeCell`.
+
 ## Backlog (not yet scheduled)
 - [ ] Bench-item prefab polish: deployment + customization reuse `EquipButton.prefab`; make a dedicated
       unit-card prefab (icon + name) if desired.
@@ -44,6 +64,13 @@
       scene's 4 were cleared; these are likely runtime-driven HUD/node labels — clear only if they show through).
 
 ## Done (recent — prune periodically)
+- [x] **Themed encounters — design + Slice A terrain model (ADR-024, 2026-06-25):** designed the 3-slice system
+      (`Docs/18_ThemedEncounters.md`); built Slice A — `TerrainType` (Passable/Impassable/Hazard) generalizing the
+      binary `blocked` flag, `DeploymentGrid` terrain map (`SetTerrain/GetTerrain/IsImpassable/IsHazard/TerrainCells`
+      + `SetBlocked/IsBlocked` compat wrappers), `IsDeployable`/`GetState` extension (`CellState.Hazard`),
+      `DeploymentGridConfig.allowPlaceOnHazard`, `TerrainLayout` (+ `DeploymentManager` Awake stamp), renderer
+      `hazardColor`. Pure logic, self-verified: **181/181 green** (+9 terrain tests). B + C captured above with their
+      contracts. No Play needed (carve visual is Slice B).
 - [x] **Deployment layout persists + auto-restores (ADR-023, 2026-06-23):** `DeploymentTray.RestoreSavedPlacements()`
       replays `RunState.Placements` (already saved) on combat entry — your last layout re-deploys; stale/not-in-party
       placements dropped; bench/Clear still edit. Reuses tested primitives; 172/172 green (`2a0bede`). Play-verify:

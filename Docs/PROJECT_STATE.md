@@ -3,25 +3,25 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-23 — deployment layout persists + auto-restores between combats (ADR-023); battle-camera fix (ADR-022); 172 green._
+_Last updated: 2026-06-25 — themed-encounter system designed (3 slices); Slice A terrain/obstacle model built (ADR-024); 181 green._
 
 ## One-line status
-**Customization is now a paper-doll** (ADR-021): **code complete, 169/169 EditMode green, committed (`79ba7fe`)**
-on `main` — centered live preview flanked by gear slots + a cosmetic body-slot row, HP/DAMAGE/ARMOR footer +
-Stats button, scrollable **Gear/Body** bag; **tap** auto-equips to the item's own slot, **drag-and-drop** equips
-(wrong slot rejects), **tap a filled slot** unequips. Reuses the equip backend (no new stat math); **body-part
-edits now persist**. The panel is now **assembled in `Test_M7_Map` and Play-verified** (built via the
-`PaperDollBuilder` editor tool — `Tools/Paper-Doll/Build In Open Scene`; opens for a live unit, slots + body
-slots + bag generate, live stats, and **tap-equip, tap-unequip, and drag-and-drop all confirmed in Play**). Layout
-still wants visual tuning (the builder is re-runnable). Repo is trunk-based on `main` (ADR-020); rollback tag
-`pre-trunk-main`. Other gameplay still needs a Play pass (see "Needs human verification").
+**Themed-encounter system: designed (3 slices), Slice A built (ADR-024).** The deployment board now carries a
+per-cell `TerrainType` (**Passable / Impassable / Hazard**) that generalizes the old binary `blocked` flag —
+a pure `Combat.Deployment` model with obstacle-aware placement (`IsDeployable`/`GetState`), an inline-authored
+`TerrainLayout` stamped on `DeploymentManager.Awake`, and the legacy `SetBlocked/IsBlocked` kept as Impassable
+compat wrappers. **181/181 EditMode green** (+9 terrain tests); pure logic — self-verified, no Play needed.
+Slices **B** (biome theming + NavMesh carve) and **C** (encounter builder: roster + obstacle layout +
+obstacle-aware enemy placement) are specified in `Docs/18_ThemedEncounters.md` + TASKS, **not built**. Repo is
+trunk-based on `main` (ADR-020); rollback tag `pre-trunk-main`. Earlier features (paper-doll ADR-021, battle
+camera ADR-022) still await a human Play pass (see "Needs human verification").
 
 ## Repo / branch state
 - **Trunk: `main`** (= `origin/main`) — the only working branch now. Work on `main` or short-lived feature
   branches (ADR-020). `claude/deployment-grid` was pruned (local + remote). The remote still keeps
   `claude/capsule-wars-setup-pBoDq` (an old setup branch, fully contained in `main` — prunable).
 - Rollback point: tag **`pre-trunk-main`** (`852a520`, pushed) = `main` before the consolidation fast-forward.
-- Tests: `Assets/Scripts/Tests/EditMode/` — **169 green**. Run `run_tests` after any C# change.
+- Tests: `Assets/Scripts/Tests/EditMode/` — **181 green**. Run `run_tests` after any C# change.
 
 ## What currently works
 - Milestone base through ~M9 (draft → battle → recruit; combat, abilities, elements, synergies, status, stats;
@@ -35,6 +35,13 @@ still wants visual tuning (the builder is re-runnable). Repo is trunk-based on `
   `DeploymentTray` HUD; `DeploymentPhaseController` gate (combat blocked until Assemble); spawn-on-place via
   `BattlePartySpawner`; enemy-zone cell tap → shared `UnitInspectionPanel`. **Placements persist + auto-restore
   on re-entry (ADR-023):** your last layout re-deploys each combat (still editable via bench-tap / Clear).
+- **Board terrain/obstacles (ADR-024, Slice A of themed encounters):** each cell has a `TerrainType` —
+  `Passable` / `Impassable` (blocks placement + pathing) / `Hazard` (placeable-but-harmful, per
+  `DeploymentGridConfig.allowPlaceOnHazard`, default on). Pure `Combat.Deployment` model: `DeploymentGrid`
+  `SetTerrain/GetTerrain/IsImpassable/IsHazard/TerrainCells` (legacy `SetBlocked/IsBlocked` = Impassable wrappers);
+  `IsDeployable`/`GetState` are terrain-aware (`CellState.Hazard`). A serializable `TerrainLayout` is authored inline
+  on `DeploymentManager` and stamped on `Awake`. EditMode-tested (9 tests). Theming + NavMesh carve (Slice B) and the
+  encounter builder (Slice C) are specified in `Docs/18_ThemedEncounters.md`, not built.
 - **Battle/deployment camera (ADR-022):** `DeploymentCameraController` auto-frames the board clear of the HUD for
   deployment (tilt 84, inset 0.30), eases to a computed **~45° TFT-style** view on Assemble (not the authored
   pose), and allows **free pan/zoom during combat** (`allowControlDuringBattle`; zoom moves along the view

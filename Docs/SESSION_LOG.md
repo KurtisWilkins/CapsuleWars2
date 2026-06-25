@@ -6,6 +6,31 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-25 — Themed encounters: design + Slice A terrain model (ADR-024)
+**Ask:** kick off a 3-slice themed/obstacle encounter system — DESIGN all of it, but BUILD only Slice A (the
+per-cell terrain/obstacle data layer). Slices B (biome theming) + C (encounter builder: roster + obstacle layout +
+obstacle-aware enemy placement) are specified, not built.
+**Found (seams):** `DeploymentGrid` is a pure model with a binary `blocked` HashSet (`SetBlocked/IsBlocked`,
+`IsDeployable = InPlayerZone && !blocked`, `GetState → CellState`). `DeploymentGridRenderer.ColorFor(CellState)` is
+the cell-feedback seam. The arena `Plane` has a baked `NavMeshSurface`. `RandomUnitGenerator` builds visual-only
+units (stats/class TODO). **Enemies are scene-placed static** (`Unit_Enemy`); `BattlePartySpawner` is player-only,
+`RunBattleSetup` only boosts `Team.Enemy` stats → Slice C's enemy spawner is greenfield.
+**Did (Slice A — pure logic, self-verified, 181/181 EditMode green, +9 terrain tests):**
+- New `TerrainType` (Passable / Impassable / Hazard) generalizing `blocked` (blocked == Impassable).
+- `DeploymentGrid`: sparse `Dictionary<GridCoord,TerrainType>` + `SetTerrain/GetTerrain/IsImpassable/IsHazard` +
+  read-only `TerrainCells`; `SetBlocked/IsBlocked` kept as Impassable wrappers (compat). `IsDeployable` excludes
+  Impassable + (Hazard unless `config.allowPlaceOnHazard`). `GetState` adds `CellState.Hazard` (Blocked + Hazard
+  read anywhere).
+- `DeploymentGridConfig.allowPlaceOnHazard` (default true). `TerrainLayout` (serializable list + `ApplyTo`),
+  authored inline on `DeploymentManager`, stamped in `Awake`. Renderer got a minimal `hazardColor` case only.
+- `DeploymentTerrainTests` (9): Impassable blocks + reports Blocked; Hazard placeable/forbidden + reports Hazard;
+  SetBlocked compat + doesn't wipe a hazard; sparse default; TerrainCells; TerrainLayout.ApplyTo; Clear keeps terrain.
+**Docs:** ADR-024 + new `Docs/18_ThemedEncounters.md` (full 3-slice design + the data contracts B/C consume); TASKS
+updated with Slice B + C + their contracts.
+**Not built (scope guardrails):** no biome visuals/props/skybox (B); no EncounterDefinition / roster generation /
+placement AI (C); `RandomUnitGenerator` unchanged. **Play-verify (future, Slice B only):** the NavMesh carve visual
+(NavMeshObstacle boxes on Impassable cells). Slice A itself is fully test-covered — no Play needed.
+
 ## 2026-06-23 — Deployment layout auto-restores between combats (ADR-023)
 **Ask:** the player shouldn't have to re-deploy units every combat — auto-deploy the last layout, still editable.
 **Found:** the save side was already done — `RunState.Placements` is written by the deployment UI and round-trips

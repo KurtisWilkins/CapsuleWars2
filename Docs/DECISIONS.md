@@ -327,4 +327,34 @@ every fight was tedious; auto-restoring the last layout — still fully editable
 convenient default. **Status:** code done, **172/172 EditMode green** (`2a0bede`); reuses tested primitives + the
 existing placement round-trip test. Play-verify: deploy → fight → next combat auto-deploys the same layout; edits stick.
 
+### ADR-024 — Per-cell terrain model generalizes the binary "blocked" flag (Slice A of the themed-encounter system)
+**Decided:** replace the deployment grid's binary `blocked` set with a per-cell `TerrainType` —
+`Passable` / `Impassable` (blocks placement AND pathing: rock/river/wall) / `Hazard` (placeable but harmful/avoid:
+lava/trap). The model stays a **pure, serializable Combat.Deployment model with no scene deps** (matches
+`DeploymentGrid`'s style), so it's fully EditMode-testable. `DeploymentGrid` gains
+`SetTerrain/GetTerrain/IsImpassable/IsHazard` + a read-only `TerrainCells` (non-Passable cells only); the old
+`SetBlocked/IsBlocked` stay as **thin compat wrappers over `Impassable`** so all existing callers + tests are
+untouched. `IsDeployable = InPlayerZone && !Impassable && (config.allowPlaceOnHazard || !Hazard)`. `CellState`
+gains `Hazard` (appended, so existing values keep their meaning); `GetState` reports `Blocked` for Impassable and
+`Hazard` for hazards (both readable anywhere, like the old Blocked). A serializable `TerrainLayout`
+(`List<TerrainCell>` + `ApplyTo(grid)`) is authored **inline on `DeploymentManager`** and stamped onto the grid in
+`Awake` before the deployment UI builds.
+**Decisions taken (recommended set):** Hazard is **placeable by default** (the harm is applied later in
+combat/Slice C, not by this data layer) behind a `DeploymentGridConfig.allowPlaceOnHazard` flag (default true);
+`SetBlocked/IsBlocked` kept as Impassable wrappers; terrain authored inline (a ScriptableObject is deferred to
+Slice C generation); `CellState.Hazard` added.
+**Why:** the binary flag can't express "walk-through-but-harmful" vs "solid wall", and the themed-encounter system
+(below) needs a richer, generated obstacle layer. Generalizing in place — with compat wrappers — adds the model
+without disturbing placement, the spawner, or the 172 existing tests.
+**Seams left for later slices (NOT built):** **Slice B (theming)** reads `GetTerrain`/`TerrainCells` to map
+`TerrainType → themed prop prefab/material` and to drive the **NavMesh carve** (drop `NavMeshObstacle` carving
+boxes on Impassable cells at `config.CellToWorld`, no re-bake). The renderer got a minimal `hazardColor` case only.
+**Slice C (encounter builder)** reads `GetTerrain`/`IsImpassable` + `config.InEnemyZone` to place a generated enemy
+roster on Passable enemy-zone cells around the obstacles; `EncounterDefinition` (SO) = roster spec + a
+`TerrainLayout` (or seeded generator) + placement strategy, and a new `EnemyEncounterSpawner` (mirror of
+`BattlePartySpawner`) spawns them. Determinism from `RunState.Seed + nodeId` → the layout needn't be saved unless a
+later design makes it non-deterministic.
+**Status:** Slice A code done, **181/181 EditMode green** (+9 terrain tests). Pure logic — self-verified; the only
+human-Play item is the future NavMesh carve visual (Slice B). See `Docs/18_ThemedEncounters.md`.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

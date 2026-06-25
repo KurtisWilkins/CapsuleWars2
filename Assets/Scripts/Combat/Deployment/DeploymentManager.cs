@@ -20,6 +20,8 @@ namespace CapsuleWars.Combat.Deployment
     public class DeploymentManager : MonoBehaviour
     {
         [SerializeField] private DeploymentGridConfig config = new DeploymentGridConfig();
+        [Tooltip("Hand-authored obstacles/hazards stamped onto the grid at startup (Slice A). Slice C generates these per encounter.")]
+        [SerializeField] private TerrainLayout terrainLayout = new TerrainLayout();
 
         private DeploymentGrid grid;
         private readonly Dictionary<string, UnitRoot> units = new Dictionary<string, UnitRoot>();
@@ -31,6 +33,12 @@ namespace CapsuleWars.Combat.Deployment
 
         /// <summary>Raised on any placement change (place / move / apply). Payload = current placements.</summary>
         public event Action<IReadOnlyDictionary<string, GridCoord>> OnPlacementsChanged;
+
+        /// <summary>The authored terrain layout (obstacles/hazards) stamped onto the grid at startup.</summary>
+        public TerrainLayout Terrain => terrainLayout;
+
+        // Stamp authored terrain onto the (lazily created) grid before the deployment UI builds.
+        private void Awake() => terrainLayout?.ApplyTo(Grid);
 
         /// <summary>Register a player unit so it can be placed. Idempotent; ignores null/idless units.</summary>
         public void RegisterUnit(UnitRoot unit)

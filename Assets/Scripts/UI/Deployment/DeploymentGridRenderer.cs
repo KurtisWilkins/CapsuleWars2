@@ -25,6 +25,8 @@ namespace CapsuleWars.UI.Deployment
         [SerializeField] private Color emptyColor = new Color(0.2f, 0.8f, 0.3f, 0.5f);
         [SerializeField] private Color occupiedColor = new Color(0.2f, 0.5f, 0.9f, 0.5f);
         [SerializeField] private Color blockedColor = new Color(0.9f, 0.2f, 0.2f, 0.5f);
+        [Tooltip("Hazard terrain (lava/trap): placeable but harmful. Minimal Slice-A feedback; Slice B themes it.")]
+        [SerializeField] private Color hazardColor = new Color(0.95f, 0.6f, 0.1f, 0.55f);
         [SerializeField] private Color outsideColor = new Color(0.5f, 0.5f, 0.5f, 0.25f);
         [Tooltip("Far-side enemy zone tiles, shown so the two sides read as clearly separated.")]
         [SerializeField] private Color enemyZoneColor = new Color(0.9f, 0.35f, 0.2f, 0.4f);
@@ -75,6 +77,7 @@ namespace CapsuleWars.UI.Deployment
             CellState.Empty => emptyColor,
             CellState.Occupied => occupiedColor,
             CellState.Blocked => blockedColor,
+            CellState.Hazard => hazardColor,
             _ => outsideColor,
         };
 

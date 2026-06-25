@@ -35,6 +35,10 @@ namespace CapsuleWars.Combat.Deployment
         [Tooltip("Highest row index of the enemy zone.")]
         [Min(0)] public int enemyRowMax = 8;
 
+        [Header("Terrain")]
+        [Tooltip("May the player deploy a unit on a Hazard cell? (Impassable terrain always blocks placement.)")]
+        public bool allowPlaceOnHazard = true;
+
         public bool InBounds(GridCoord c) => c.col >= 0 && c.col < columns && c.row >= 0 && c.row < rows;
 
         /// <summary>In bounds and within the inclusive player row range (near side).</summary>

@@ -287,9 +287,12 @@ old "persist body-part edits" backlog item. Load already round-trips `dto.Parts`
 self-building its visuals so they generate with no authored prefab; theme via `UIThemeApplier` + `UIThemePalette`
 (no new art style). **Scope held:** no bag economy / currency / "add slots" (backlog); no run-scoped inventory yet
 (bag = `EquipmentCatalog ∪ starterItems` and `PartCatalog`; equipped = highlighted, not consumed).
-**Status:** code complete, **169/169 EditMode green**, committed. In-editor scene assembly + wiring is a manual
-checklist (`Docs/CHECKLIST_PaperDoll.md`) — the MCP bridge in that session couldn't read refs / page the
-hierarchy / run editor code, so the panel couldn't be assembled blind safely. Behavior gate is the Play list in
-that checklist + PROJECT_STATE.
+**Status:** code complete + **scene assembled in `Test_M7_Map` and Play-verified (2026-06-23)**. Built via a
+re-runnable editor tool `PaperDollBuilder` (`Tools/Paper-Doll/Build In Open Scene`) that generates the containers
++ footer + bag + buttons and wires all 13 refs via `SerializedObject` (deterministic, not blind clicks).
+Play-verified via computer-use: opens for a live unit; slots/body-slots/bag generate; live HP/DAMAGE/ARMOR;
+**tap-equip, tap-unequip, and drag-and-drop (ghost + auto-route) all confirmed.** 169/169 EditMode green. Remaining
+human checks: visual layout polish, wrong-slot drag reject, Stats button, body-part bag equip, persistence
+round-trip. (`Docs/CHECKLIST_PaperDoll.md` retained as the assembly/verification reference.)
 
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

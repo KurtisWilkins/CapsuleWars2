@@ -6,6 +6,30 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-23 — Paper-doll panel BUILT in `Test_M7_Map` + Play-verified (ADR-021)
+**Goal:** actually assemble the paper-doll scene (the prior session left it as a checklist because the bridge
+couldn't read refs / the computer-use capture was blank — turned out to be remote/RDP).
+
+**Got computer-use working:** the user was physically at the machine; capture worked once the editor was the
+front window. Surfaced the running editor via the Hub (the editor process has no Start-menu entry, so
+`open_application "Unity"` only ever opens the Hub; double-clicking the project there focused/loaded the editor).
+
+**Built deterministically, not by blind clicks:** wrote `Assets/Scripts/Editor/PaperDollBuilder.cs` (editor-only,
+`Tools/Paper-Doll/Build In Open Scene`). It finds the `CustomizationScreen`, treats `panelRoot` (= the panel
+itself) as the root, removes the old list UI (VerticalLayoutGroup), full-stretches + transparents the panel,
+generates the containers (left/right gear columns, body row, Gear/Body bag ScrollRect+grid, HP/DAMAGE/ARMOR
+footer, Stats/Close/tab buttons + UIThemeApplier), and wires all 13 serialized refs via `SerializedObject`.
+Deleted the leftover old children (`TitleText`/`EquipmentListRoot`/old `CloseButton`). Idempotent + re-runnable.
+
+**Play-verified end-to-end (computer-use, drafted run):** a `Tools/Paper-Doll/TEST - Open First Party Unit`
+helper calls `Show()` directly (bypasses the tangled in-scene button nav). The panel opens for a live unit; gear
+slots + cosmetic body slots (green = filled with the unit's parts) + the Gear bag (starter items) all generate;
+HP/DAMAGE/ARMOR show live; **tap a bag item → equips to its slot (slot fills + bag highlights); tap a filled slot
+→ unequips; drag-and-drop → equips with a drag ghost + background auto-route.** Layout works but wants visual
+tuning (re-run the builder after tweaking anchors). 169/169 EditMode green. Commits `c2678ef` (+ docs).
+Still to confirm by hand: layout polish, wrong-slot drag reject, Stats button, body-part bag equip, persistence
+round-trip. (Starter items carry no stat modifiers, so equipping them doesn't move the numbers — content, not a bug.)
+
 ## 2026-06-22 — Feature: paper-doll customization (ADR-021), code-complete + green
 **Goal:** rework the customization screen into a paper-doll equip layout — centered preview, flanking gear slots,
 cosmetic body-slot row, HP/DAMAGE/ARMOR footer + Stats button, scrollable Gear/Body bag; tap-to-route +

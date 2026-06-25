@@ -3,17 +3,18 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-22 — paper-doll customization (ADR-021); code-complete + 169 green, scene assembly pending (`Docs/CHECKLIST_PaperDoll.md`)._
+_Last updated: 2026-06-23 — paper-doll customization (ADR-021) assembled in `Test_M7_Map` + Play-verified; 169 green._
 
 ## One-line status
 **Customization is now a paper-doll** (ADR-021): **code complete, 169/169 EditMode green, committed (`79ba7fe`)**
 on `main` — centered live preview flanked by gear slots + a cosmetic body-slot row, HP/DAMAGE/ARMOR footer +
 Stats button, scrollable **Gear/Body** bag; **tap** auto-equips to the item's own slot, **drag-and-drop** equips
 (wrong slot rejects), **tap a filled slot** unequips. Reuses the equip backend (no new stat math); **body-part
-edits now persist**. The in-editor **scene assembly is a manual checklist** (`Docs/CHECKLIST_PaperDoll.md`) — the
-MCP bridge couldn't read refs / page the hierarchy / run editor code this session, so the panel couldn't be built
-blind safely. Repo is trunk-based on `main` (ADR-020); rollback tag `pre-trunk-main`. Other gameplay still needs a
-Play pass (see "Needs human verification").
+edits now persist**. The panel is now **assembled in `Test_M7_Map` and Play-verified** (built via the
+`PaperDollBuilder` editor tool — `Tools/Paper-Doll/Build In Open Scene`; opens for a live unit, slots + body
+slots + bag generate, live stats, and **tap-equip, tap-unequip, and drag-and-drop all confirmed in Play**). Layout
+still wants visual tuning (the builder is re-runnable). Repo is trunk-based on `main` (ADR-020); rollback tag
+`pre-trunk-main`. Other gameplay still needs a Play pass (see "Needs human verification").
 
 ## Repo / branch state
 - **Trunk: `main`** (= `origin/main`) — the only working branch now. Work on `main` or short-lived feature
@@ -60,11 +61,13 @@ Play pass (see "Needs human verification").
 3. **Branching map** (`Test_M7_Map`) — start a run → branching map renders → pick a start → encounter → return →
    only edge-connected nodes clickable → climb + clear the Boss → a new segment stitches on; lose → run ends.
    Tune MapView spacing if cramped; delete any leftover old Map Panel content if it peeks through.
-4. **Paper-doll customization** (`Test_M7_Map`) — FIRST assemble + wire the panel per
-   `Docs/CHECKLIST_PaperDoll.md` (in-editor; the bridge couldn't build it blind). Then verify: tap a bag item
-   auto-equips to its own slot (mesh on socket + live HP/DAMAGE/ARMOR); drag-and-drop equips, wrong slot rejects
-   (red flash), background drop auto-routes; tap a filled slot unequips; Stats opens `UnitInspectionPanel`;
-   **gear AND body-part edits both round-trip** after Close+reopen; the combat unit shows the gear.
+4. **Paper-doll customization** (`Test_M7_Map`) — assembled + **Play-verified 2026-06-23**: opens for a live
+   unit; gear + body slots + Gear/Body bag generate; live HP/DAMAGE/ARMOR; **tap-equip, tap-unequip, and
+   drag-and-drop (ghost + background auto-route) all confirmed.** STILL to verify by a human: visual layout
+   tuning (the builder is re-runnable); wrong-slot drag rejection (red flash); the **Stats** button →
+   `UnitInspectionPanel`; equipping a **body part from the Body bag tab**; and the **persistence round-trip**
+   (gear + body-part edits survive Close + reopen + show on the combat unit). Note: starter items currently carry
+   no stat modifiers, so equipping them doesn't move the numbers (content, not a UI bug).
 5. **Equipment rolled item** — roll one (`EquipmentRoller.Roll(def, rollConfig, tier, seed)`), equip it →
    inspection shows its stats + generated name while the mesh attaches; a starter/old item keeps stats after load.
 6. **Mirror equip** — equip a mirrored (opposite-side) part and confirm it shows on the correct side.

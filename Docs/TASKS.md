@@ -4,15 +4,13 @@
 > specific and self-contained. Move finished items to "Done (recent)".
 
 ## Next up (work top-down)
-- [ ] **START HERE — assemble the paper-doll customization panel + Play-verify it.** Code is complete + 169 green
-      (ADR-021); the in-editor panel is NOT built (the MCP bridge couldn't do it blind this session). Follow
-      `Docs/CHECKLIST_PaperDoll.md`: under the customization panel create the layout containers (left/right gear
-      columns, body row, Gear/Body bag scroll, HP/DAMAGE/ARMOR footer, Stats + tab + close buttons), wire the
-      `CustomizationScreen` refs + the `UIThemePalette`, keep the panel bg transparent so the 3D preview shows,
-      then run the checklist's Play list (tap-route, drag-drop + wrong-slot reject, unequip, live stats, gear +
-      body-part round-trip).
-- [ ] **Play-mode verification pass for the rest of the gameplay** (D3D11 is the project default; no
+- [ ] **START HERE — Play-mode verification pass for the gameplay** (D3D11 is the project default; no
       `-force-d3d11` flag). Re-bake the NavMesh FIRST, then walk the list (full per-item checklist in PROJECT_STATE).
+- [ ] **Finish the paper-doll checks + tune its layout** (`Test_M7_Map`; built + Play-verified 2026-06-23 —
+      tap-equip/unequip + drag-drop all confirmed). Re-run `Tools/Paper-Doll/Build In Open Scene` after tuning
+      anchors in `PaperDollBuilder` if needed. Still to confirm by hand: visual layout polish; wrong-slot drag
+      rejection; **Stats** button → `UnitInspectionPanel`; equip a **body part** from the Body bag tab; and the
+      **persistence round-trip** (gear + body edits survive Close + reopen + show on the combat unit).
 - [ ] **Re-bake the NavMesh for the enlarged arena.** `Test_M3_Battle` → `Plane` → `NavMeshSurface` → **Bake**
       (Plane scaled to 4, centred (10.5,0,14)). Gates combat movement on the bigger board.
 - [ ] **Play-test deployment v2** (`Test_M3_Battle`, drafted run). Tap a bench unit → green player-zone cell ⇒
@@ -41,6 +39,11 @@
       scene's 4 were cleared; these are likely runtime-driven HUD/node labels — clear only if they show through).
 
 ## Done (recent — prune periodically)
+- [x] **Paper-doll panel assembled + Play-verified (ADR-021, 2026-06-23):** built `Test_M7_Map`'s customization
+      panel via the re-runnable `PaperDollBuilder` editor tool (containers + footer + Gear/Body bag + buttons,
+      old list UI removed, all 13 refs wired by `SerializedObject`). Play-verified end-to-end via computer-use:
+      opens for a live unit; slots + body slots + bag generate; live HP/DAMAGE/ARMOR; **tap-equip, tap-unequip,
+      drag-and-drop (ghost + auto-route) all work.** 169 green. Commit `c2678ef`.
 - [x] **Paper-doll customization — code (ADR-021):** reworked the customization screen into a paper-doll (gear
       slots + cosmetic body slots, tap-route + drag-drop with wrong-slot reject + tap-unequip, HP/DAMAGE/ARMOR
       footer, Gear/Body bag, Stats reuses `UnitInspectionPanel`). `UnitCustomization` exposes

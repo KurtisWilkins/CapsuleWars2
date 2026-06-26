@@ -6,6 +6,33 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-25 — Build-to-spec content pass: audit + Slice 1 (elements + ability strategies, ADR-028)
+**Ask:** audit predetermined content (elements/abilities/status/classes/equipment) vs Docs/05/07/08/09/10 + the
+uploaded 16-class roster; plan staged build; build Slice 1 (finish elements + ability strategy code classes).
+**Audit (5 parallel read-only agents):** elements ~complete (15 types + 5×5 chart + multipliers correct; only the
+dual-element rule missing); abilities 8/~30 strategy classes; status 1/24 authored (data-driven, no per-effect
+enum — correct by design); classes 0/16 roster (Class_Warrior is a placeholder) + 2/16 weapon classes; equipment
+code-complete but content-sparse. Corrected an agent miss: a `BattleEventBus` (OnDamageDealt/Taken/Downed/Kill/
+BattleStart) already exists in Combat/Stats — shrinks the event-trigger gap.
+**Decisions (user):** Monk = own hybrid class; build the `StatusEffectBehavior` complex-status hook; ability
+naming = code convention; element chart topology stays hardcoded; **evolution system is IN scope** (XP/floor stat
+growth — new slice); equipment rarity ×s align to Docs/07. (ADR-028.)
+**Built — Slice 1a (elements):** dual-element "least favorable for attacker" rule via a pure, testable
+`ElementMath.Multiplier(chart, atk, defPrimary, defSecondary)`; both damage paths (`UnitAttackController`,
+`DamageEffect_SO`) route through it; `SecondaryElement` added to `UnitStatusController`. **Elements complete to
+spec.** Commit `035ddd4`.
+**Built — Slice 1b (ability strategies, no new infra):** targeting GetAllTargets/GetAllyTargets/GetCurrentTarget;
+filters LowestHp/Random/RaceClassElement(class+element; no Race in CW2)/KeepCurrentTarget; effects NoEffect/Revive;
++ a pure tested `AbilitySelect` core (KeepLowestN/KeepRandomN/KeepWhere). No behavior invented beyond Docs/05.
+Commit `cba8ca0`. **+8 EditMode tests; 209/209 green.**
+**Reconciled** the 16-class roster into `Docs/09_ClassSynergies.md` as the canonical class list (supersedes the
+Warrior placeholder).
+**Deferred to later approved slices (TASKS):** event triggers + OnLowHp + GetAttacker (BattleEventBus wiring +
+per-runtime latch); HighestThreat (per-unit damage-dealt stat); BuffStat (transient-buff channel); KnockBack/
+Teleport (NavMesh+DOTween); ChangeSize/VFX/projectile; status effects (incl. `StatusEffectBehavior` hook + 2 bug
+fixes + Accuracy/CritRate getters); `globalBuffs` + 16 classes + ~14 weapon classes; ability move content;
+equipment content; the evolution system. All pure logic this session — no Play needed.
+
 ## 2026-06-25 — Themed encounters Slice C2+C3: generated obstacle-aware enemy roster (ADR-027)
 **Ask:** "continue" → C2 (enemy roster) + C3 (obstacle-aware placement). Built them together as the satisfying
 completion of Slice C (generated enemies placed around the generated obstacles); contracts were already settled in

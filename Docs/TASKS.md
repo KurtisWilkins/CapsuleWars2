@@ -4,6 +4,31 @@
 > specific and self-contained. Move finished items to "Done (recent)".
 
 ## Next up (work top-down)
+
+### Build-to-spec content backlog (Docs/05/07/08/09/10 + class roster; ADR-028) — dependency-ordered
+Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slices, each a discrete approved unit:
+- [ ] **BTS-A — ability event-trigger infra + remaining triggers/targeting [code].** Wire `AbilityController`/
+      `AbilityRuntime` to the existing `BattleEventBus` + per-runtime latch state; build OnHit/OnTakeHit/OnKill/
+      OnAllyDeath/OnBattleStart + OnLowHp (latched) triggers + GetAttackerTarget. Also fold `OnAbilityCast/Hit/
+      Resolved` stat events. (Unblocks behavioral class synergies.)
+- [ ] **BTS-B — status combat hooks + bug fixes [code].** Build the `StatusEffectBehavior` custom-SO hook + the
+      damage-pipeline status consult (Marked/Protected/Shield/Frozen-amp); add Accuracy/CritRate(/DefElem) modified
+      getters to `UnitStatusController`; fix the resistance roll (`Random.value < 0f`) + `RollPerTick`.
+- [ ] **BTS-C — WeaponClass_SO assets [content].** Author the ~14 missing weapon classes (Bow, Crossbow, Musket,
+      Spear, Javelin, Potion×2, Bomb, Dagger, Staff, Wand, 2H, TowerShield, HolyShield, Dual-1H); fix `WC_1HSword`
+      mislabel.
+- [ ] **BTS-D — status effects [content+code].** Author the 13 expressible assets + the 4 stat-getter ones (post
+      BTS-B) + the 7 behavioral via the BTS-B hook. The full 24 per Docs/10.
+- [ ] **BTS-E — `globalBuffs` + 16 classes [code+content].** Add `ClassSynergyTier.globalBuffs` + resolver branch
+      + test; author 16 `UnitClass_SO` + [content] stat tiers (Paladin fully); wire [code] behavioral tiers using
+      BTS-A/B strategies + hooks. (Monk = own class.)
+- [ ] **BTS-F — ability move CONTENT [content].** Author `Ability_SO` move sets per class/weapon using the strategy classes.
+- [ ] **BTS-G — equipment content [content].** Items across slots×rarities; `EquipmentRollConfig` + `LootTable_SO`
+      assets; align rarity ×s to Docs/07 (1/1.25/1.5/2/3); fill blank ids; update stale Docs/07 data-model section.
+- [ ] **BTS-H — EVOLUTION system [code] (newly in scope, ADR-028).** XP gained after each battle; stats evolve
+      across floors/maps; evolution tiers drive the `Ability_SO` evolution-indexed strategy arrays + `EvolveEffect`
+      + `ChangeSizeEffect`. (Also unblocks the deferred VFX/projectile effects when the VFX pipeline lands.)
+
 - [ ] **START HERE — Play-verify + tune the battle camera** (`Test_M3_Battle`, ADR-022; this just landed). Re-bake
       the NavMesh FIRST (item below). Then: deployment shows all 3 player rows above the HUD + every cell clickable;
       pan/zoom work in deployment; Assemble → ~45° board view; battle → pan + zoom (zoom dollies toward the board) +

@@ -432,4 +432,33 @@ off-mesh / don't move, reorder so the roster spawns AFTER `ArenaBuilder.Bake()` 
 size range/boss/floor, enemy cells in-zone + obstacle-avoiding + deterministic). The spawn itself is Awake-only →
 **Play-verified** (PROJECT_STATE item 1d): generated enemies appear in the enemy zone, off the obstacles, and fight.
 
+### ADR-028 — Build-to-spec content pass: audit + locked decisions (Docs/05/07/08/09/10 + class roster)
+**Context:** a build-to-spec session audited the predetermined content (elements, abilities, status, classes,
+equipment) against the docs and built the foundational slice. Findings: **elements ~complete** (15 types + 5×5
+chart correct; only the dual-element rule was missing); **abilities** had 8/~30 strategy classes; **status** had
+1/24 authored (data-driven, no per-effect enum — correct); **classes** had 0/16 roster classes (Class_Warrior is a
+placeholder) + 2/16 weapon classes; **equipment** code complete, content sparse.
+**Locked decisions (this session):**
+- **Monk** = its own hybrid class (NOT multi-class); one-class-per-unit holds at MVP.
+- **Complex status mechanism** = build the doc's `StatusEffectBehavior` custom-SO hook (not a fold-in shortcut)
+  for the 7 behavioral statuses (Frozen-amp, Marked, Unlucky, LastStand, Madness, Protected, Shield).
+- **Ability strategy naming** = the code's existing convention (`_SO` suffix, no `Movement` prefix), not the doc's
+  literal names.
+- **Element chart topology** = stays hardcoded in `ElementChart_SO.cs` (matches doc; the scalar multipliers stay
+  data-tunable on the asset).
+- **Evolution system is IN scope** (not deferred): XP after each battle, stats evolving across floors/maps. This
+  is a new prioritized slice; `EvolveEffect` + evolution-indexed ability strategy arrays land there (the
+  `Ability_SO` axes are spec'd as evolution-indexed arrays but are single-slot in code today).
+- **Equipment rarity multipliers** = align to Docs/07 (1 / 1.25 / 1.5 / 2 / 3); current assets are 1/1.5/2/2.5/3.
+**Built (Slice 1a/1b):** the element dual-element "least favorable" rule via a pure `ElementMath.Multiplier`
+(both damage paths route through it) + `SecondaryElement` on `UnitStatusController`; and the no-new-infra ability
+strategy classes (targeting GetAll/GetAlly/GetCurrent; filters LowestHp/Random/RaceClassElement/KeepCurrentTarget;
+effects NoEffect/Revive) with a tested pure `AbilitySelect` core. **209/209 EditMode green.**
+**Cross-cutting [code] prerequisites discovered (gate later content), tracked in TASKS:** a status→damage-pipeline
+hook (`StatusEffectBehavior`); `ClassSynergyTier.globalBuffs` (spec'd, absent in code); Accuracy/CritRate(/DefElem)
+modified getters on `UnitStatusController` (buffs computed but never read); wiring ability event-triggers to the
+existing `BattleEventBus` (it has OnDamageDealt/Taken/Downed/Kill/BattleStart) + per-runtime latch state; two
+status bugs (resistance roll `Random.value < 0f` always-false; `RollPerTick` unhandled).
+**Doc drift noted:** Docs/07 data-model section is stale vs ADR-019 (instance model) — update with the equipment slice.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

@@ -34,15 +34,15 @@
 - [ ] **Swap placeholder item visuals:** `EquipVisual_Cube` is a stand-in. Assign real `visualPrefab`/`visualMesh`
       per item; optionally re-parent `Socket_*` empties under hand/head bones for animated attachment.
 
-### Themed encounters — continue the system (Slice A landed; see `Docs/18_ThemedEncounters.md` + ADR-024)
-- [ ] **Slice B — biome theming + NavMesh carve.** A visual skin over the terrain data; the model is untouched.
-      Build: a `BiomeTheme` SO (`TerrainType → prop prefab + material`, ground/skybox); a `TerrainView` scene
-      component that, on deployment build, iterates `DeploymentManager.Terrain.Cells` / `grid.TerrainCells` and
-      instantiates the themed prop at `config.CellToWorld(coord)` (mirrors `DeploymentGridRenderer`); and a NavMesh
-      carve — a `NavMeshObstacle` (carving) box ≈`cellSize` on every **Impassable** cell so the baked arena NavMesh
-      is cut at runtime (no re-bake). **Contract consumed:** `grid.TerrainCells` (non-Passable only),
-      `config.CellToWorld` + `cellSize`. Read-only; never writes the model. **Play-verify:** obstacles render +
-      units path around Impassable cells.
+### Themed encounters — continue the system (Slices A + B landed; see `Docs/18_ThemedEncounters.md` + ADR-024/025)
+- [ ] **Play-verify the runtime arena (ADR-025)** — PROJECT_STATE item 1b: blocks tile with no gaps, checkerboard
+      reads, obstacles/hazard on the right cells, NavMesh bakes + agents path around obstacles, placement raycasts
+      still land, rebuilds cleanly between encounters.
+- [ ] **Drop in real block art (no code change).** Assign Kubikos / Meshy-generated block prefabs (+ materials) to
+      the `ThemeBlockSet` assets in `Assets/Settings/Arena/` (FloorA/FloorB/Obstacle/HazardMarker per theme). Tune
+      floor A/B material contrast for cell readability; add more `EncounterTheme`s (forest/cave/ship/sewer/…). The
+      `ArenaBuilder` scales prefabs to `cellSize` — check chunky-kit prefabs aren't distorted (may want a per-theme
+      scale or to skip the auto-scale for authored prefabs).
 - [ ] **Slice C — encounter builder (iterative).** Turn a map node into a fight. Build: an `EncounterDefinition`
       SO (roster spec by `NodeType` + depth, an obstacle `TerrainLayout` or seeded generator, a placement strategy)
       + a builder that stamps the layout (`TerrainLayout.ApplyTo`), generates the roster (extends
@@ -64,6 +64,12 @@
       scene's 4 were cleared; these are likely runtime-driven HUD/node labels — clear only if they show through).
 
 ## Done (recent — prune periodically)
+- [x] **Themed encounters — Slice B runtime block arena (ADR-025, 2026-06-25):** `ArenaBuilder` (`UI.Arena`) builds
+      the board at runtime from `ThemeBlockSet`/`EncounterTheme` SOs (`Data.Arena`, primitive fallback) — checkerboard
+      floor 1:1 with the grid, raised obstacles on Impassable cells, hazard markers, sized from cellSize; runtime
+      `NavMeshSurface` re-bake (PhysicsColliders + obstacle NotWalkable). Wired into `Test_M3_Battle` via
+      `ArenaSetupTool` (grass + volcanic placeholders, demo terrain) + editor preview. Pure `ArenaLayout` math.
+      **190/190 green** (+9 arena tests); editor-preview self-verified. Play-verify + real art are the next items above.
 - [x] **Themed encounters — design + Slice A terrain model (ADR-024, 2026-06-25):** designed the 3-slice system
       (`Docs/18_ThemedEncounters.md`); built Slice A — `TerrainType` (Passable/Impassable/Hazard) generalizing the
       binary `blocked` flag, `DeploymentGrid` terrain map (`SetTerrain/GetTerrain/IsImpassable/IsHazard/TerrainCells`

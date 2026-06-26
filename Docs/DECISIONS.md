@@ -357,4 +357,36 @@ later design makes it non-deterministic.
 **Status:** Slice A code done, **181/181 EditMode green** (+9 terrain tests). Pure logic — self-verified; the only
 human-Play item is the future NavMesh carve visual (Slice B). See `Docs/18_ThemedEncounters.md`.
 
+### ADR-025 — Runtime modular-block arena builder + ThemeBlockSet model (Slice B of the themed-encounter system)
+**Decided:** the battle board is built at runtime from themed blocks by `ArenaBuilder` (`CapsuleWars.UI.Arena`),
+consuming the Slice A terrain layer (ADR-024). One checkerboard floor tile per grid cell — aligned **1:1 with
+`DeploymentGridConfig`** so every visual tile IS a deployment cell — plus a raised obstacle block on each
+Impassable cell and a marker on each Hazard cell, all sized from `cellSize`. Everything is driven by a
+`ThemeBlockSet` SO (`CapsuleWars.Data.Arena`) mapping roles {FloorA, FloorB, Obstacle, HazardMarker} →
+{prefab, material, height}; a **null prefab falls back to a scaled primitive cube**, so the system works with
+zero authored assets and a real kit (Kubikos / Meshy blocks) drops in later by assigning prefabs — no code change.
+An `EncounterTheme` SO selects the block set per floor (forest/volcanic/etc. are just different sets). Pure
+placement math (checkerboard parity, terrain→role, cell centers) lives in a testable static `ArenaLayout`.
+**Checkerboard = deployment readability:** the floor is the BASE layer; the existing `DeploymentGridRenderer`
+CellState tints are a translucent OVERLAY on the SAME cells (one shared grid — no second visual grid). Floor tiles
+sit a hair proud of the legacy ground (`floorSurfaceY`, default 0.05) so the board reads with no z-fighting and
+units (spawned at ~0) still sit on it.
+**NavMesh (runtime bake, not carving):** after building geometry, `Build()` calls `Bake()` →
+`NavMeshSurface.useGeometry = PhysicsColliders` then `BuildNavMesh()`. Units have no colliders (ADR-008) so they're
+never baked into the mesh; the legacy Plane's MeshCollider is the walkable ground; obstacle blocks carry a
+`NavMeshModifier(area = Not Walkable)` BoxCollider so their footprints carve out. Order matters: **bake once after
+all blocks exist, before any unit moves**. Extends the scene's existing `NavMeshSurface` (the Plane), doesn't
+duplicate it. The legacy Plane renderer is hidden by the builder (`groundPlaneRenderer`) while its collider stays
+as the placement-raycast + NavMesh ground.
+**Lifecycle:** build at encounter start (`Start`), `Teardown()` (destroy the `ArenaRoot`) on end — each battle
+reloads the scene → clean rebuild, no leaks. Editor-only `#if UNITY_EDITOR` preview (ContextMenu + `Tools/Arena/*`
+menu items: Build geometry / Bake / Clear) so the board is eyeball-able without Play; nothing debug ships.
+**Scope (NOT built):** no procedural terrain generation (Slice C — the layout is the hand-authored
+`DeploymentManager.Terrain`, seeded here with a demo: Impassable (2,4)(4,4)(3,5) + Hazard (3,3) in neutral rows);
+no multi-level/vertical pathing (single 2D plane; obstacles are visually raised only); no enemy generation; no paid
+assets (primitives only).
+**Status:** code done, scene wired (`Test_M3_Battle`), **190/190 EditMode green** (+9 arena tests). Editor-preview
+self-verified: blocks tile 1:1 with cells, obstacles raised on the right cells, hazard marker placed, checkerboard
+reads. NavMesh bake + agent pathing + final look are **Play-verified** (PROJECT_STATE). See `Docs/18_ThemedEncounters.md`.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

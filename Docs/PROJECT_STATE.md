@@ -3,25 +3,27 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-25 — themed-encounter system designed (3 slices); Slice A terrain/obstacle model built (ADR-024); 181 green._
+_Last updated: 2026-06-25 — themed-encounter Slice B: runtime modular-block arena built + wired in Test_M3_Battle (ADR-025); 190 green._
 
 ## One-line status
-**Themed-encounter system: designed (3 slices), Slice A built (ADR-024).** The deployment board now carries a
-per-cell `TerrainType` (**Passable / Impassable / Hazard**) that generalizes the old binary `blocked` flag —
-a pure `Combat.Deployment` model with obstacle-aware placement (`IsDeployable`/`GetState`), an inline-authored
-`TerrainLayout` stamped on `DeploymentManager.Awake`, and the legacy `SetBlocked/IsBlocked` kept as Impassable
-compat wrappers. **181/181 EditMode green** (+9 terrain tests); pure logic — self-verified, no Play needed.
-Slices **B** (biome theming + NavMesh carve) and **C** (encounter builder: roster + obstacle layout +
-obstacle-aware enemy placement) are specified in `Docs/18_ThemedEncounters.md` + TASKS, **not built**. Repo is
-trunk-based on `main` (ADR-020); rollback tag `pre-trunk-main`. Earlier features (paper-doll ADR-021, battle
-camera ADR-022) still await a human Play pass (see "Needs human verification").
+**Themed-encounter system: Slices A + B built (ADR-024/025).** The battle board is now **built at runtime from
+themed blocks** by `ArenaBuilder` — a checkerboard floor (one tile per grid cell, 1:1 with the deployment grid),
+raised obstacle blocks on Impassable cells + markers on Hazard cells, driven by a `ThemeBlockSet`/`EncounterTheme`
+SO (primitive-cube fallback → works with no assets; grass + volcanic placeholders authored). After building it
+re-bakes the `NavMeshSurface` (PhysicsColliders; obstacles = NotWalkable) so agents path around obstacles. The
+checkerboard is the BASE layer; the existing CellState tints overlay the same cells. Wired into `Test_M3_Battle`
++ editor preview (`Tools/Arena/*`); **190/190 EditMode green** (+9 arena tests). Editor-preview self-verified
+(tiling/alignment/obstacles/hazard/checkerboard); NavMesh + pathing + look are Play-gated below. Slice **C**
+(encounter builder: enemy roster + obstacle layout + obstacle-aware placement) is next, specified in
+`Docs/18_ThemedEncounters.md` + TASKS. Repo trunk-based on `main` (ADR-020); rollback tag `pre-trunk-main`.
+Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human Play pass (below).
 
 ## Repo / branch state
 - **Trunk: `main`** (= `origin/main`) — the only working branch now. Work on `main` or short-lived feature
   branches (ADR-020). `claude/deployment-grid` was pruned (local + remote). The remote still keeps
   `claude/capsule-wars-setup-pBoDq` (an old setup branch, fully contained in `main` — prunable).
 - Rollback point: tag **`pre-trunk-main`** (`852a520`, pushed) = `main` before the consolidation fast-forward.
-- Tests: `Assets/Scripts/Tests/EditMode/` — **181 green**. Run `run_tests` after any C# change.
+- Tests: `Assets/Scripts/Tests/EditMode/` — **190 green**. Run `run_tests` after any C# change.
 
 ## What currently works
 - Milestone base through ~M9 (draft → battle → recruit; combat, abilities, elements, synergies, status, stats;
@@ -42,6 +44,14 @@ camera ADR-022) still await a human Play pass (see "Needs human verification").
   `IsDeployable`/`GetState` are terrain-aware (`CellState.Hazard`). A serializable `TerrainLayout` is authored inline
   on `DeploymentManager` and stamped on `Awake`. EditMode-tested (9 tests). Theming + NavMesh carve (Slice B) and the
   encounter builder (Slice C) are specified in `Docs/18_ThemedEncounters.md`, not built.
+- **Runtime modular-block arena (ADR-025, Slice B):** `ArenaBuilder` (`UI.Arena`, on `Test_M3_Battle`) builds the
+  board at runtime from themed blocks — checkerboard floor (1 tile/cell, 1:1 with the grid), raised obstacles on
+  Impassable cells, hazard markers on Hazard cells, sized from `cellSize`, driven by `ThemeBlockSet`/`EncounterTheme`
+  SOs (`Data.Arena`; primitive-cube fallback when no prefab; grass + volcanic placeholders in `Assets/Settings/Arena/`).
+  After building, re-bakes the `NavMeshSurface` (PhysicsColliders; obstacles `NavMeshModifier`=NotWalkable) so agents
+  path around obstacles; the legacy Plane is hidden but its collider stays as the placement-raycast + walkable ground.
+  Editor preview via `Tools/Arena/*` + component ContextMenus. Demo terrain authored (Impassable (2,4)(4,4)(3,5) +
+  Hazard (3,3), neutral rows). Real kits (Kubikos/Meshy) drop in by assigning prefabs to a block set — no code change.
 - **Battle/deployment camera (ADR-022):** `DeploymentCameraController` auto-frames the board clear of the HUD for
   deployment (tilt 84, inset 0.30), eases to a computed **~45° TFT-style** view on Assemble (not the authored
   pose), and allows **free pan/zoom during combat** (`allowControlDuringBattle`; zoom moves along the view
@@ -64,7 +74,18 @@ camera ADR-022) still await a human Play pass (see "Needs human verification").
 
 ## Needs human verification (Play mode — Claude can't see it; D3D11 is the project default, no flag needed)
 1. **Re-bake the NavMesh first** — `Test_M3_Battle` → `Plane` → `NavMeshSurface` → **Bake** (arena enlarged:
-   Plane scale 4, centre (10.5,0,14)); combat movement needs it.
+   Plane scale 4, centre (10.5,0,14)); combat movement needs it. (Note: the new `ArenaBuilder` ALSO re-bakes at
+   runtime on build — this manual bake is the editor baseline; verify the runtime bake in item 1b.)
+1b. **Runtime modular-block arena (ADR-025, `Test_M3_Battle`) — the focus of this session.** Enter Play (in a run
+   so deployment loads). Verify: blocks tile with **no gaps/overlap** and match unit sizing; the **checkerboard**
+   reads as discrete cells from the deployment camera (player-zone tint still distinguishable on top); the **3
+   obstacle blocks** sit on cells (2,4)(4,4)(3,5) and the **hazard** marker on (3,3); the legacy Plane is hidden
+   (board is the visible floor); **placement raycasts still land** (tap a player-zone cell → unit appears on the
+   right tile); after Assemble the **NavMesh bakes** and **agents path AROUND the obstacle cells** (don't walk
+   through); leaving + re-entering the combat **rebuilds cleanly** (no leftover/duplicate blocks). Eyeball without
+   Play via `Tools/Arena/Build Preview (open scene)` then `Clear Preview`. Tune look by assigning real
+   prefabs/materials to the `ThemeBlockSet` assets in `Assets/Settings/Arena/` (no code change), or bump
+   floor A/B material contrast for clearer cells.
 2. **Deployment loop** — load a combat node with a drafted party → tap a bench unit → tap a green player-zone
    cell ⇒ the real unit appears (scale-in); tap a placed cell to bench it; **Clear**; **Assemble** ⇒ those exact
    units start combat (no dupes; not before Assemble). (Placement + enemy inspection + Assemble were Play-verified

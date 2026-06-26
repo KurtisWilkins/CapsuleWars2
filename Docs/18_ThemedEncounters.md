@@ -13,7 +13,7 @@ on its own:
 | Slice | Owns | Layer | Status |
 |------|------|-------|--------|
 | **A. Terrain/obstacle data** | per-cell `TerrainType`, placement validation, authored layout | `Combat.Deployment` (pure model) | **built (ADR-024)** |
-| **B. Scenery / biome theming** | `TerrainType → prop prefab/material`, NavMesh carve, skybox/biome skin | UI / scene | later |
+| **B. Scenery / biome theming** | runtime block arena: checkerboard floor + obstacle blocks, themed, runtime NavMesh bake | `UI.Arena` + `Data.Arena` | **built (ADR-025)** |
 | **C. Encounter builder** | `EncounterDefinition`, enemy roster generation, obstacle-aware placement ("the strategy") | Run / Combat | later, iterative |
 
 The hard rule that makes this composable: **the terrain layer (A) knows nothing about visuals (B) or
@@ -47,17 +47,28 @@ enemies (C)**. B and C *read* A. A never references UI or Run (assembly layering
   and NavMesh-obstacle boxes).
 - **Zones:** `config.InPlayerZone(c)` / `config.InEnemyZone(c)` (enemy placement domain for Slice C).
 
-## Slice B — scenery / biome theming (later)
-A **visual skin** over the terrain data; changes nothing in the model.
+## Slice B — runtime modular-block arena (BUILT, ADR-025)
+A **visual skin** over the terrain data; changes nothing in the model. Realized as a runtime block builder rather
+than just prop-scatter, so the floor itself reads as the deployment grid.
 
-- **`BiomeTheme` SO**: `TerrainType → { prop prefab, material/decal }` + ground material + skybox/lighting.
-- **`TerrainView` scene component**: on deployment build, iterate `manager.Terrain.Cells` (or
-  `grid.TerrainCells`), instantiate the themed prop for each non-Passable cell at `config.CellToWorld(coord)`.
-  Mirrors how `DeploymentGridRenderer` builds tiles.
-- **NavMesh carve** (same cell set): drop a `NavMeshObstacle` (carving) box ~`cellSize` on every `Impassable`
-  cell so the baked arena NavMesh is cut at runtime — **no re-bake needed**. Best lives next to `TerrainView`
-  since both consume `TerrainCells`. (The arena `Plane` already has a `NavMeshSurface`; see PROJECT_STATE.)
-- **Contract used:** `TerrainCells` + `CellToWorld` + `cellSize`. Read-only; B never writes the model.
+- **`ThemeBlockSet` SO** (`Data.Arena`): role {FloorA, FloorB, Obstacle, HazardMarker} → `{prefab, material, height}`.
+  Null prefab → scaled **primitive-cube fallback** (works with zero assets; Kubikos/Meshy drop in by assigning
+  prefabs — no code change). **`EncounterTheme` SO** selects a block set per floor (grass + volcanic placeholders
+  authored under `Assets/Settings/Arena/`).
+- **`ArenaBuilder`** (`UI.Arena`, scene component on `Test_M3_Battle`): `Build()` reads `DeploymentManager.Config`
+  + `.Terrain` and instantiates, under one `ArenaRoot`, a checkerboard floor tile per cell (`(col+row)%2`) + a
+  raised obstacle on each Impassable cell + a marker on each Hazard cell, sized from `cellSize`. `Teardown()`
+  destroys the root (no leaks). Pure math in testable `ArenaLayout`.
+- **NavMesh = runtime re-bake** (not carving — see ADR-025): `Bake()` sets `NavMeshSurface.useGeometry =
+  PhysicsColliders` and calls `BuildNavMesh()` after the geometry exists; obstacles carry `NavMeshModifier(Not
+  Walkable)` + a BoxCollider; collider-less units (ADR-008) are never baked in; the Plane MeshCollider is the
+  walkable ground. Extends the scene's existing `NavMeshSurface`.
+- **Checkerboard ↔ overlay:** the block floor is the BASE; `DeploymentGridRenderer`'s CellState tints are a
+  translucent OVERLAY on the same cells (shared grid). Floor lifted `floorSurfaceY≈0.05` so it reads over the
+  legacy Plane (which the builder hides) with no z-fighting.
+- **Editor preview:** `Tools/Arena/*` menu items + component ContextMenus build/bake/clear without Play.
+- **Contract used:** `DeploymentManager.Config` + `.Terrain` (the `TerrainLayout`), `config.CellToWorld`/`cellSize`,
+  `grid.TerrainCells`. Read-only; B never writes the model.
 
 ## Slice C — encounter builder (later, iterative)
 Turns a map node into a concrete fight: roster + obstacle layout + obstacle-aware placement.

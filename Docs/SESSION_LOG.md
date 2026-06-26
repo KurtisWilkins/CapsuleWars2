@@ -6,6 +6,41 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-25 — Themed encounters Slice B: runtime modular-block arena (ADR-025)
+**Ask:** build the concrete visual of Slice B — a runtime `ArenaBuilder` that constructs the battle board from
+themed cube/block prefabs (checkerboard floor + obstacle blocks), sized to the grid, with a runtime-baked NavMesh,
+themed per floor, block-set-agnostic (primitives now, real kits later by assigning prefabs). Consume Slice A's
+terrain layer; don't invent a new obstacle model.
+**Found (seams):** placement is a **ground raycast** (`DeploymentTray` → `Physics.Raycast(groundMask)` →
+`WorldToCell`); units have **no colliders** (ADR-008) + spawn at `CellToWorld` keeping their own Y (~0). Scene
+`NavMeshSurface` on the Plane is `CollectObjects:All`; **no code baked it before** (editor-baked). AI Navigation
+2.0.12 installed (`NavMeshSurface.BuildNavMesh` is code-callable; `NavMeshCollectGeometry` is in `UnityEngine.AI`,
+not `Unity.AI.Navigation`). `DeploymentGridRenderer` already renders per-cell CellState tints → it's the overlay,
+the checkerboard is the new base.
+**Did (190/190 EditMode green, +9 arena tests):**
+- `Data.Arena`: `ArenaBlock` enum, `ThemeBlockSet` SO (role→{prefab,material,height}, primitive fallback),
+  `EncounterTheme` SO. `UI.Arena`: pure `ArenaLayout` (parity / terrain→role / cell center) + `ArenaBuilder`
+  MonoBehaviour (`Build`/`BuildGeometry`/`Bake`/`Teardown`, editor ContextMenu preview). Added `Unity.AI.Navigation`
+  to the UI + Editor asmdefs.
+- NavMesh: bake AFTER geometry via `useGeometry=PhysicsColliders` + `BuildNavMesh`; obstacles get a BoxCollider +
+  `NavMeshModifier(NotWalkable)`; collider-less units never bake in; Plane collider = walkable ground; Plane
+  renderer hidden. Floor lifted `floorSurfaceY=0.05` so the checkerboard reads over the legacy Plane (no z-fight).
+- `ArenaSetupTool` editor menu: created grass + volcanic placeholder themes (tinted primitives) under
+  `Assets/Settings/Arena/`, wired `ArenaBuilder` into `Test_M3_Battle` (manager/theme/surface/groundPlaneRenderer),
+  authored demo terrain (Impassable (2,4)(4,4)(3,5) + Hazard (3,3) in neutral rows), + Build/Clear preview items.
+- 9 tests: `ArenaLayoutTests` (parity, terrain→role, cell center) + `ThemeBlockSetTests` (role mapping, primitive
+  fallback, thin-floor/raised-obstacle defaults).
+**Self-verified (scene-view capture):** blocks tile 1:1 with cells, aligned + centered; 3 obstacles raised on the
+right Impassable cells; hazard marker on (3,3); checkerboard reads. Confirmed material wiring via the block-set
+asset YAML + the scene YAML (all 4 ArenaBuilder refs set). The Plane lingering in editor captures is a SceneView
+repaint-timing quirk on renderer-disable, not a runtime bug (game view renders every frame).
+**Bug fixed mid-build:** `NavMeshCollectGeometry` is in `UnityEngine.AI` (not `Unity.AI.Navigation`) — the wrong
+namespace failed `CapsuleWars.UI` so a stale test assembly ran (181, not 190); caught it via the count mismatch,
+fixed the using, reran → 190.
+**Not built (scope):** no procedural generation (Slice C — layout is hand-authored), no vertical pathing (single
+2D plane; obstacles visually raised only), no enemy generation, no paid assets. **Play-verify:** NavMesh bake +
+agents pathing around obstacles + final look (PROJECT_STATE item 1b).
+
 ## 2026-06-25 — Themed encounters: design + Slice A terrain model (ADR-024)
 **Ask:** kick off a 3-slice themed/obstacle encounter system — DESIGN all of it, but BUILD only Slice A (the
 per-cell terrain/obstacle data layer). Slices B (biome theming) + C (encounter builder: roster + obstacle layout +

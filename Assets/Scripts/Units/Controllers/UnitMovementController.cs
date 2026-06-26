@@ -91,6 +91,17 @@ namespace CapsuleWars.Units.Controllers
                 return;
             }
 
+            // Units are spawned (Awake-time spawners + deployment placement) BEFORE ArenaBuilder bakes the runtime
+            // NavMesh (its Start), and Unity does NOT auto-attach an agent once a navmesh later appears. Snap any
+            // off-mesh agent onto the baked mesh the first frame it needs to act — otherwise the approach branch
+            // below short-circuits at `!agent.isOnNavMesh` before driving the Animator's Speed param, and the unit
+            // freezes in Idle (never moves, never attacks). Cheap: only runs while an agent is still off-mesh.
+            if (agent != null && !agent.isOnNavMesh &&
+                NavMesh.SamplePosition(transform.position, out var navHit, 2f, NavMesh.AllAreas))
+            {
+                agent.Warp(navHit.position);
+            }
+
             if (currentTarget == null || currentTarget.IsDowned)
                 currentTarget = AcquireTarget();
 

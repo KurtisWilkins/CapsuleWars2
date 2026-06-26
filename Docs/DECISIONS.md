@@ -501,4 +501,40 @@ Assassin/Archer/Spearman/Paladin tiers actually fold. **`Class_Warrior.asset` is
 left in place (may be referenced by test units) and flagged to retire when units are assigned roster classes (BTS-F).
 Behavioral tiers + assigning classes→units are **Play-gated** (no class is on a live unit yet).
 
+### ADR-031 — Battle-start polish: NavMesh re-attach, robust spawn-reveal, floor-aware deployment overlay
+**Context:** Play-testing after the themed-encounter (ArenaBuilder) work surfaced three battle-start defects, all
+rooted in the same theme — **things authored for the old flat Y≈0 ground, or for a spawn-before-bake order, were
+broken by the runtime arena.** A read-only diagnostic workflow (3 agents) root-caused each with high confidence.
+**Decided (three fixes, all Play-verify-gated — runtime behaviors, not EditMode-testable):**
+- **Animations never started (the big one) — NavMesh spawn-order inversion.** Units spawn in `Awake`
+  (`EnemyEncounterSpawner` −75, `BattlePartySpawner` −50) and during deployment, but `ArenaBuilder` bakes the
+  runtime NavMesh in `Start` (the scene ships with NO baked mesh). NavMeshAgents came up **off-mesh and were never
+  re-attached** (Unity doesn't auto-attach when a mesh later appears), so `UnitMovementController.Update`
+  short-circuited at `if (!agent.isOnNavMesh) return;` **before** driving the Animator's `Speed` param → units
+  froze in Idle, never moved, never attacked. **Fix:** self-heal in the movement controller — once Active, any
+  off-mesh agent does `NavMesh.SamplePosition + agent.Warp` onto the baked mesh the first frame it needs to act
+  (cheap; only runs while off-mesh). Chosen over a central sweep / execution-order reshuffle because it's
+  self-contained and also covers units placed interactively during deployment. **Resolves the NavMesh-timing
+  caveat flagged in ADR-027.**
+- **Units spawned compressed + floating — fragile spawn-reveal.** `UnitSpawnInHide` zeroed the unit scale at
+  Awake and relied on a DOTween `DOScale` grow-back; a tween can silently fail (DOTween capacity exhaustion when
+  many units spawn, uninitialized engine, `SetLink` kill on re-parent/destroy), leaving the unit **permanently
+  squashed** — which also reads as floating (a near-zero-scale unit collapsed to its pivot). **Fix:** rewrote it
+  **Update-driven** (ease-out cubic, no overshoot), guaranteed to reach the authored scale, with an `OnDisable`
+  restore and a zero-scale guard. Dropped the DOTween dependency entirely. Update-driven over tween precisely
+  because the failure mode was "the tween didn't complete."
+- **No "place here" highlight in deployment — overlay occluded by the floor.** The green deployable highlight
+  (`DeploymentGridRenderer`, `CellState.Empty`) was rendered correctly but at Y≈0.02, **buried under the opaque
+  checkerboard floor** whose top is at `floorSurfaceY`=0.05. **Fix:** made the renderer floor-aware — it reads
+  `ArenaBuilder.FloorSurfaceY` (new accessor; same `CapsuleWars.UI` assembly) and floats every overlay tile at
+  `floorSurfaceY + yOffset`, so the floor can never re-bury it even if `floorSurfaceY` is retuned. The overlay
+  raycast still maps taps by XZ, so the Y lift doesn't affect placement.
+**Why grouped:** one shared cause — "units/overlays are set up before the runtime arena (bake / floor lift) is
+ready, and nothing re-syncs them." Also renamed the deployment confirm button **"Assemble" → "Battle Start"** per
+the same feedback.
+**Status:** code done, **216/216 EditMode green**, no new tests (all three are Play behaviors). **Play-verify
+needed** (see PROJECT_STATE): enter Test_M3_Battle → deploy (green player-zone tiles now read on top of the floor)
+→ Battle Start → units spawn at full scale, planted (not squashed/floating), and **move + attack + animate**. Noted
+cleanup for later: a dead legacy `AttackOrder` Animator param (`AttackIndex` is the live one).
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

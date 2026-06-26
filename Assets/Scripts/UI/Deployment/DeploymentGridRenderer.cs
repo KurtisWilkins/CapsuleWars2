@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CapsuleWars.Combat.Deployment;
+using CapsuleWars.UI.Arena;
 using UnityEngine;
 
 namespace CapsuleWars.UI.Deployment
@@ -18,7 +19,10 @@ namespace CapsuleWars.UI.Deployment
     public class DeploymentGridRenderer : MonoBehaviour
     {
         [SerializeField] private GameObject cellPrefab;
-        [SerializeField] private float yOffset = 0.02f;        // sit just above the ground
+        [Tooltip("Gap above the floor/ground SURFACE. Resolved relative to the ArenaBuilder checkerboard top " +
+                 "(floorSurfaceY) when present, so the runtime floor can never bury the highlight; falls back to " +
+                 "ground (Y 0) with no arena.")]
+        [SerializeField] private float yOffset = 0.02f;
         [SerializeField] private bool showOutsideZone = false;
 
         [Header("State colors")]
@@ -42,12 +46,16 @@ namespace CapsuleWars.UI.Deployment
             if (manager == null || cellPrefab == null) return;
 
             var cfg = manager.Config;
+            // Float the overlay above the ArenaBuilder checkerboard floor (top = floorSurfaceY) so the runtime
+            // floor can't bury the highlight; with no arena it sits just above the legacy ground (Y 0).
+            var arena = FindFirstObjectByType<ArenaBuilder>();
+            float surfaceY = arena != null ? arena.FloorSurfaceY : 0f;
             for (int row = 0; row < cfg.rows; row++)
             {
                 for (int col = 0; col < cfg.columns; col++)
                 {
                     var coord = new GridCoord(col, row);
-                    Vector3 pos = cfg.CellToWorld(coord) + new Vector3(0f, yOffset, 0f);
+                    Vector3 pos = cfg.CellToWorld(coord) + new Vector3(0f, surfaceY + yOffset, 0f);
                     var go = Instantiate(cellPrefab, pos, Quaternion.Euler(90f, 0f, 0f), transform);
                     go.name = $"Cell_{col}_{row}";
                     if (go.TryGetComponent<Renderer>(out var r)) cells[coord] = r;

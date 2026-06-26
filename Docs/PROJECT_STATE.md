@@ -125,7 +125,14 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
    **fight normally**. **Main thing to watch:** the spawner runs in Awake before `ArenaBuilder` re-bakes the NavMesh
    in Start — confirm the spawned `NavMeshAgent`s are on the mesh and MOVE; if they don't, reorder the spawn to
    after `ArenaBuilder.Bake()` (see ADR-027). If something's off, enemies only break inside a run (standalone scene
-   keeps the authored enemy).
+   keeps the authored enemy). **→ now addressed by ADR-031 (item 1e) — agents self-heal onto the baked mesh.**
+1e. **Battle-start polish fixes (ADR-031) — the focus of this fix; resolves the 1d NavMesh caveat.** Enter a Combat
+   node in a run and press **Battle Start**. Verify all three: (a) **deployment highlight** — the green player-zone
+   tiles now read ON TOP of the checkerboard floor (they were buried under it); (b) units spawn at **full scale,
+   planted on the tiles** (not compressed/floating); (c) after Battle Start, units **move + attack + animate** (no
+   longer frozen in Idle — off-mesh NavMeshAgents self-heal via `SamplePosition`+`Warp` in `UnitMovementController`).
+   If a unit still won't move, confirm a baked navmesh exists within ~2m of its cell. Button now reads **Battle
+   Start** (was "Assemble").
 2. **Deployment loop** — load a combat node with a drafted party → tap a bench unit → tap a green player-zone
    cell ⇒ the real unit appears (scale-in); tap a placed cell to bench it; **Clear**; **Assemble** ⇒ those exact
    units start combat (no dupes; not before Assemble). (Placement + enemy inspection + Assemble were Play-verified

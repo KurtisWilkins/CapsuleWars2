@@ -6,6 +6,22 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-26 — Battle-polish fixes: NavMesh re-attach + spawn-reveal + deployment overlay (ADR-031)
+**Did:** root-caused (read-only 3-agent workflow) + fixed three Play-test defects from the user's batch, all rooted
+in "set up before the runtime arena is ready":
+ 1. **Animations never started** — units spawn (Awake spawners −75/−50 + deployment) before ArenaBuilder bakes the
+    NavMesh (Start), so agents came up off-mesh; `UnitMovementController` returned at `!agent.isOnNavMesh` before
+    driving the Animator. Fix: self-heal off-mesh agents via `NavMesh.SamplePosition + agent.Warp` once Active.
+    (Resolves the ADR-027 NavMesh-timing caveat.)
+ 2. **Units compressed + floating** — `UnitSpawnInHide` zeroed scale then relied on a DOTween that can silently
+    not complete (capacity/init/link), leaving units squashed. Fix: rewrote Update-driven (guaranteed full scale,
+    OnDisable restore, zero-scale guard), dropped DOTween.
+ 3. **No deployment highlight** — green deployable overlay was buried under the checkerboard floor (overlay Y 0.02
+    < floor top 0.05). Fix: `DeploymentGridRenderer` reads `ArenaBuilder.FloorSurfaceY` (new accessor) and floats
+    tiles above the floor.
+Plus the "Assemble"→"Battle Start" rename (prior commit). **216/216 green; all three are Play-verify-gated.**
+**Next:** user Play-verifies in Test_M3_Battle; then customization visuals (#90) or BTS-E2 (#88).
+
 ## 2026-06-26 — BTS-E1: class synergies — globalBuffs + 16 UnitClass_SO (Docs/09 roster)
 **Did:** (1) added `ClassSynergyTier.globalBuffs` (whole-team, any class) + a third `SynergyResolver` pass that
 accumulates each active tier's globals per team and applies them to every live unit on that team; +1 test (a

@@ -48,6 +48,9 @@ namespace CapsuleWars.UI.Arena
         /// <summary>True while a built arena exists.</summary>
         public bool HasArena => arenaRoot != null;
 
+        /// <summary>World Y of the floor's top surface — overlays (e.g. the deployment highlight) sit above this.</summary>
+        public float FloorSurfaceY => floorSurfaceY;
+
         private void Start()
         {
             if (buildOnStart) Build();

@@ -28,6 +28,13 @@ namespace CapsuleWars.Run.Encounters
         [Tooltip("Allow terrain on the far enemy-zone rows. If off, terrain is confined to the neutral middle rows.")]
         public bool allowEnemyZone = true;
 
-        // --- Roster spec (Slice C2) lands here later: enemy count by NodeType/floor, archetype pool, etc. ---
+        [Header("Enemy roster (Slice C2)")]
+        [Tooltip("Min/max enemies per encounter (before per-floor scaling).")]
+        [Min(0)] public int minEnemies = 2;
+        [Min(0)] public int maxEnemies = 4;
+        [Tooltip("Extra enemies added per floor of depth (floored).")]
+        [Min(0f)] public float enemiesPerFloor = 0.25f;
+        [Tooltip("Fixed enemy count on boss encounters. 0 = use the min/max range like a normal fight.")]
+        [Min(0)] public int bossEnemyCount = 1;
     }
 }

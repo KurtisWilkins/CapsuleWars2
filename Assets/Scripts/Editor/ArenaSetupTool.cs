@@ -4,6 +4,7 @@ using CapsuleWars.Combat.Deployment;
 using CapsuleWars.Data.Arena;
 using CapsuleWars.Run.Encounters;
 using CapsuleWars.UI.Arena;
+using CapsuleWars.Units.Controllers;
 using Unity.AI.Navigation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -231,11 +232,23 @@ namespace CapsuleWars.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(builder);
 
+            // Enemy spawner (C3) on the same GameObject — run-gated, so standalone play keeps the scene enemy.
+            var spawner = Object.FindFirstObjectByType<EnemyEncounterSpawner>(FindObjectsInactive.Include);
+            if (spawner == null) spawner = builder.gameObject.AddComponent<EnemyEncounterSpawner>();
+            var enemyPrefab = LoadEnemyPrefab();
+            var sso = new SerializedObject(spawner);
+            sso.FindProperty("manager").objectReferenceValue = manager;
+            sso.FindProperty("definition").objectReferenceValue = def;
+            if (enemyPrefab != null) sso.FindProperty("enemyPrefab").objectReferenceValue = enemyPrefab;
+            sso.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(spawner);
+
             var scene = builder.gameObject.scene;
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
-            Debug.Log($"[ArenaSetupTool] Wired EncounterBuilder (manager={manager.name}, definition={def.name}). " +
-                      "It generates per-node terrain at runtime when a run is active.");
+            Debug.Log($"[ArenaSetupTool] Wired EncounterBuilder + EnemyEncounterSpawner (manager={manager.name}, " +
+                      $"definition={def.name}, enemyPrefab={(enemyPrefab != null ? enemyPrefab.name : "NONE — assign manually")}). " +
+                      "They generate per-node terrain + enemies at runtime when a run is active.");
         }
 
         [MenuItem("Tools/Arena/Preview Generated Encounter (open scene)")]
@@ -253,6 +266,13 @@ namespace CapsuleWars.Editor
             SceneView.RepaintAll();
             Debug.Log("[ArenaSetupTool] Previewed a generated encounter (seed 777, floor 3). In-memory only — " +
                       "use 'Clear Preview' and do NOT save (the scene keeps its authored demo terrain).");
+        }
+
+        private static UnitRoot LoadEnemyPrefab()
+        {
+            var go = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Unit_Enemy.prefab");
+            if (go == null) { Debug.LogWarning("[ArenaSetupTool] Unit_Enemy.prefab not found; assign enemyPrefab manually."); return null; }
+            return go.GetComponent<UnitRoot>();
         }
 
         private static EncounterDefinition MakeEncounterDefinition(string name)

@@ -118,5 +118,63 @@ namespace CapsuleWars.Tests.EditMode
             foreach (var c in layout.Cells)
                 Assert.IsTrue(seen.Add(c.coord), $"cell {c.coord} used by more than one terrain entry");
         }
+
+        // ---- Roster size (C2) ----
+
+        [Test]
+        public void RosterSize_WithinRange_AtFloorZero()
+        {
+            var def = Def(0, 0, 0, 0);
+            def.minEnemies = 2; def.maxEnemies = 4; def.enemiesPerFloor = 0f; def.bossEnemyCount = 0;
+            int n = EncounterGenerator.RosterSize(def, seed: 4, nodeId: 2, floor: 0, isBoss: false);
+            Assert.GreaterOrEqual(n, 2);
+            Assert.LessOrEqual(n, 4);
+        }
+
+        [Test]
+        public void RosterSize_Boss_UsesFixedCount()
+        {
+            var def = Def(0, 0, 0, 0);
+            def.bossEnemyCount = 3;
+            Assert.AreEqual(3, EncounterGenerator.RosterSize(def, seed: 1, nodeId: 1, floor: 5, isBoss: true));
+        }
+
+        [Test]
+        public void RosterSize_ScalesWithFloor()
+        {
+            var def = Def(0, 0, 0, 0);
+            def.minEnemies = 2; def.maxEnemies = 2; def.enemiesPerFloor = 1f; def.bossEnemyCount = 0;
+            Assert.AreEqual(2 + 3, EncounterGenerator.RosterSize(def, seed: 8, nodeId: 1, floor: 3, isBoss: false));
+        }
+
+        // ---- Enemy placement cells (C3) ----
+
+        [Test]
+        public void EnemyCells_AreInEnemyZone_AndAvoidImpassable()
+        {
+            var cfg = Config();
+            var grid = new DeploymentGrid(cfg);
+            grid.SetTerrain(new GridCoord(0, 6), TerrainType.Impassable);
+            grid.SetTerrain(new GridCoord(3, 7), TerrainType.Impassable);
+
+            var cells = EncounterGenerator.EnemyCells(cfg, grid, count: 5, seed: 3, nodeId: 4);
+
+            Assert.AreEqual(5, cells.Count);
+            foreach (var c in cells)
+            {
+                Assert.IsTrue(cfg.InEnemyZone(c), $"enemy cell {c} not in the enemy zone");
+                Assert.IsFalse(grid.IsImpassable(c), $"enemy spawned on an obstacle at {c}");
+            }
+        }
+
+        [Test]
+        public void EnemyCells_Deterministic()
+        {
+            var cfg = Config();
+            var grid = new DeploymentGrid(cfg);
+            var a = EncounterGenerator.EnemyCells(cfg, grid, 4, seed: 99, nodeId: 6);
+            var b = EncounterGenerator.EnemyCells(cfg, grid, 4, seed: 99, nodeId: 6);
+            CollectionAssert.AreEqual(a, b);
+        }
     }
 }

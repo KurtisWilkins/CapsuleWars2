@@ -41,6 +41,44 @@ namespace CapsuleWars.Run.Encounters
             return layout;
         }
 
+        /// <summary>Number of enemies for a node (Slice C2). Deterministic; boss uses a fixed count when set, else the range.</summary>
+        public static int RosterSize(EncounterDefinition def, int seed, int nodeId, int floor, bool isBoss)
+        {
+            if (def == null) return 0;
+            if (isBoss && def.bossEnemyCount > 0) return def.bossEnemyCount;
+
+            var rng = new System.Random((seed ^ (nodeId * 83492791)) + 13);
+            int max = Mathf.Max(def.minEnemies, def.maxEnemies);
+            int n = rng.Next(def.minEnemies, max + 1) + Mathf.FloorToInt(Mathf.Max(0, floor) * def.enemiesPerFloor);
+            return Mathf.Max(0, n);
+        }
+
+        /// <summary>
+        /// Up to <paramref name="count"/> deterministic enemy spawn cells (Slice C3): Passable cells in the enemy
+        /// zone, avoiding Impassable terrain. Returns fewer if the zone is too crowded. Seeded separately from the
+        /// terrain so obstacle placement and enemy placement don't correlate.
+        /// </summary>
+        public static List<GridCoord> EnemyCells(DeploymentGridConfig config, DeploymentGrid grid, int count, int seed, int nodeId)
+        {
+            var result = new List<GridCoord>();
+            if (config == null || count <= 0) return result;
+
+            var candidates = new List<GridCoord>();
+            for (int row = 0; row < config.rows; row++)
+                for (int col = 0; col < config.columns; col++)
+                {
+                    var c = new GridCoord(col, row);
+                    if (!config.InEnemyZone(c)) continue;
+                    if (grid != null && grid.IsImpassable(c)) continue;   // don't spawn inside an obstacle
+                    candidates.Add(c);
+                }
+
+            var rng = new System.Random((seed ^ (nodeId * 19349663)) + 7);
+            Shuffle(candidates, rng);
+            for (int i = 0; i < count && i < candidates.Count; i++) result.Add(candidates[i]);
+            return result;
+        }
+
         /// <summary>Cells terrain may occupy: neutral always; player rows only if not kept clear; enemy rows only if allowed.</summary>
         private static List<GridCoord> EligibleCells(EncounterDefinition def, DeploymentGridConfig config)
         {

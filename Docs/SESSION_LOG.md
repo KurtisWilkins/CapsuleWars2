@@ -6,6 +6,18 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-25 — BTS-B1: status stat getters + resistance bug fixes (Docs/10)
+**Ask:** continue → BTS-B (status combat hooks + fixes). Split it: did the safe status-LAYER subset now (B1); the
+damage-pipeline `StatusEffectBehavior` hook is B2 (touches `UnitHealthController.TakeDamage`).
+**Did (215/215 green, +3 tests):** added `Accuracy`/`CritRate`/`CritDmg`/`Resistance` modified getters (+ base
+fields) to `UnitStatusController`, so those status/equipment/synergy buffs now fold + are read (previously computed
+and discarded — the Accuracy/Crit status pairs + Assassin/Archer/Paladin synergy stats were dead on arrival).
+Fixed two resistance bugs: the apply roll was `Random.value < 0f` (never resisted) → now the Docs/10 formula,
+apply chance = (effectAccuracy − Resistance)/1000 clamped (new `effectAccuracy` on `StatusEffect_SO`, default 1000 =
+always lands → preserves current behaviour); and `RollPerTick` is honoured (resisted ticks skipped).
+**Next (BTS-B2):** the `StatusEffectBehavior` custom-SO hook + damage-pipeline consult (Marked +25% taken /
+Protected negate-next / Shield absorb / Frozen ×1.5 phys) — the 7 behavioral statuses depend on it. Commit `6f073d7`.
+
 ## 2026-06-25 — BTS-A: ability event-trigger infrastructure (ADR-029)
 **Ask:** continue the build-to-spec backlog → BTS-A (wire ability triggers to combat events).
 **Found:** a `BattleEventBus` (OnDamageDealt/Taken/Downed/Kill/BattleStart) already exists, owned by

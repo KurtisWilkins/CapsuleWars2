@@ -11,9 +11,11 @@ Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slic
       `AbilityController` subscribes + stamps per-runtime event timestamps; OnHit/OnTakeHit/OnKill/OnAllyDeath +
       OnBattleStart + OnLowHp triggers. 212 green. **Remaining (BTS-A2):** `GetAttackerTarget` (thread the event's
       other-unit into `AbilityCastContext`) + fold `OnAbilityCast/Hit/Resolved` stat events.
-- [ ] **BTS-B — status combat hooks + bug fixes [code].** Build the `StatusEffectBehavior` custom-SO hook + the
-      damage-pipeline status consult (Marked/Protected/Shield/Frozen-amp); add Accuracy/CritRate(/DefElem) modified
-      getters to `UnitStatusController`; fix the resistance roll (`Random.value < 0f`) + `RollPerTick`.
+- [x] **BTS-B1 — status stat getters + resistance fixes (done, 215 green).** Accuracy/CritRate/CritDmg/Resistance
+      getters fold buffs; apply-roll Docs/10 formula + RollPerTick fixed (new `effectAccuracy` field).
+- [ ] **BTS-B2 — `StatusEffectBehavior` damage hook [code].** Build the custom-SO behavior hook + the damage-pipeline
+      consult in `UnitHealthController.TakeDamage` (Marked +25% taken, Protected negate-next-hit, Shield absorb pool,
+      Frozen ×1.5 physical). The 7 behavioral statuses (incl. Unlucky/LastStand/Madness via behavior hooks) need this.
 - [ ] **BTS-C — WeaponClass_SO assets [content].** Author the ~14 missing weapon classes (Bow, Crossbow, Musket,
       Spear, Javelin, Potion×2, Bomb, Dagger, Staff, Wand, 2H, TowerShield, HolyShield, Dual-1H); fix `WC_1HSword`
       mislabel.

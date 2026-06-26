@@ -150,20 +150,29 @@ namespace CapsuleWars.Editor
                         string folder = AssetPipelineImporter.EnsureFolder($"{IconsRoot}/{job.category}");
                         string path = $"{folder}/{job.id}.png";
                         File.WriteAllBytes(path, t.Result);
-                        AssetDatabase.ImportAsset(path);
 
-                        // The missing step: import as a Sprite so it's assignable to UI Image.sprite.
+                        // Import as a SPRITE so it's assignable to UI Image.sprite (the step the AssetRequest path
+                        // lacked). Set the importer, then FORCE a synchronous reimport so the Sprite sub-asset
+                        // actually exists before we load it — a plain SaveAndReimport can defer, leaving
+                        // LoadAssetAtPath<Sprite> null and the icon silently unassigned.
+                        AssetDatabase.ImportAsset(path);
                         if (AssetImporter.GetAtPath(path) is TextureImporter imp)
                         {
                             imp.textureType = TextureImporterType.Sprite;
+                            imp.spriteImportMode = SpriteImportMode.Single;
                             imp.alphaIsTransparency = true;
                             imp.SaveAndReimport();
                         }
+                        AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
 
                         var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                        if (sprite == null) throw new Exception("Sprite import produced no Sprite sub-asset.");
+
                         var so = new SerializedObject(job.so);
                         var ip = so.FindProperty("icon");
-                        if (ip != null) { ip.objectReferenceValue = sprite; so.ApplyModifiedPropertiesWithoutUndo(); }
+                        if (ip == null) throw new Exception("target SO has no serialized 'icon' field.");
+                        ip.objectReferenceValue = sprite;
+                        so.ApplyModifiedPropertiesWithoutUndo();
                         EditorUtility.SetDirty(job.so);
                         AssetDatabase.SaveAssets();
 

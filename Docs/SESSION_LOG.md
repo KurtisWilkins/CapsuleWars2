@@ -6,6 +6,20 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-26 — BTS-E1: class synergies — globalBuffs + 16 UnitClass_SO (Docs/09 roster)
+**Did:** (1) added `ClassSynergyTier.globalBuffs` (whole-team, any class) + a third `SynergyResolver` pass that
+accumulates each active tier's globals per team and applies them to every live unit on that team; +1 test (a
+wizard global reaches a same-team warrior; the wizard team-buff does not). (2) `ClassSetupTool`
+(`Tools/Build-To-Spec/Author Unit Classes`, idempotent) authored the **16 `UnitClass_SO`** on the 2/4/6 ladder,
+numbers verbatim from the roster. **[content] stat tiers + globalBuffs filled** (Barbarian/Fighter/Archer/
+Spearman-T2/Heavy/Javelin/Assassin/Monk/Crossbow-T4-6/**Paladin fully**, + Heavy/Monk/Paladin globals); **[code]
+behavioral tiers left as desc-only placeholders** (BTS-E2 wires them after BTS-B2/D/F). BTS-B1's crit/acc/res
+getters mean those tiers actually fold. **216/216 EditMode green.**
+**Watch:** `Class_Warrior.asset` is a stale pre-roster placeholder — left in place, retire in BTS-F. No class is on
+a live unit yet (assigning classes→units = BTS-F; behavioral synergies = BTS-E2) → all Play-gated.
+**Next (this session):** the bundled battle-polish fixes (Assemble→Battle Start rename, deployment tile
+highlighting, units scaled/floating, animations not starting) — see the user's Play-test batch.
+
 ## 2026-06-25 — BTS-C: WeaponClass_SO assets authored (Docs/09 roster)
 **Did:** `WeaponClassSetupTool` (`Tools/Build-To-Spec/Author Weapon Classes`, idempotent) authored the 16 weapon
 classes the roster needs — Melee2H, Dual1H, Bow, Spear, TowerShield, Staff, Wand, HolyFocus, ThrownJavelin,

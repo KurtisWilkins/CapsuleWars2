@@ -21,6 +21,9 @@ namespace CapsuleWars.Data.Classes
 
         [Tooltip("Buffs applied to every unit of this class on the team when active.")]
         public List<StatBuff> teamBuffs = new();
+
+        [Tooltip("Buffs applied to the WHOLE team (any class) when active. Rare — high tiers / support classes (Docs/09).")]
+        public List<StatBuff> globalBuffs = new();
     }
 
     /// <summary>

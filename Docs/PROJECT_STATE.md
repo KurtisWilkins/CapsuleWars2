@@ -11,7 +11,7 @@ _Last updated: 2026-06-25 — build-to-spec: Slice 1 + BTS-A (event triggers) + 
 | **Elements** (Docs/08) | 15 types + 5×5 chart + dual rule | 15 + chart + multipliers + **dual-element rule (new)** | ✅ **complete to spec** |
 | **Abilities** (Docs/05) | ~30 strategy classes | 8 prior + 9 (targeting/filters/effects) + **8 triggers (BTS-A)** = 25; event-bus wiring done | ⏳ remaining: GetAttacker (BTS-A pt2), HighestThreat (needs dmg stat), BuffStat/KnockBack/Teleport/VFX/Evolve |
 | **Status** (Docs/10) | 24 effects | 1 authored; **stat getters + resistance bugs fixed (BTS-B1)** | ⏳ author 24 assets (BTS-D); 7 behavioral need the `StatusEffectBehavior` damage hook (BTS-B2) |
-| **Classes** (Docs/09 + roster) | 16 + tiers | **16 `WeaponClass_SO` authored (BTS-C)**; 0/16 `UnitClass_SO` | ⏳ `globalBuffs` field + 16 `UnitClass_SO` (BTS-E); Paladin pure-content, 14 need [code] behaviors |
+| **Classes** (Docs/09 + roster) | 16 + tiers | **16 `WeaponClass_SO` (BTS-C) + 16 `UnitClass_SO` w/ [content] tiers + `globalBuffs` (BTS-E1)** | ⏳ BTS-E2: [code] behavioral tiers wire once status/effect/hook slices land; assign classes→units (BTS-F); retire `Class_Warrior` placeholder. No class on a live unit yet (Play-gated) |
 | **Equipment** (Docs/07) | 8 slots × 5 rarities | code ✅; 6 items (all Common) | ⏳ 4 empty slots, none above Common, no roll-config/loot assets, rarity ×s to align to doc |
 | **Evolution** (new, in scope) | XP/floor stat growth | — | ⏳ not started (gates EvolveEffect + evolution-indexed strategies) |
 

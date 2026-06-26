@@ -22,9 +22,14 @@ Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slic
       `Ability_SO.requiredWeaponClasses` (BTS-F authors that side).
 - [ ] **BTS-D — status effects [content+code].** Author the 13 expressible assets + the 4 stat-getter ones (post
       BTS-B) + the 7 behavioral via the BTS-B hook. The full 24 per Docs/10.
-- [ ] **BTS-E — `globalBuffs` + 16 classes [code+content].** Add `ClassSynergyTier.globalBuffs` + resolver branch
-      + test; author 16 `UnitClass_SO` + [content] stat tiers (Paladin fully); wire [code] behavioral tiers using
-      BTS-A/B strategies + hooks. (Monk = own class.)
+- [x] **BTS-E1 — `globalBuffs` + 16 classes [content] (done).** Added `ClassSynergyTier.globalBuffs` + 3rd
+      `SynergyResolver` pass + test; `ClassSetupTool` authored 16 `UnitClass_SO` (2/4/6 ladder, roster verbatim) with
+      the [content] stat tiers + globalBuffs (Paladin fully). 216 green.
+- [ ] **BTS-E2 — [code] behavioral synergy tiers.** Wire the desc-only placeholder tiers (armor-pen, DoT/splash,
+      on-hit/kill heal, atk-speed ramps, front-row/low-HP conditionals, ability-dmg %, healing-power, team regen,
+      strike-first, double-shot, reposition, pierce, backline-open) as ability-effect/status/combat-hook strategies.
+      Gated by BTS-B2 (damage hook), BTS-D (statuses), BTS-F (ability sets). Also HandGunner-T4's −10% Speed (defer
+      with its [code] dmg). Retire/repoint `Class_Warrior` placeholder once units carry roster classes (BTS-F).
 - [ ] **BTS-F — ability move CONTENT [content].** Author `Ability_SO` move sets per class/weapon using the strategy classes.
 - [ ] **BTS-G — equipment content [content].** Items across slots×rarities; `EquipmentRollConfig` + `LootTable_SO`
       assets; align rarity ×s to Docs/07 (1/1.25/1.5/2/3); fill blank ids; update stale Docs/07 data-model section.

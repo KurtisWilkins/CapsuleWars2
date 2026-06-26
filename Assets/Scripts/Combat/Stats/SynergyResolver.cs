@@ -78,6 +78,29 @@ namespace CapsuleWars.Combat.Stats
                 }
             }
 
+            // Third pass: team-wide global buffs. Accumulate each active tier's globalBuffs per team, then apply
+            // to every live unit on that team regardless of class (rare, high-tier — Docs/09).
+            var teamGlobals = new Dictionary<Team, List<StatBuff>>();
+            foreach (var kv in classCounts)
+            {
+                var tier = kv.Key.Item2.GetActiveTier(kv.Value);
+                if (tier == null || tier.globalBuffs == null || tier.globalBuffs.Count == 0) continue;
+                if (!teamGlobals.TryGetValue(kv.Key.Item1, out var gl)) { gl = new List<StatBuff>(); teamGlobals[kv.Key.Item1] = gl; }
+                gl.AddRange(tier.globalBuffs);
+            }
+            if (teamGlobals.Count > 0)
+            {
+                for (int i = 0; i < units.Count; i++)
+                {
+                    var u = units[i];
+                    if (u == null || (u is UnityEngine.Object go && go == null) || u.IsDowned) continue;
+                    if (!teamGlobals.TryGetValue(u.Team, out var globals)) continue;
+                    var root = u.GameObject != null ? u.GameObject.GetComponentInParent<UnitRoot>() : null;
+                    if (root == null || root.Status == null) continue;
+                    if (bufferBuilder.TryGetValue(root.Status, out var list)) list.AddRange(globals);
+                }
+            }
+
             // Push computed buffs to each status controller.
             foreach (var kv in bufferBuilder)
             {

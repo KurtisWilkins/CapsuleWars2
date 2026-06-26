@@ -19,6 +19,7 @@ namespace CapsuleWars.Tests.EditMode
         private readonly List<GameObject> spawned = new();
         private MockRegistry registry;
         private UnitClass_SO warriorClass;
+        private UnitClass_SO wizardClass;
 
         [SetUp]
         public void Setup()
@@ -56,6 +57,7 @@ namespace CapsuleWars.Tests.EditMode
             }
             spawned.Clear();
             Object.DestroyImmediate(warriorClass);
+            if (wizardClass != null) Object.DestroyImmediate(wizardClass);
         }
 
         [Test]
@@ -138,13 +140,59 @@ namespace CapsuleWars.Tests.EditMode
             Assert.AreEqual(before, s1.Atk);
         }
 
+        [Test]
+        public void GlobalBuffs_ApplyToWholeTeam_RegardlessOfClass()
+        {
+            // Wizard tier (threshold 2): +8 Atk to wizards (teamBuffs) + +5 Def to the WHOLE team (globalBuffs).
+            wizardClass = ScriptableObject.CreateInstance<UnitClass_SO>();
+            SetField(wizardClass, "tiers", new List<ClassSynergyTier>
+            {
+                new ClassSynergyTier
+                {
+                    threshold = 2,
+                    teamBuffs = new List<StatBuff>
+                    {
+                        new StatBuff { stat = StatType.Atk, modType = StatBuffModType.Flat, amount = 8 }
+                    },
+                    globalBuffs = new List<StatBuff>
+                    {
+                        new StatBuff { stat = StatType.Def, modType = StatBuffModType.Flat, amount = 5 }
+                    }
+                },
+            });
+
+            var (rw1, sw1) = SpawnOf(Team.Player, wizardClass);
+            var (rw2, _) = SpawnOf(Team.Player, wizardClass);
+            var (rWar, sWar) = SpawnOf(Team.Player, warriorClass); // lone warrior — below warrior tier 2
+            registry.Register(rw1);
+            registry.Register(rw2);
+            registry.Register(rWar);
+
+            int warAtkBefore = sWar.Atk;
+            int warDefBefore = sWar.Def;
+            int wizAtkBefore = sw1.Atk;
+            int wizDefBefore = sw1.Def;
+
+            new SynergyResolver(registry).RecomputeSynergies();
+
+            // Wizard global (+5 Def) reaches the warrior; wizard team buff (+8 Atk) does NOT.
+            Assert.AreEqual(warDefBefore + 5, sWar.Def, "warrior should receive the wizard globalBuff");
+            Assert.AreEqual(warAtkBefore, sWar.Atk, "warrior must NOT receive the wizard teamBuff");
+
+            // Wizards get both their team buff and the global buff.
+            Assert.AreEqual(wizAtkBefore + 8, sw1.Atk, "wizard should receive its teamBuff");
+            Assert.AreEqual(wizDefBefore + 5, sw1.Def, "wizard should receive its globalBuff");
+        }
+
         // -----------------------------------------------------------------
         // Helpers
         // -----------------------------------------------------------------
 
-        private (UnitRoot, UnitStatusController) SpawnWarrior(Team team)
+        private (UnitRoot, UnitStatusController) SpawnWarrior(Team team) => SpawnOf(team, warriorClass);
+
+        private (UnitRoot, UnitStatusController) SpawnOf(Team team, UnitClass_SO cls)
         {
-            var go = new GameObject($"Warrior_{team}");
+            var go = new GameObject($"Unit_{team}");
             spawned.Add(go);
             var root = go.AddComponent<UnitRoot>();
             var status = go.AddComponent<UnitStatusController>();
@@ -152,7 +200,7 @@ namespace CapsuleWars.Tests.EditMode
             SetField(root, "team", team);
             SetField(root, "status", status);
             SetField(root, "health", health);
-            SetField(status, "unitClass", warriorClass);
+            SetField(status, "unitClass", cls);
             // Awake on UnitRoot has already run via AddComponent ordering; force-relink fields.
             return (root, status);
         }

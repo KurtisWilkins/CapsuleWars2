@@ -473,4 +473,32 @@ triggers fire when their event is newer than the runtime's last cast. Keeps trig
 `TimeBasedTrigger` reading `runtime.LastCastTime`). **Status:** built (BTS-A), 212 green; `GetAttacker` (needs the
 event's other-unit in the cast context) is part 2.
 
+### ADR-030 — Class synergies: `globalBuffs` field + 16 `UnitClass_SO` authored, [content]/[code] tier split (BTS-E1)
+**Decided:** the 16-class roster (Docs/09, LOCKED) is now authored as `UnitClass_SO` assets, and the
+`ClassSynergyTier.globalBuffs` field the spec listed but the code lacked is added. **`globalBuffs`** (whole-team,
+any class) sits alongside `teamBuffs` (same-class only); `SynergyResolver` gets a third pass that accumulates each
+active tier's `globalBuffs` per team and applies them to every live unit on that team regardless of class
+(`teamGlobals` dict → per-unit add). The 16 classes are authored by a re-runnable editor tool `ClassSetupTool`
+(`Tools/Build-To-Spec/Author Unit Classes`, reflection-sets the serialized fields + `SaveAssets`, idempotent) into
+`Assets/Data/Classes/Class_<Name>.asset` on the **2/4/6 threshold ladder**, numbers copied **verbatim** from the
+roster (first-pass/tunable — not "improved").
+**[content]/[code] split (the key call):** only the pure-`StatBuff` portions of each tier are filled now —
+**Barbarian/Fighter/Archer/Spearman(T2)/Heavy/Javelin/Assassin/Monk/Crossbow(T4-6)/Paladin** get real stat tiers,
+and **Heavy-T6/Monk-T6/Paladin-T4-6** get `globalBuffs`. **Paladin is fully [content]** (Def/Res + team Res/Def).
+Tiers whose roster effect is **[code]** (armor-pen, DoT/splash, on-hit/kill heal, atk-speed ramps, front-row /
+low-HP conditionals, ability-dmg %, healing-power, team regen, strike-first, double-shot, reposition, pierce,
+backline-open) are authored as **threshold + descTermKey with EMPTY buff lists** — placeholders so the ladder/asset
+exists, to be wired in **BTS-E2** once the ability-effect / status / combat-hook slices (BTS-B2, BTS-D, BTS-F) land.
+Never faked in the stat layer (the roster's build note). A `-10% Speed` content fragment (HandGunner-T4) is also
+deferred because it only makes sense paired with its [code] damage trade-off — shipping a lone downside would be a
+silent imbalance.
+**Why now:** `globalBuffs` is the one architectural gap blocking the high/support tiers; the stat tiers are pure
+content authorable today; the behavioral tiers are dependency-gated. Splitting E into E1 (this) + E2 (behavior)
+keeps each slice green and testable.
+**Status:** code + 16 assets done, **216/216 EditMode green** (+1 test: a wizard `globalBuff` reaches a same-team
+warrior while the wizard `teamBuff` does not). The Accuracy/CritRate/CritDmg/Resistance getters (BTS-B1) mean
+Assassin/Archer/Spearman/Paladin tiers actually fold. **`Class_Warrior.asset` is a stale pre-roster placeholder** —
+left in place (may be referenced by test units) and flagged to retire when units are assigned roster classes (BTS-F).
+Behavioral tiers + assigning classes→units are **Play-gated** (no class is on a live unit yet).
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

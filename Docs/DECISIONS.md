@@ -537,4 +537,35 @@ needed** (see PROJECT_STATE): enter Test_M3_Battle → deploy (green player-zone
 → Battle Start → units spawn at full scale, planted (not squashed/floating), and **move + attack + animate**. Noted
 cleanup for later: a dead legacy `AttackOrder` Animator param (`AttackIndex` is the live one).
 
+### ADR-032 — Customization live preview un-occluded; icon system scoped (build-not-AI)
+**Context:** Play-test feedback: the customization paper-doll's live character preview "does not show up", and
+parts/weapons/armor have no icons. A read-only 2-agent diagnostic workflow root-caused the preview (high
+confidence) and inventoried the icon gap.
+**Preview — decided + fixed:** the preview is an **in-world unit** (same base prefab, spawned at the origin
+PreviewAnchor), meant to show through a transparent Screen-Space-Overlay panel — NOT a RenderTexture rig. It was
+rendered correctly but **hidden behind the panel's own opaque background**: `PaperDollBuilder` set the panel Image
+transparent, but the `UIThemeApplier` on it (`colorOwnBackground=true`) repaints the background with
+`palette.panelBackground` (0.06,0.07,0.10,**0.96** ≈ opaque) on every OnEnable/ExecuteAlways. (Confirmed NOT the
+`UnitSpawnInHide` zero-scale bug — the Update-driven rewrite is on disk and the reveal completes.) **Fix:** set
+`colorOwnBackground=false` on the panel's applier so it themes child buttons/text but leaves the root transparent —
+in `PaperDollBuilder.Build` (durable, re-runnable) **and** directly in `Test_M7_Map.unity` (panel Image alpha
+0.96→0 + applier `colorOwnBackground` 1→0 on GameObject 1055545173) so the current scene works without a rebuild.
+**Known follow-up:** with the panel transparent the preview shows against the **map backdrop** (no dedicated
+background). The clean version — a preview Camera on a PREVIEW layer → RenderTexture → RawImage, preview unit on
+that layer — is deferred as polish (bigger: new layer + camera + RT + builder wiring).
+**Icons — scoped, NOT yet built; decision recorded.** No icon system exists: `Equipment_SO` has an `icon` field
+(all 7 assets null); `BodyPart_SO` has **no icon field at all** (6 assets); 13 items total, 0 icons; the bag/slot
+widgets fall back to text. **Decision: BUILD icons by rendering the actual 3D geometry** (an editor `IconBaker`
+using `PreviewRenderUtility` / a hidden RenderTexture → `EncodeToPNG` → import as **Sprite** (`textureType=Sprite`,
+the step the AI path also lacks today) → assign via `SerializedObject`), **not AI-generate** — free, deterministic,
+re-runnable, and matches the in-game mesh; AI (the Grok pipeline) stays a manual override for hero items. Plan:
+(1) add `BodyPart_SO.icon` + getter; (2) `Assets/Scripts/Editor/IconRenderer/IconBaker.cs`
+(`Tools/Icons/Bake All Item Icons`, iterate `EquipmentCatalog`+`PartCatalog`); (3) widget tweaks (`BagItemWidget`
+ConfigureBody → pass `part.Icon`; `PaperDollSlot.SetBody` sprite-aware; `CustomizationScreen.RefreshSlots` body
+branch). **Caveat:** default body parts use built-in primitive meshes (sphere/cubes) so they bake generic
+thumbnails until real meshes exist, and **per-category camera framing/angle needs the user's eyes** (Play/scene
+review) — so the baker is its own task (#90 split: preview done here; icons = follow-up).
+**Status:** preview fix done, **216/216 EditMode green** (no new tests — UI/scene change). Play-verify: open the
+paper-doll → the character preview is now visible (against the map until the RT rig lands).
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

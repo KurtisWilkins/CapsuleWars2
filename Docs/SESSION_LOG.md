@@ -6,6 +6,19 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-26 — Customization live preview un-occluded (#90 part 1); icon system scoped (ADR-032)
+**Did:** root-caused (read-only 2-agent workflow) why the paper-doll live preview was blank: the preview is an
+in-world unit meant to show through a transparent panel, but the panel's `UIThemeApplier` (`colorOwnBackground=true`)
+repainted the root opaque (palette.panelBackground 0.96 alpha), burying it. (NOT the UnitSpawnInHide bug — rewrite
+confirmed on disk.) **Fix:** `colorOwnBackground=false` on the panel applier — in `PaperDollBuilder.Build` (durable)
+and directly in `Test_M7_Map.unity` (panel Image alpha→0 + applier flag→0 on GO 1055545173). Preview now shows
+(against the map backdrop until a dedicated preview-camera/RenderTexture rig is added — deferred polish).
+**Icons:** scoped but NOT built — 13 items need icons (Equipment_SO icon field all null; BodyPart_SO has NO icon
+field); decided to **render real 3D geometry** via an editor `IconBaker` (PreviewRenderUtility→PNG→Sprite import),
+not AI. Plan in ADR-032; it's a follow-up (needs per-asset framing tuning the user must eyeball).
+**216/216 green** (UI/scene change, no new tests). Play-verify: open the paper-doll → preview visible.
+**Next:** icon baker (#90 part 2) or BTS-E2 (#88).
+
 ## 2026-06-26 — Battle-polish fixes: NavMesh re-attach + spawn-reveal + deployment overlay (ADR-031)
 **Did:** root-caused (read-only 3-agent workflow) + fixed three Play-test defects from the user's batch, all rooted
 in "set up before the runtime arena is ready":

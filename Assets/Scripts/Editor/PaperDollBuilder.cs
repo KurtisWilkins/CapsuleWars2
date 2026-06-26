@@ -109,12 +109,17 @@ namespace CapsuleWars.Editor
             scroll.viewport = viewport; scroll.content = content;
 
             // Theme applier on the panel.
+            // Assign the palette but DON'T let the applier recolor the panel's OWN background: the root Image is
+            // intentionally transparent (line ~52) so the in-world 3D preview shows through. colorOwnBackground=true
+            // repaints it opaque (palette.panelBackground) and buries the preview — the cause of the "preview
+            // doesn't show up" bug. Children (buttons/text) are still themed.
             var applier = panel.GetComponent<UIThemeApplier>() ?? panel.AddComponent<UIThemeApplier>();
-            if (palette != null)
             {
                 var aso = new SerializedObject(applier);
-                var pp = aso.FindProperty("palette");
-                if (pp != null) { pp.objectReferenceValue = palette; aso.ApplyModifiedPropertiesWithoutUndo(); }
+                if (palette != null) { var pp = aso.FindProperty("palette"); if (pp != null) pp.objectReferenceValue = palette; }
+                var cob = aso.FindProperty("colorOwnBackground");
+                if (cob != null) cob.boolValue = false;
+                aso.ApplyModifiedPropertiesWithoutUndo();
             }
 
             // Inspection panel: keep existing, else find one in the scene.

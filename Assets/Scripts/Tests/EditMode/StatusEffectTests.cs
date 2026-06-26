@@ -91,6 +91,38 @@ namespace CapsuleWars.Tests.EditMode
         }
 
         [Test]
+        public void StatBuff_CritRate_FoldsIntoGetter()
+        {
+            int before = status.CritRate;   // base 0
+            var effect = BuildStatusEffect(
+                buffs: new[] { new StatBuff { stat = StatType.CritRate, modType = StatBuffModType.Flat, amount = 15 } });
+            status.ApplyStatus(effect, null);
+            Assert.AreEqual(before + 15, status.CritRate);
+            status.ClearAllStatuses();
+            Assert.AreEqual(before, status.CritRate);
+        }
+
+        [Test]
+        public void StatBuff_PercentAccuracy_FoldsIntoGetter()
+        {
+            int before = status.Accuracy;   // base 100
+            var effect = BuildStatusEffect(
+                buffs: new[] { new StatBuff { stat = StatType.Accuracy, modType = StatBuffModType.Percent, amount = 10 } });
+            status.ApplyStatus(effect, null);
+            Assert.AreEqual(before + 10, status.Accuracy);   // +10% of 100
+        }
+
+        [Test]
+        public void StatBuff_Resistance_FoldsIntoGetter()
+        {
+            int before = status.Resistance;  // base 0
+            var effect = BuildStatusEffect(
+                buffs: new[] { new StatBuff { stat = StatType.Resistance, modType = StatBuffModType.Flat, amount = 30 } });
+            status.ApplyStatus(effect, null);
+            Assert.AreEqual(before + 30, status.Resistance);
+        }
+
+        [Test]
         public void PreventsAction_ExposesCannotActFlag()
         {
             var effect = BuildStatusEffect(duration: 5f, preventsAction: true);

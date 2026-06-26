@@ -22,6 +22,12 @@ namespace CapsuleWars.Units.Controllers
         [SerializeField, Min(0)] private int baseAtk = 20;
         [SerializeField, Min(0)] private int baseDef = 5;
         [SerializeField, Min(0f)] private float baseSpeed = 3.5f;
+        [Tooltip("Hit chance baseline (%). Accuracy/CritRate/CritDmg/Resistance fold buffs from statuses, equipment, and synergies.")]
+        [SerializeField, Min(0)] private int baseAccuracy = 100;
+        [SerializeField, Min(0)] private int baseCritRate = 0;
+        [SerializeField, Min(0)] private int baseCritDmg = 50;
+        [Tooltip("Resistance to status application (rolled against an effect's accuracy) + elemental resistance.")]
+        [SerializeField, Min(0)] private int baseResistance = 0;
 
         [Header("Element")]
         [Tooltip("Primary element of the unit. Drives element multiplier on dealt/received damage.")]
@@ -50,6 +56,10 @@ namespace CapsuleWars.Units.Controllers
         public int Atk => GetModifiedStat(StatType.Atk, baseAtk);
         public int Def => GetModifiedStat(StatType.Def, baseDef);
         public float Speed => GetModifiedStatF(StatType.Speed, baseSpeed);
+        public int Accuracy => GetModifiedStat(StatType.Accuracy, baseAccuracy);
+        public int CritRate => GetModifiedStat(StatType.CritRate, baseCritRate);
+        public int CritDmg => GetModifiedStat(StatType.CritDmg, baseCritDmg);
+        public int Resistance => GetModifiedStat(StatType.Resistance, baseResistance);
 
         // -----------------------------------------------------------------
         // Active status effects
@@ -86,10 +96,7 @@ namespace CapsuleWars.Units.Controllers
         {
             if (effect == null) return;
 
-            if (effect.Resistance == ResistanceCheck.RollOnApply)
-            {
-                if (UnityEngine.Random.value < 0.0f) return;
-            }
+            if (effect.Resistance == ResistanceCheck.RollOnApply && IsResisted(effect)) return;
 
             switch (effect.StackBehavior)
             {
@@ -236,6 +243,7 @@ namespace CapsuleWars.Units.Controllers
         private void ApplyTick(ActiveStatusEffect e)
         {
             if (health == null) return;
+            if (e.Effect.Resistance == ResistanceCheck.RollPerTick && IsResisted(e.Effect)) return;   // resisted this tick
             int amount = e.Effect.TickAmount;
             if (e.Effect.TickIsPercentOfMaxHp)
             {
@@ -311,6 +319,14 @@ namespace CapsuleWars.Units.Controllers
                 if (b.modType == StatBuffModType.Flat) flatMod += b.amount * scale;
                 else percentMod += b.amount * scale;
             }
+        }
+
+        // Resistance roll (Docs/10): apply chance = (effect accuracy − this unit's Resistance) / 1000, clamped 0–1.
+        // Returns true when the effect is RESISTED (the roll meets/exceeds the apply chance).
+        private bool IsResisted(StatusEffect_SO effect)
+        {
+            float applyChance = Mathf.Clamp01((effect.Accuracy - Resistance) / 1000f);
+            return UnityEngine.Random.value >= applyChance;
         }
 
         private ActiveStatusEffect FindActive(StatusEffect_SO effect)

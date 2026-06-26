@@ -43,6 +43,10 @@ namespace CapsuleWars.Data.StatusEffects
         [SerializeField] private StackBehavior stackBehavior = StackBehavior.Refresh;
         [SerializeField] private ResistanceCheck resistance = ResistanceCheck.None;
 
+        [Tooltip("Hit accuracy vs the target's Resistance stat (Docs/10). Apply chance = (accuracy - resistance)/1000, " +
+                 "clamped 0–1. 1000 = always lands. Only consulted when resistance is RollOnApply / RollPerTick.")]
+        [SerializeField, Min(0)] private int effectAccuracy = 1000;
+
         [Header("Stat Modifiers (Buff / Debuff)")]
         [Tooltip("Applied to the unit's stat block while this effect is active. Empty list = no stat changes.")]
         [SerializeField] private List<StatBuff> statBuffs = new();
@@ -76,6 +80,7 @@ namespace CapsuleWars.Data.StatusEffects
         public int MaxStacks => maxStacks;
         public StackBehavior StackBehavior => stackBehavior;
         public ResistanceCheck Resistance => resistance;
+        public int Accuracy => effectAccuracy;
         public IReadOnlyList<StatBuff> StatBuffs => statBuffs;
         public float TickInterval => tickInterval;
         public int TickAmount => tickAmount;

@@ -11,7 +11,8 @@
         "CapsuleWars.Legacy",
         "CapsuleWars.Persistence",
         "CapsuleWars.Audio",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.AI.Navigation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -11,7 +11,8 @@
         "CapsuleWars.Legacy",
         "CapsuleWars.Persistence",
         "CapsuleWars.UI",
-        "CapsuleWars.Audio"
+        "CapsuleWars.Audio",
+        "Unity.AI.Navigation"
     ],
     "includePlatforms": [
         "Editor"

@@ -6,6 +6,17 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-26 — IconGen: Grok AI icon pipeline (flat-emblem), ADR-033
+**Did:** user asked to use Grok for all content icons → built `IconGen` (`Assets/Scripts/Editor/IconGen.cs`,
+`Tools/Icons/*`): per-category flat-emblem prompt → `GrokImageService.GenerateAsync` → PNG → **import as Sprite**
+(the gap) → assign to SO `icon`. Sequential (paid calls), idempotent (skip existing). Added `BodyPart_SO.icon`
+(only missing field). Reverses ADR-032's "build/render" — abstract classes/moves can't be render-thumbnailed, and
+placeholder meshes look worse rendered than a consistent AI style. Key stays editor-side (SecretsConfig); I drive
+the tool, never handle the key. **216 green** (additive field + editor tool).
+**Scope:** classes (16) + equipment (7) + body parts (6) now; **moves await BTS-F** (no Ability_SO assets yet).
+**Next:** run the sweep (paid; user curates + judges quality — I can't see icons over RDP); validate with the
+single-icon test menu first. Then wire `BodyPart.Icon` into the bag/slot widgets (#91).
+
 ## 2026-06-26 — Customization live preview un-occluded (#90 part 1); icon system scoped (ADR-032)
 **Did:** root-caused (read-only 2-agent workflow) why the paper-doll live preview was blank: the preview is an
 in-world unit meant to show through a transparent panel, but the panel's `UIThemeApplier` (`colorOwnBackground=true`)

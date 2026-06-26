@@ -568,4 +568,30 @@ review) — so the baker is its own task (#90 split: preview done here; icons = 
 **Status:** preview fix done, **216/216 EditMode green** (no new tests — UI/scene change). Play-verify: open the
 paper-doll → the character preview is now visible (against the map until the RT rig lands).
 
+### ADR-033 — Content icons via Grok AI (flat-emblem), reversing ADR-032's "build/render" call
+**Decided:** generate all content icons (classes, moves, body parts, weapons, armor) with the **existing
+editor-side Grok image pipeline (AI)** in a **flat-emblem game-icon style**, NOT render-to-thumbnail — at the
+user's direction, reversing ADR-032's recommendation. **Why the reversal:** classes and moves are **abstract**
+(no 3D mesh to render), so AI is the *only* way to icon them; and the placeholder meshes (default body parts are
+built-in sphere/cubes) render to generic blobs, so one consistent Grok style reads better across the whole set
+than mixed render-thumbnails. The render path (ADR-032) is dropped; AI is now primary.
+**Built — `IconGen` (`Assets/Scripts/Editor/IconGen.cs`, `Tools/Icons/*`):** per category it composes a
+flat-emblem prompt (a shared style anchor + a per-class imagery map / humanized item name) → `GrokImageService
+.GenerateAsync(…, "1:1", "1k")` → writes `Assets/Generated/Icons/<cat>/<asset>.png` → **imports it as a Sprite**
+(`textureType=Sprite`, the one step the AssetRequest image path lacked) → assigns to the SO's `icon` via
+`SerializedObject`. Generation is **sequential** (each image is a PAID xAI call), **idempotent** (skips SOs that
+already have an icon; delete one to regenerate), and reuses the pipeline's `GenerationServices`/`GenerationHttp`/
+`AssetPipelineImporter`. Added **`BodyPart_SO.icon`** — the only missing field (`UnitClass_SO`/`Ability_SO`/
+`Equipment_SO`/`ElementType_SO`/`StatusEffect_SO` already had one). Menu: per-category + ALL + a single-icon
+**test** entry to validate the pipeline cheaply before the full sweep.
+**Security:** the xAI key stays in the git-ignored editor-only `SecretsConfig`; Claude drives the tool (menu
+items) but **never sees/handles the key and makes no raw API calls** — the editor makes the call.
+**Scope now:** classes (16) + equipment (7) + body parts (6) ≈ 29 icons. **Move icons await BTS-F** (no
+`Ability_SO` move assets exist yet; Ability also needs the editor asmdef to reference the Abilities assembly).
+Curate results via the pipeline's Archive/Reject; refine prompts after seeing the first batch.
+**Status:** pipeline built + compiles, **216/216 EditMode green** (additive `BodyPart_SO.icon` field + editor-only
+tool). Generation itself is **paid + eye-verified** — Claude can't see the icons over the user's remote setup, so
+the user runs the sweep and judges quality. Widget consumption of `BodyPart.Icon` (bag/slots) is the remaining
+wiring (gear already reads `Icon`); tracked with #91.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

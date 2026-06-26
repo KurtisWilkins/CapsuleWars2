@@ -410,4 +410,26 @@ count ranges, player-zone-clear, enemy-zone confinement, no double-use). Editor-
 obstacles + hazards in the neutral/enemy rows, player rows clear). Play-verify in a run (PROJECT_STATE). See
 `Docs/18_ThemedEncounters.md`.
 
+### ADR-027 — Generated, obstacle-aware enemy roster (Slice C, iterations C2+C3)
+**Decided:** combat nodes spawn a generated, obstacle-aware enemy roster instead of the static scene enemy.
+`EncounterGenerator.RosterSize` (deterministic from `Seed ^ nodeId`; boss = fixed count, else min/max + per-floor
+scaling) decides how many; `EncounterGenerator.EnemyCells` picks that many **Passable cells in the enemy zone,
+avoiding Impassable** terrain (seeded separately so obstacle and enemy placement don't correlate). An
+`EnemyEncounterSpawner` (`Run.Encounters`, `[DefaultExecutionOrder(-75)]` — after `EncounterBuilder` stamps terrain,
+before the player spawner) reads the run, retires the scene's `Team.Enemy` units, and spawns the roster from a
+`Unit_Enemy.prefab` (Team.Enemy base) via `UnitFactory.Spawn` — mirroring `BattlePartySpawner`'s run-gated
+retire-then-spawn pattern. **v1 spawns clones of the base enemy** (visual variety via the part generator is a later
+pass — `RandomUnitGenerator` is player-unlock-gated, so enemies need a non-gated pool or a fully-unlocked profile
+first). Difficulty rides the existing `RunBattleSetup` depth boost; no per-unit stat/class generation. With no
+active run the spawner leaves the authored scene enemy (so the scene stays playable standalone), so wiring it is
+low-blast-radius.
+**Open caveat for Play-verify / next session — NavMesh timing.** The spawner runs in Awake (−75); `ArenaBuilder`
+re-bakes the NavMesh in `Start`. Spawned `NavMeshAgent`s rely on the editor-baked mesh existing at scene load and
+the enemy cells staying walkable after the re-bake (they avoid Impassable, so they should). If agents come up
+off-mesh / don't move, reorder so the roster spawns AFTER `ArenaBuilder.Bake()` but still before
+`BattleStateManager`'s registration sweep. This is the main thing to watch in Play.
+**Status:** C2+C3 code done, wired into `Test_M3_Battle` (run-gated), **201/201 EditMode green** (+5 tests: roster
+size range/boss/floor, enemy cells in-zone + obstacle-avoiding + deterministic). The spawn itself is Awake-only →
+**Play-verified** (PROJECT_STATE item 1d): generated enemies appear in the enemy zone, off the obstacles, and fight.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

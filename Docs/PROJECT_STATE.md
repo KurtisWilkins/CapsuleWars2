@@ -3,15 +3,17 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-25 — themed-encounter Slice C1: seeded per-node terrain generation (ADR-026) feeding the arena; 196 green._
+_Last updated: 2026-06-25 — themed-encounter Slice C complete: seeded terrain (C1) + generated obstacle-aware enemy roster (C2/C3, ADR-026/027); 201 green._
 
 ## One-line status
-**Themed-encounter system: Slices A + B + C1 built (ADR-024/025/026).** Combat nodes now **generate their own
-seeded obstacle field** — `EncounterGenerator`+`EncounterBuilder` (`Run.Encounters`) turn `RunState.Seed ^
-CurrentNodeId` + floor into a `TerrainLayout` (player deploy zone kept clear, obstacles scale with depth), applied
-via `DeploymentManager.SetTerrain` before the arena renders + NavMesh-bakes it — closing the data→render→generate
-loop. Deterministic (no save needed); wired into `Test_M3_Battle` + editor preview. **C2 (enemy roster) + C3
-(obstacle-aware placement) are next.** The battle board is **built at runtime from themed blocks** by `ArenaBuilder` — a checkerboard floor (one tile per grid cell, 1:1 with the deployment grid),
+**Themed-encounter system: Slices A + B + C built (ADR-024/025/026/027).** Combat nodes now **generate a complete
+encounter**: a seeded obstacle/hazard `TerrainLayout` (player deploy zone kept clear, scales with depth) AND a
+generated **obstacle-aware enemy roster** — `EncounterGenerator` (`Run.Encounters`) decides terrain + how many
+enemies + which Passable enemy-zone cells (avoiding obstacles); `EncounterBuilder` (−100) stamps terrain before the
+arena renders + NavMesh-bakes it, and `EnemyEncounterSpawner` (−75, run-gated) spawns the roster from
+`Unit_Enemy.prefab` (mirrors `BattlePartySpawner`). All deterministic from `RunState.Seed ^ CurrentNodeId` (no save
+needed); wired into `Test_M3_Battle`. **v1 enemies are base clones** (visual variety + smarter strategy iterate
+next). The battle board is **built at runtime from themed blocks** by `ArenaBuilder` — a checkerboard floor (one tile per grid cell, 1:1 with the deployment grid),
 raised obstacle blocks on Impassable cells + markers on Hazard cells, driven by a `ThemeBlockSet`/`EncounterTheme`
 SO (primitive-cube fallback → works with no assets; grass + volcanic placeholders authored). After building it
 re-bakes the `NavMeshSurface` (PhysicsColliders; obstacles = NotWalkable) so agents path around obstacles. The
@@ -27,7 +29,7 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
   branches (ADR-020). `claude/deployment-grid` was pruned (local + remote). The remote still keeps
   `claude/capsule-wars-setup-pBoDq` (an old setup branch, fully contained in `main` — prunable).
 - Rollback point: tag **`pre-trunk-main`** (`852a520`, pushed) = `main` before the consolidation fast-forward.
-- Tests: `Assets/Scripts/Tests/EditMode/` — **196 green**. Run `run_tests` after any C# change.
+- Tests: `Assets/Scripts/Tests/EditMode/` — **201 green**. Run `run_tests` after any C# change.
 
 ## What currently works
 - Milestone base through ~M9 (draft → battle → recruit; combat, abilities, elements, synergies, status, stats;
@@ -61,7 +63,13 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
   obstacle/hazard `TerrainLayout` from `RunState.Seed ^ CurrentNodeId` (+ floor scaling; player deploy zone kept
   clear), applied via `DeploymentManager.SetTerrain` before `ArenaBuilder` renders + bakes it. Wired into
   `Test_M3_Battle` with `EncounterDefinition_Default`; no run → keeps the authored demo terrain. Editor preview:
-  `Tools/Arena/Preview Generated Encounter`. **Enemies are still scene-placed (C2/C3 generate + place them).**
+  `Tools/Arena/Preview Generated Encounter`.
+- **Generated obstacle-aware enemy roster (ADR-027, Slice C2/C3):** `EncounterGenerator.RosterSize` (count by
+  boss/floor) + `.EnemyCells` (Passable enemy-zone cells avoiding Impassable) + `EnemyEncounterSpawner`
+  (`Run.Encounters`, exec −75, run-gated): in a run, retires the scene enemy and spawns the roster from
+  `Unit_Enemy.prefab` (clones; mirrors `BattlePartySpawner`). Deterministic from `Seed ^ CurrentNodeId`; difficulty
+  rides `RunBattleSetup`'s depth boost. Wired into `Test_M3_Battle`. **v1 = base clones; visual variety + smarter
+  placement + per-unit stats iterate next.** Spawn is Awake-only (Play-verify) — watch NavMesh-bake-vs-spawn order.
 - **Battle/deployment camera (ADR-022):** `DeploymentCameraController` auto-frames the board clear of the HUD for
   deployment (tilt 84, inset 0.30), eases to a computed **~45° TFT-style** view on Assemble (not the authored
   pose), and allows **free pan/zoom during combat** (`allowControlDuringBattle`; zoom moves along the view
@@ -101,6 +109,13 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
    stay clear** (every player-zone cell still placeable); re-entering the SAME node regenerates the SAME board
    (deterministic); deeper floors get more obstacles; agents path around the generated obstacles after Assemble.
    Eyeball without Play via `Tools/Arena/Preview Generated Encounter (open scene)` → `Clear Preview` (don't save).
+1d. **Generated enemy roster (ADR-027, Slice C2/C3) — Awake-only, needs Play in a RUN.** Enter a Combat node in a
+   run: generated enemies appear in the **enemy zone, off the obstacle cells** (not the single authored
+   `Unit_Enemy`); count varies by floor (boss = fixed); re-entering the SAME node spawns the SAME roster; and they
+   **fight normally**. **Main thing to watch:** the spawner runs in Awake before `ArenaBuilder` re-bakes the NavMesh
+   in Start — confirm the spawned `NavMeshAgent`s are on the mesh and MOVE; if they don't, reorder the spawn to
+   after `ArenaBuilder.Bake()` (see ADR-027). If something's off, enemies only break inside a run (standalone scene
+   keeps the authored enemy).
 2. **Deployment loop** — load a combat node with a drafted party → tap a bench unit → tap a green player-zone
    cell ⇒ the real unit appears (scale-in); tap a placed cell to bench it; **Clear**; **Assemble** ⇒ those exact
    units start combat (no dupes; not before Assemble). (Placement + enemy inspection + Assemble were Play-verified

@@ -6,6 +6,27 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-25 — Themed encounters Slice C2+C3: generated obstacle-aware enemy roster (ADR-027)
+**Ask:** "continue" → C2 (enemy roster) + C3 (obstacle-aware placement). Built them together as the satisfying
+completion of Slice C (generated enemies placed around the generated obstacles); contracts were already settled in
+the approved Slice C design.
+**Found (confirmed):** `UnitFactory.Spawn(dto, prefab, database, pos, rot, …)` clones the prefab + configures from
+the DTO — null database/parts keeps the prefab's visuals (how `BattlePartySpawner` spawns players). `Unit_Enemy.prefab`
+is a Team.Enemy base. `RunBattleSetup` already depth-boosts `Team.Enemy`.
+**Did (201/201 EditMode green, +5 tests):**
+- `EncounterGenerator.RosterSize` (deterministic count: boss fixed, else min/max + per-floor) + `.EnemyCells`
+  (Passable enemy-zone cells avoiding Impassable, seeded separately). Roster fields added to `EncounterDefinition`.
+- `EnemyEncounterSpawner` (`Run.Encounters`, `[DefaultExecutionOrder(-75)]`, run-gated): retires scene `Team.Enemy`,
+  spawns the roster from `Unit_Enemy.prefab` via `UnitFactory.Spawn` (base clones; v1). Mirrors `BattlePartySpawner`.
+- Wired into `Test_M3_Battle` via `ArenaSetupTool` (EncounterBuilder + EnemyEncounterSpawner on one GO,
+  enemyPrefab=Unit_Enemy). 5 tests: roster range/boss/floor; enemy cells in-zone + obstacle-avoiding + deterministic.
+**Verification:** logic unit-tested; the spawn is Awake-only so NOT editor-previewable — **Play-verify in a run**
+(PROJECT_STATE 1d). **Flagged caveat (ADR-027):** spawner Awake (−75) runs before ArenaBuilder's Start NavMesh
+re-bake; spawned agents rely on the editor-baked mesh + enemy cells staying walkable — if agents come up off-mesh,
+reorder the spawn after `ArenaBuilder.Bake()`. Run-gated → only affects run-combat (standalone keeps the scene enemy).
+**Not built:** enemy visual generation (RandomUnitGenerator is unlock-gated — needs a non-gated pool), smarter
+placement strategies, per-unit stats/class. Slice C's core is complete; these are iterations.
+
 ## 2026-06-25 — Themed encounters Slice C1: seeded encounter terrain generation (ADR-026)
 **Ask:** "continue" → the next roadmap item, Slice C (encounter builder). Designed it (Step 1), then — per the
 project's iterative-feature pattern — scoped + built **C1 only: seeded per-node terrain generation** (the natural,

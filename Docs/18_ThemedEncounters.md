@@ -14,7 +14,7 @@ on its own:
 |------|------|-------|--------|
 | **A. Terrain/obstacle data** | per-cell `TerrainType`, placement validation, authored layout | `Combat.Deployment` (pure model) | **built (ADR-024)** |
 | **B. Scenery / biome theming** | runtime block arena: checkerboard floor + obstacle blocks, themed, runtime NavMesh bake | `UI.Arena` + `Data.Arena` | **built (ADR-025)** |
-| **C. Encounter builder** | `EncounterDefinition`, enemy roster generation, obstacle-aware placement ("the strategy") | Run / Combat | **C1 (terrain gen) built (ADR-026)**; C2 roster + C3 placement next |
+| **C. Encounter builder** | `EncounterDefinition`, enemy roster generation, obstacle-aware placement ("the strategy") | Run / Combat | **C1 terrain + C2 roster + C3 placement built (ADR-026/027)**; visual variety + smarter strategy iterate next |
 
 The hard rule that makes this composable: **the terrain layer (A) knows nothing about visuals (B) or
 enemies (C)**. B and C *read* A. A never references UI or Run (assembly layering Core/Combat → … → UI/Run).
@@ -78,7 +78,14 @@ Turns a map node into a concrete fight: roster + obstacle layout + obstacle-awar
 the run (`Seed ^ CurrentNodeId`, `CurrentFloor`), generates a `TerrainLayout` of Impassable+Hazard cells (player
 deploy zone kept clear, obstacles scale with floor), and applies it via `DeploymentManager.SetTerrain` before
 ArenaBuilder renders + NavMesh-bakes it. Deterministic → no save needed. Wired into `Test_M3_Battle`; editor
-preview via `Tools/Arena/Preview Generated Encounter`. **C2 (roster) + C3 (placement) still to do, below.**
+preview via `Tools/Arena/Preview Generated Encounter`.
+
+**C2+C3 — generated obstacle-aware enemies (BUILT, ADR-027):** `EncounterGenerator.RosterSize` (count by
+boss/floor) + `EncounterGenerator.EnemyCells` (Passable enemy-zone cells avoiding Impassable) + an
+`EnemyEncounterSpawner` (`[DefaultExecutionOrder(-75)]`, run-gated, retires the scene enemy, spawns
+`Unit_Enemy.prefab` clones via `UnitFactory.Spawn` — mirrors `BattlePartySpawner`). v1 = base clones (visual
+variety later). **Next iterations:** enemy visual generation (needs a non-unlock-gated parts pool), smarter
+placement strategies, real per-unit stats/class. Watch NavMesh-bake-vs-spawn ordering in Play (ADR-027).
 
 - **`EncounterDefinition` SO** (or seeded generator config): enemy roster spec (count/tiers/archetypes by
   `NodeType` + depth), an obstacle **`TerrainLayout`** (hand-authored or a generator config), and a

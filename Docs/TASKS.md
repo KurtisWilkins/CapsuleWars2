@@ -34,7 +34,7 @@
 - [ ] **Swap placeholder item visuals:** `EquipVisual_Cube` is a stand-in. Assign real `visualPrefab`/`visualMesh`
       per item; optionally re-parent `Socket_*` empties under hand/head bones for animated attachment.
 
-### Themed encounters — continue the system (Slices A + B + C1 landed; see `Docs/18_ThemedEncounters.md` + ADR-024/025/026)
+### Themed encounters — continue the system (Slices A + B + C landed; see `Docs/18_ThemedEncounters.md` + ADR-024/025/026/027)
 - [ ] **Play-verify the runtime arena (ADR-025)** — PROJECT_STATE item 1b: blocks tile with no gaps, checkerboard
       reads, obstacles/hazard on the right cells, NavMesh bakes + agents path around obstacles, placement raycasts
       still land, rebuilds cleanly between encounters.
@@ -43,16 +43,13 @@
       floor A/B material contrast for cell readability; add more `EncounterTheme`s (forest/cave/ship/sewer/…). The
       `ArenaBuilder` scales prefabs to `cellSize` — check chunky-kit prefabs aren't distorted (may want a per-theme
       scale or to skip the auto-scale for authored prefabs).
-- [ ] **Slice C2 — enemy roster generation.** Add roster spec to `EncounterDefinition` (enemy count by `NodeType` +
-      floor, archetype/parts pool). Generate the roster deterministically (`RunState.Seed ^ CurrentNodeId`); visual
-      identity via `RandomUnitGenerator`, difficulty rides the existing `RunBattleSetup` depth boost (stats/class/
-      abilities stay TODO unless you decide to build them). No placement yet.
-- [ ] **Slice C3 — obstacle-aware enemy placement + `EnemyEncounterSpawner`.** Spawn the C2 roster as `Team.Enemy`
-      from `Unit_Enemy.prefab` (mirror player-only `BattlePartySpawner`), placing on **Passable** cells within
-      `config.InEnemyZone` avoiding `IsImpassable` (Hazard per strategy) — likely an enemy-zone analogue of
-      `DeploymentManager.FirstFreeCell`. Retire the static scene `Unit_Enemy`. Order after `EncounterBuilder` so
-      placement sees the obstacles. **Contract consumed:** `grid.GetTerrain/IsImpassable`, `config.InEnemyZone`.
-      This is the "strategy" — iterate on placement smarts here.
+- [ ] **Play-verify the generated enemy roster (ADR-027, Slice C2/C3)** — PROJECT_STATE item 1d. **Key risk:** the
+      spawner runs in Awake before ArenaBuilder re-bakes the NavMesh in Start — confirm spawned agents are on the
+      mesh and MOVE; if not, reorder the spawn after `ArenaBuilder.Bake()`.
+- [ ] **Slice C — iterate (the "strategy" + variety).** Enemy VISUAL generation (RandomUnitGenerator is player-
+      unlock-gated — give enemies a non-gated parts pool or a fully-unlocked profile); smarter placement strategies
+      (cover/cluster/by-archetype) behind a strategy enum on `EncounterDefinition`; real per-unit enemy stats/class/
+      abilities (still TODO in the generator). Roster archetype pools per biome/floor.
 
 ## Backlog (not yet scheduled)
 - [ ] Bench-item prefab polish: deployment + customization reuse `EquipButton.prefab`; make a dedicated
@@ -64,6 +61,11 @@
       scene's 4 were cleared; these are likely runtime-driven HUD/node labels — clear only if they show through).
 
 ## Done (recent — prune periodically)
+- [x] **Themed encounters — Slice C2+C3 generated obstacle-aware enemy roster (ADR-027, 2026-06-25):**
+      `EncounterGenerator.RosterSize` (count by boss/floor) + `.EnemyCells` (Passable enemy-zone cells avoiding
+      Impassable) + `EnemyEncounterSpawner` (`Run.Encounters`, exec −75, run-gated; retires the scene enemy, spawns
+      `Unit_Enemy.prefab` clones via `UnitFactory.Spawn` — mirrors `BattlePartySpawner`). Wired into `Test_M3_Battle`.
+      **201/201 green** (+5 tests). v1 = base clones; spawn is Awake-only → Play-verify (item 1d, NavMesh-order caveat).
 - [x] **Themed encounters — Slice C1 seeded terrain generation (ADR-026, 2026-06-25):** `EncounterGenerator` (pure,
       `Run.Encounters`) + `EncounterDefinition` SO + `EncounterBuilder` (battle-scene, exec −100) generate a
       reproducible obstacle/hazard `TerrainLayout` per combat node from `Seed ^ CurrentNodeId` (+ floor scaling,

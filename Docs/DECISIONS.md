@@ -461,4 +461,16 @@ existing `BattleEventBus` (it has OnDamageDealt/Taken/Downed/Kill/BattleStart) +
 status bugs (resistance roll `Random.value < 0f` always-false; `RollPerTick` unhandled).
 **Doc drift noted:** Docs/07 data-model section is stale vs ADR-019 (instance model) — update with the equipment slice.
 
+### ADR-029 — Lower layers subscribe to combat events via a Core `IBattleEvents` seam (BTS-A)
+**Decided:** ability triggers (and any other below-Combat consumer) reach the `BattleEventBus` through a Core
+interface `IBattleEvents` (OnDamageDealt/Taken/Downed/Kill/BattleStart) published on `CombatServices.Events` by
+`BattleStateManager`, rather than referencing the Combat assembly. `BattleEventBus` implements the interface; the
+event payload structs already live in Core. **Why:** the Abilities assembly is below Combat in the layering and
+can't take a Combat dependency; the existing `CombatServices` service-locator (Registry/ElementChart) is the
+established seam for exactly this. **Per-unit event state:** `AbilityController` subscribes once combat is active,
+filters events to its own unit by GameObject identity, and stamps timestamps on its `AbilityRuntime`s; event
+triggers fire when their event is newer than the runtime's last cast. Keeps trigger SOs stateless (matching
+`TimeBasedTrigger` reading `runtime.LastCastTime`). **Status:** built (BTS-A), 212 green; `GetAttacker` (needs the
+event's other-unit in the cast context) is part 2.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

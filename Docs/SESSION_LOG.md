@@ -6,6 +6,22 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-25 — BTS-A: ability event-trigger infrastructure (ADR-029)
+**Ask:** continue the build-to-spec backlog → BTS-A (wire ability triggers to combat events).
+**Found:** a `BattleEventBus` (OnDamageDealt/Taken/Downed/Kill/BattleStart) already exists, owned by
+`BattleStateManager` but not exposed via `CombatServices`; the event payloads (DamageEvent/DownedEvent/KillEvent)
+live in Core. AbilityController (Abilities layer) can't reference Combat.
+**Did (212/212 green, +3 tests):** added a Core `IBattleEvents` interface exposed via `CombatServices.Events`
+(Abilities subscribe without referencing Combat); `BattleEventBus` implements it; `BattleStateManager` publishes
+it. `AbilityController` subscribes + stamps per-runtime event timestamps (LastHitDealt/Taken/Kill/AllyDeath)
+filtered to its own unit by GameObject identity. New triggers: `OnHit/OnTakeHit/OnKill/OnAllyDeath` (shared
+`EventTriggerBase` — fire when the event is newer than the runtime's last cast, optional inner cooldown) +
+`OnBattleStart` (first-Active-tick poll) + `OnLowHp` (HP% latch). Trigger logic is pure → EditMode-tested.
+**Deferred (BTS-A part 2):** `GetAttacker` targeting — needs the event's "other unit" threaded into the readonly
+`AbilityCastContext` (small struct enrichment). **This unblocks the behavioral class synergies** (Barbarian
+heal-on-kill, Monk on-hit heal, on-ally-death reactions). All pure logic — Play-verify when classes/abilities are
+authored. Commits `c7fafd0` (code).
+
 ## 2026-06-25 — Build-to-spec content pass: audit + Slice 1 (elements + ability strategies, ADR-028)
 **Ask:** audit predetermined content (elements/abilities/status/classes/equipment) vs Docs/05/07/08/09/10 + the
 uploaded 16-class roster; plan staged build; build Slice 1 (finish elements + ability strategy code classes).

@@ -3,13 +3,13 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-25 — build-to-spec content pass: audit + Slice 1 (element dual-element rule + ability strategy classes, ADR-028); 209 green._
+_Last updated: 2026-06-25 — build-to-spec: Slice 1 (elements + ability strategies) + BTS-A (ability event-trigger infra); 212 green._
 
 ## Content completeness vs design docs (build-to-spec, ADR-028)
 | Category | Spec | Built | Status |
 |---|---|---|---|
 | **Elements** (Docs/08) | 15 types + 5×5 chart + dual rule | 15 + chart + multipliers + **dual-element rule (new)** | ✅ **complete to spec** |
-| **Abilities** (Docs/05) | ~30 strategy classes | 8 prior + **9 new** (targeting/filters/effects) = 17 | ⏳ remaining: event triggers+OnLowHp+GetAttacker (need bus wiring), HighestThreat (needs dmg stat), BuffStat/KnockBack/Teleport/VFX/Evolve |
+| **Abilities** (Docs/05) | ~30 strategy classes | 8 prior + 9 (targeting/filters/effects) + **8 triggers (BTS-A)** = 25; event-bus wiring done | ⏳ remaining: GetAttacker (BTS-A pt2), HighestThreat (needs dmg stat), BuffStat/KnockBack/Teleport/VFX/Evolve |
 | **Status** (Docs/10) | 24 effects | 1 authored (Stunned) | ⏳ 13 [content]-ready, 4 need stat getters, 7 need `StatusEffectBehavior` hook + 2 bug fixes |
 | **Classes** (Docs/09 + roster) | 16 + tiers | 0/16 (Warrior = placeholder) | ⏳ needs `globalBuffs` field, 16 `UnitClass_SO`, ~14 `WeaponClass_SO`; Paladin pure-content, 14 need [code] behaviors |
 | **Equipment** (Docs/07) | 8 slots × 5 rarities | code ✅; 6 items (all Common) | ⏳ 4 empty slots, none above Common, no roll-config/loot assets, rarity ×s to align to doc |
@@ -39,7 +39,7 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
   branches (ADR-020). `claude/deployment-grid` was pruned (local + remote). The remote still keeps
   `claude/capsule-wars-setup-pBoDq` (an old setup branch, fully contained in `main` — prunable).
 - Rollback point: tag **`pre-trunk-main`** (`852a520`, pushed) = `main` before the consolidation fast-forward.
-- Tests: `Assets/Scripts/Tests/EditMode/` — **209 green**. Run `run_tests` after any C# change.
+- Tests: `Assets/Scripts/Tests/EditMode/` — **212 green**. Run `run_tests` after any C# change.
 
 ## What currently works
 - Milestone base through ~M9 (draft → battle → recruit; combat, abilities, elements, synergies, status, stats;

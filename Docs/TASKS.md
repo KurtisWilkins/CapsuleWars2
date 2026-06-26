@@ -7,10 +7,10 @@
 
 ### Build-to-spec content backlog (Docs/05/07/08/09/10 + class roster; ADR-028) — dependency-ordered
 Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slices, each a discrete approved unit:
-- [ ] **BTS-A — ability event-trigger infra + remaining triggers/targeting [code].** Wire `AbilityController`/
-      `AbilityRuntime` to the existing `BattleEventBus` + per-runtime latch state; build OnHit/OnTakeHit/OnKill/
-      OnAllyDeath/OnBattleStart + OnLowHp (latched) triggers + GetAttackerTarget. Also fold `OnAbilityCast/Hit/
-      Resolved` stat events. (Unblocks behavioral class synergies.)
+- [x] **BTS-A — ability event-trigger infra (ADR-029, done).** `IBattleEvents` Core seam + `CombatServices.Events`;
+      `AbilityController` subscribes + stamps per-runtime event timestamps; OnHit/OnTakeHit/OnKill/OnAllyDeath +
+      OnBattleStart + OnLowHp triggers. 212 green. **Remaining (BTS-A2):** `GetAttackerTarget` (thread the event's
+      other-unit into `AbilityCastContext`) + fold `OnAbilityCast/Hit/Resolved` stat events.
 - [ ] **BTS-B — status combat hooks + bug fixes [code].** Build the `StatusEffectBehavior` custom-SO hook + the
       damage-pipeline status consult (Marked/Protected/Shield/Frozen-amp); add Accuracy/CritRate(/DefElem) modified
       getters to `UnitStatusController`; fix the resistance roll (`Random.value < 0f`) + `RollPerTick`.

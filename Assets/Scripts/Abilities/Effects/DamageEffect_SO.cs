@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CapsuleWars.Core;
+using CapsuleWars.Data.Elements;
 using CapsuleWars.Units.Controllers;
 using UnityEngine;
 
@@ -43,10 +44,9 @@ namespace CapsuleWars.Abilities
                 if (root == null || root.Health == null) continue;
 
                 int damage = baseTotal;
-                var defEl = root.Status != null ? root.Status.PrimaryElement : null;
-                if (chart != null && atkEl != null && defEl != null)
+                if (chart != null && atkEl != null && root.Status != null)
                 {
-                    float mult = chart.GetMultiplier(atkEl.Family, defEl.Family);
+                    float mult = ElementMath.Multiplier(chart, atkEl, root.Status.PrimaryElement, root.Status.SecondaryElement);
                     damage = Mathf.Max(1, Mathf.RoundToInt(damage * mult));
                 }
 

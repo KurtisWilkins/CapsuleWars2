@@ -27,7 +27,12 @@ namespace CapsuleWars.Units.Controllers
         [Tooltip("Primary element of the unit. Drives element multiplier on dealt/received damage.")]
         [SerializeField] private ElementType_SO primaryElement;
 
+        [Tooltip("Optional secondary element. Dual-element defenders give the attacker the LEAST favorable " +
+                 "matchup of their two elements — best defense (Docs/08).")]
+        [SerializeField] private ElementType_SO secondaryElement;
+
         public ElementType_SO PrimaryElement => primaryElement;
+        public ElementType_SO SecondaryElement => secondaryElement;
 
         [Header("Class")]
         [Tooltip("Unit class. Drives class synergy bonuses when N+ same-class units are deployed on the team.")]

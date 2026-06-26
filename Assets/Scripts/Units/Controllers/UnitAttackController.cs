@@ -1,5 +1,6 @@
 using System;
 using CapsuleWars.Core;
+using CapsuleWars.Data.Elements;
 using CapsuleWars.Data.Weapons;
 using UnityEngine;
 
@@ -72,13 +73,13 @@ namespace CapsuleWars.Units.Controllers
             int raw = root.Status.Atk - targetRoot.Status.Def;
             int damage = Math.Max(1, raw);
 
-            // Element multiplier (M5): family-level matchup via the shared chart.
+            // Element multiplier (Docs/08): family-level matchup via the shared chart, incl. the dual-element
+            // "least favorable for attacker" rule when the defender has a secondary element.
             var chart = CombatServices.ElementChart;
             var atkEl = root.Status.PrimaryElement;
-            var defEl = targetRoot.Status.PrimaryElement;
-            if (chart != null && atkEl != null && defEl != null)
+            if (chart != null && atkEl != null)
             {
-                float mult = chart.GetMultiplier(atkEl.Family, defEl.Family);
+                float mult = ElementMath.Multiplier(chart, atkEl, targetRoot.Status.PrimaryElement, targetRoot.Status.SecondaryElement);
                 damage = Math.Max(1, (int)Math.Round(damage * mult));
             }
 

@@ -12,6 +12,7 @@ namespace CapsuleWars.Core
         public static ICombatRegistry Registry { get; set; }
         public static BattlePhase Phase { get; set; } = BattlePhase.PreBattle;
         public static IElementChart ElementChart { get; set; }
+        public static IBattleEvents Events { get; set; }
     }
 }
 

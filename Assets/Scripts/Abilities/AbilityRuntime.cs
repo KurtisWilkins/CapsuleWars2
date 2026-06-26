@@ -16,6 +16,13 @@ namespace CapsuleWars.Abilities
         public bool IsLocked { get; set; }
         public float LastCastTime { get; private set; } = float.MinValue;
 
+        // Per-unit combat-event timestamps, stamped by AbilityController from the BattleEventBus. Event triggers
+        // fire when their event is newer than this runtime's last cast. Default MinValue = the event never happened.
+        public float LastHitDealtTime = float.MinValue;
+        public float LastHitTakenTime = float.MinValue;
+        public float LastKillTime = float.MinValue;
+        public float LastAllyDeathTime = float.MinValue;
+
         private readonly List<IUnitRef> candidatesBuffer = new();
 
         public AbilityRuntime(Ability_SO ability, IUnitRef source)

@@ -65,6 +65,7 @@ namespace CapsuleWars.Combat.State
 
             CombatServices.Phase = BattlePhase.PreBattle;
             CombatServices.ElementChart = elementChart;
+            CombatServices.Events = EventBus;
             Stats.HookBus(EventBus);
             Synergies = new SynergyResolver(registry);
 

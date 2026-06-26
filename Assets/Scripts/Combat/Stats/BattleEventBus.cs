@@ -14,7 +14,7 @@ namespace CapsuleWars.Combat.Stats
     /// HookUnit/UnhookUnit are idempotent — safe to call multiple times
     /// per unit during initialization sweeps.
     /// </summary>
-    public class BattleEventBus
+    public class BattleEventBus : IBattleEvents
     {
         public event Action<DamageEvent> OnDamageDealt;
         public event Action<DamageEvent> OnDamageTaken;

@@ -6,6 +6,16 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-25 — BTS-C: WeaponClass_SO assets authored (Docs/09 roster)
+**Did:** `WeaponClassSetupTool` (`Tools/Build-To-Spec/Author Weapon Classes`, idempotent) authored the 16 weapon
+classes the roster needs — Melee2H, Dual1H, Bow, Spear, TowerShield, Staff, Wand, HolyFocus, ThrownJavelin,
+ThrownPotion, ThrownPotionSupport, Dagger, Crossbow, Musket, ThrownBomb, HolyShield — with first-pass/tunable stats
+(range/cooldown/count/handedness, mirroring WC_Unarmed style) + distinct `weaponTypeId`s. Also **fixed the
+mislabeled `WC_1HSword`** (its id/name said "Unarmed") → relabeled to Sword1H. Fist = existing WC_Unarmed (Monk).
+Content-only — no runtime code, no unit references them yet (BTS-E assigns classes→weapons), so 215/215 unaffected.
+**Next:** BTS-E (16 `UnitClass_SO` + `globalBuffs`) wires classes → weapons → the ability/status/trigger infra into
+playable synergies. Commit pending.
+
 ## 2026-06-25 — Adversarial review of the build-to-spec code + fixes
 **Ran a multi-agent review workflow** (4 dimensions × find → adversarial-verify, 17 agents) over everything shipped
 this session (elements, ability strategies, event triggers, status fixes): 13 findings, **8 confirmed real** (the

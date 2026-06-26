@@ -16,9 +16,10 @@ Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slic
 - [ ] **BTS-B2 — `StatusEffectBehavior` damage hook [code].** Build the custom-SO behavior hook + the damage-pipeline
       consult in `UnitHealthController.TakeDamage` (Marked +25% taken, Protected negate-next-hit, Shield absorb pool,
       Frozen ×1.5 physical). The 7 behavioral statuses (incl. Unlucky/LastStand/Madness via behavior hooks) need this.
-- [ ] **BTS-C — WeaponClass_SO assets [content].** Author the ~14 missing weapon classes (Bow, Crossbow, Musket,
-      Spear, Javelin, Potion×2, Bomb, Dagger, Staff, Wand, 2H, TowerShield, HolyShield, Dual-1H); fix `WC_1HSword`
-      mislabel.
+- [x] **BTS-C — WeaponClass_SO assets (done).** 16 weapon classes authored via `WeaponClassSetupTool`
+      (`Tools/Build-To-Spec/Author Weapon Classes`); `WC_1HSword` relabeled Sword1H; Fist = WC_Unarmed. First-pass
+      stats (tunable). No `WeaponClass→ability` eligibility list on the SO yet — abilities gate via
+      `Ability_SO.requiredWeaponClasses` (BTS-F authors that side).
 - [ ] **BTS-D — status effects [content+code].** Author the 13 expressible assets + the 4 stat-getter ones (post
       BTS-B) + the 7 behavioral via the BTS-B hook. The full 24 per Docs/10.
 - [ ] **BTS-E — `globalBuffs` + 16 classes [code+content].** Add `ClassSynergyTier.globalBuffs` + resolver branch

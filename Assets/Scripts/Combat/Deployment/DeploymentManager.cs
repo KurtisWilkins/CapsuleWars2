@@ -40,6 +40,17 @@ namespace CapsuleWars.Combat.Deployment
         // Stamp authored terrain onto the (lazily created) grid before the deployment UI builds.
         private void Awake() => terrainLayout?.ApplyTo(Grid);
 
+        /// <summary>
+        /// Replace the terrain layout at runtime (e.g. a generated encounter, Slice C) and re-stamp it onto the
+        /// grid. Clears any previously-applied terrain first so regeneration is clean; placements are untouched.
+        /// </summary>
+        public void SetTerrain(TerrainLayout layout)
+        {
+            terrainLayout = layout ?? new TerrainLayout();
+            if (grid != null) grid.ClearTerrain();
+            terrainLayout.ApplyTo(Grid);
+        }
+
         /// <summary>Register a player unit so it can be placed. Idempotent; ignores null/idless units.</summary>
         public void RegisterUnit(UnitRoot unit)
         {

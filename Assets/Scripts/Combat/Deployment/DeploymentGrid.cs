@@ -42,6 +42,9 @@ namespace CapsuleWars.Combat.Deployment
         /// <summary>Non-Passable cells only (obstacles + hazards) — for Slice B theming + the NavMesh carver.</summary>
         public IReadOnlyDictionary<GridCoord, TerrainType> TerrainCells => terrain;
 
+        /// <summary>Remove all terrain (back to all-Passable). Occupants/placements are untouched.</summary>
+        public void ClearTerrain() => terrain.Clear();
+
         // Back-compat: "blocked" is Impassable terrain, so existing callers/tests keep working.
         public void SetBlocked(GridCoord c, bool isBlocked)
         {

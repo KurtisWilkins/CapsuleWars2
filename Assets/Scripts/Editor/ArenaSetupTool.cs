@@ -2,6 +2,7 @@
 using System.IO;
 using CapsuleWars.Combat.Deployment;
 using CapsuleWars.Data.Arena;
+using CapsuleWars.Run.Encounters;
 using CapsuleWars.UI.Arena;
 using Unity.AI.Navigation;
 using UnityEditor;
@@ -202,6 +203,69 @@ namespace CapsuleWars.Editor
             builder.Teardown();
             SceneView.RepaintAll();
             Debug.Log("[ArenaSetupTool] Cleared arena preview.");
+        }
+
+        [MenuItem("Tools/Arena/Add Encounter Generator (open scene)")]
+        public static void SetupEncounter()
+        {
+            EnsureFolder(ArenaDir);
+            var def = MakeEncounterDefinition("EncounterDefinition_Default");
+            AssetDatabase.SaveAssets();
+
+            var manager = Object.FindFirstObjectByType<DeploymentManager>(FindObjectsInactive.Include);
+            if (manager == null) { Debug.LogWarning("[ArenaSetupTool] No DeploymentManager in the open scene; open Test_M3_Battle."); return; }
+
+            var builder = Object.FindFirstObjectByType<EncounterBuilder>(FindObjectsInactive.Include);
+            if (builder == null)
+            {
+                // Reuse the ArenaBuilder's GameObject if present, else a new one.
+                var host = Object.FindFirstObjectByType<ArenaBuilder>(FindObjectsInactive.Include);
+                GameObject go = host != null ? host.gameObject : new GameObject("EncounterBuilder");
+                if (host == null) Undo.RegisterCreatedObjectUndo(go, "Create EncounterBuilder");
+                builder = go.AddComponent<EncounterBuilder>();
+            }
+
+            var so = new SerializedObject(builder);
+            so.FindProperty("manager").objectReferenceValue = manager;
+            so.FindProperty("definition").objectReferenceValue = def;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(builder);
+
+            var scene = builder.gameObject.scene;
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log($"[ArenaSetupTool] Wired EncounterBuilder (manager={manager.name}, definition={def.name}). " +
+                      "It generates per-node terrain at runtime when a run is active.");
+        }
+
+        [MenuItem("Tools/Arena/Preview Generated Encounter (open scene)")]
+        public static void PreviewGeneratedEncounter()
+        {
+            var builder = Object.FindFirstObjectByType<EncounterBuilder>(FindObjectsInactive.Include);
+            var arena = Object.FindFirstObjectByType<ArenaBuilder>(FindObjectsInactive.Include);
+            if (builder == null || arena == null)
+            {
+                Debug.LogWarning("[ArenaSetupTool] Need both EncounterBuilder + ArenaBuilder in the open scene (run the setup items first).");
+                return;
+            }
+            builder.Generate(777, 0, 3);   // sample seed / node / floor → a busy board
+            arena.BuildGeometry();
+            SceneView.RepaintAll();
+            Debug.Log("[ArenaSetupTool] Previewed a generated encounter (seed 777, floor 3). In-memory only — " +
+                      "use 'Clear Preview' and do NOT save (the scene keeps its authored demo terrain).");
+        }
+
+        private static EncounterDefinition MakeEncounterDefinition(string name)
+        {
+            string path = $"{ArenaDir}/{name}.asset";
+            var def = AssetDatabase.LoadAssetAtPath<EncounterDefinition>(path);
+            if (def == null)
+            {
+                def = ScriptableObject.CreateInstance<EncounterDefinition>();
+                AssetDatabase.CreateAsset(def, path);
+                EditorUtility.SetDirty(def);
+            }
+            return def;
         }
 
         private static void EnsureFolder(string path)

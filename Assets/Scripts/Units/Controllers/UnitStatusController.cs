@@ -253,7 +253,7 @@ namespace CapsuleWars.Units.Controllers
             {
                 health.TakeDamage(-amount, e.Source);
             }
-            else if (amount > 0)
+            else if (amount > 0 && !health.IsDowned)   // a HoT must NOT revive a downed unit (RestoreToPercent clears IsDowned)
             {
                 int newHp = Mathf.Min(MaxHp, health.CurrentHp + amount);
                 float ratio = (float)newHp / Mathf.Max(1, MaxHp);
@@ -326,6 +326,7 @@ namespace CapsuleWars.Units.Controllers
         private bool IsResisted(StatusEffect_SO effect)
         {
             float applyChance = Mathf.Clamp01((effect.Accuracy - Resistance) / 1000f);
+            if (applyChance >= 1f) return false;   // accuracy ≥ resistance + 1000 → always lands (Random.value is inclusive of 1.0)
             return UnityEngine.Random.value >= applyChance;
         }
 

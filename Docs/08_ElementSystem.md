@@ -57,13 +57,15 @@ Each family has 3 sub-types. Sub-types share their family's matchup table but di
 - Defaulted from the table above; tunable.
 
 ## Damage calculation
-`StatCalculator.GetElementMultiplier(attackerElement, defenderElement)`:
+`ElementMath.Multiplier(IElementChart chart, attacker, defenderPrimary, defenderSecondary)`
+(`Assets/Scripts/Data/Elements/ElementMath.cs` — there is no `StatCalculator` type; both damage paths,
+`UnitAttackController` basic hits and `DamageEffect_SO` ability hits, route through it):
 1. Get attacker's family from `ElementType_SO.family`.
-2. Get defender's family.
-3. Lookup `ElementChart_SO[attackerFamily, defenderFamily]`.
-4. Return multiplier.
-
-For dual-element defenders (primary + secondary), take the **less favorable for attacker** multiplier (best defense).
+2. Get defender's family (primary, and secondary if present).
+3. Lookup `chart.GetMultiplier(attackerFamily, defenderFamily)` per defender element.
+4. Return the multiplier (single element), or — for dual-element defenders — the **least favorable for the
+   attacker** (i.e. the lower, `Mathf.Min`) of the primary/secondary multipliers (best defense). Null chart/
+   attacker or no defender element → ×1.0.
 
 ## Sub-type interactions (post-MVP)
 Sub-types within a family can have specific quirks:

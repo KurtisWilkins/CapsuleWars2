@@ -31,6 +31,19 @@ Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slic
       across floors/maps; evolution tiers drive the `Ability_SO` evolution-indexed strategy arrays + `EvolveEffect`
       + `ChangeSizeEffect`. (Also unblocks the deferred VFX/projectile effects when the VFX pipeline lands.)
 
+#### Build-to-spec adversarial review follow-ups (2026-06-25; 8 confirmed, 4 fixed inline)
+Fixed: resistance "always lands" boundary (Random.value inclusive of 1.0); Regenerating HoT no longer revives a
+downed unit; `GetAllyTargets.includeDowned` so `ReviveEffect` has a target source; Docs/08 `StatCalculator`→`ElementMath`.
+Deferred (real but edge / design-call):
+- [ ] **Event latch loses same-frame events** — `EventTriggerBase` compares event-time > `LastCastTime` with
+      frame-granular `Time.time`; a second same-frame hit/kill is missed. Replace the timestamp latch with a
+      per-event monotonic counter (or pending flag) on `AbilityRuntime`. (Rare in practice; revisit if Play shows it.)
+- [ ] **DoT/HoT ticks fire On-Hit/On-Take-Hit triggers** — `UnitStatusController.ApplyTick` routes DoT through
+      `health.TakeDamage(source)` → `BattleEventBus` → stamps LastHit*Time. **[decision]** should a status tick count
+      as a "hit"? If not, tag `DamageEvent` with a damage-kind (basic/ability/tick) or route ticks off the event path.
+- [ ] **Once-triggers never re-arm** — `OnLowHp`/`OnBattleStart` latch on `LastCastTime` (fire once per battle).
+      Add a per-runtime armed/recovered flag so OnLowHp can re-fire after the unit heals above the threshold.
+
 - [ ] **START HERE — Play-verify + tune the battle camera** (`Test_M3_Battle`, ADR-022; this just landed). Re-bake
       the NavMesh FIRST (item below). Then: deployment shows all 3 player rows above the HUD + every cell clickable;
       pan/zoom work in deployment; Assemble → ~45° board view; battle → pan + zoom (zoom dollies toward the board) +

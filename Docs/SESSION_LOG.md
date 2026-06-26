@@ -6,6 +6,17 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-25 — Adversarial review of the build-to-spec code + fixes
+**Ran a multi-agent review workflow** (4 dimensions × find → adversarial-verify, 17 agents) over everything shipped
+this session (elements, ability strategies, event triggers, status fixes): 13 findings, **8 confirmed real** (the
+verify pass refuted 5, incl. catching that my own review premise was wrong — `Random.value` is `[0,1]` inclusive).
+**Fixed inline (215/215 still green):** (1) resistance "1000 = always lands" boundary — `IsResisted` now
+short-circuits `applyChance ≥ 1`; (2) **Regenerating HoT was reviving a downed unit** (`RestoreToPercent` clears
+IsDowned) — heal tick now gated on `!IsDowned`; (3) `ReviveEffect` was unreachable (all targeting excludes downed)
+— added `GetAllyTargets.includeDowned`; (4) Docs/08 named a nonexistent `StatCalculator.GetElementMultiplier` →
+corrected to `ElementMath.Multiplier` (4-arg). **Deferred** (TASKS, real but edge/design): same-frame event-latch
+loss (timestamp→counter), DoT ticks firing hit-triggers (needs a damage-kind decision), once-triggers not re-arming.
+
 ## 2026-06-25 — BTS-B1: status stat getters + resistance bug fixes (Docs/10)
 **Ask:** continue → BTS-B (status combat hooks + fixes). Split it: did the safe status-LAYER subset now (B1); the
 damage-pipeline `StatusEffectBehavior` hook is B2 (touches `UnitHealthController.TakeDamage`).

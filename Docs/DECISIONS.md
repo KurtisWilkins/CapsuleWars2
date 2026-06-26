@@ -389,4 +389,25 @@ assets (primitives only).
 self-verified: blocks tile 1:1 with cells, obstacles raised on the right cells, hazard marker placed, checkerboard
 reads. NavMesh bake + agent pathing + final look are **Play-verified** (PROJECT_STATE). See `Docs/18_ThemedEncounters.md`.
 
+### ADR-026 — Seeded encounter terrain generation (Slice C, iteration 1 of the encounter builder)
+**Decided:** combat nodes generate their own obstacle field. A pure `EncounterGenerator` (`Run.Encounters`) turns
+an `EncounterDefinition` SO + the grid config + `(RunState.Seed ^ CurrentNodeId, CurrentFloor)` into a
+`TerrainLayout` (Slice A) of Impassable + Hazard cells; an `EncounterBuilder` battle-scene component
+(`[DefaultExecutionOrder(-100)]`) reads the active run on Awake and applies it via the new
+`DeploymentManager.SetTerrain` **before** `ArenaBuilder` renders + NavMesh-bakes it (Slice B). This closes the
+A→B→C loop: data → render → generate. **Deterministic** from seed^nodeId, so a node always lays out the same
+board and nothing extra needs saving. Counts scale with floor (`obstaclesPerFloor`); the **player deploy zone is
+kept clear** by default (`keepPlayerZoneClear`) so deployment is never blocked, and obstacles are confined to the
+enemy/neutral rows (`allowEnemyZone`).
+**Scope — iteration 1 (C1) is terrain only.** Enemy roster generation (C2) and obstacle-aware enemy placement +
+an `EnemyEncounterSpawner` (C3) are deferred — today enemies are still scene-placed and `RunBattleSetup` scales
+their stats by depth. The `EncounterDefinition` SO is the stable home for the C2 roster spec.
+**With no active run** the builder leaves the scene's authored terrain (the Slice B demo layout) in place, so the
+battle scene stays playable standalone; an editor preview (`Tools/Arena/Preview Generated Encounter`) generates a
+sample board without Play.
+**Status:** C1 code done, wired into `Test_M3_Battle`, **196/196 EditMode green** (+6 generator tests: determinism,
+count ranges, player-zone-clear, enemy-zone confinement, no double-use). Editor-preview self-verified (seeded
+obstacles + hazards in the neutral/enemy rows, player rows clear). Play-verify in a run (PROJECT_STATE). See
+`Docs/18_ThemedEncounters.md`.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

@@ -6,6 +6,30 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-25 — Themed encounters Slice C1: seeded encounter terrain generation (ADR-026)
+**Ask:** "continue" → the next roadmap item, Slice C (encounter builder). Designed it (Step 1), then — per the
+project's iterative-feature pattern — scoped + built **C1 only: seeded per-node terrain generation** (the natural,
+low-risk close of the A→B→C loop; enemy roster/placement = C2/C3, deferred).
+**Found (seams, confirmed):** `RunController.EnterCurrentNode` loads the same `Test_M3_Battle` for every combat
+node; `RunState` carries `Seed`, `CurrentNodeId`, `CurrentFloor`, `DifficultyMultiplier`, `IsBossEncounter`.
+Enemies are scene-placed; `RunBattleSetup` already scales `Team.Enemy` by depth; `Unit_Enemy.prefab` exists (for
+C3). `DeploymentManager.Terrain` feeds `ArenaBuilder`.
+**Did (196/196 EditMode green, +6 generator tests):**
+- `Run.Encounters`: `EncounterDefinition` SO (obstacle/hazard count ranges, per-floor scaling, keep-player-zone-clear,
+  allow-enemy-zone) + pure `EncounterGenerator` (`Seed ^ nodeId` → shuffled eligible cells → Impassable+Hazard
+  `TerrainLayout`) + `EncounterBuilder` (battle-scene, `[DefaultExecutionOrder(-100)]`; reads the run on Awake,
+  generates, calls `DeploymentManager.SetTerrain` before ArenaBuilder builds).
+- Combat hooks: `DeploymentManager.SetTerrain(layout)` (replace + re-stamp) + `DeploymentGrid.ClearTerrain()`.
+- Wired into `Test_M3_Battle` via `ArenaSetupTool` (`EncounterDefinition_Default` + EncounterBuilder on the
+  ArenaBuilder GO) + editor preview menu (`Preview Generated Encounter`, seed 777/floor 3).
+- 6 tests: determinism (same seed^nodeId → identical layout), count-in-range, floor scaling, player-zone-clear,
+  enemy-zone confinement, no double-used cell.
+**Self-verified (scene-view capture):** a generated board shows ~5-6 seeded obstacle blocks + 2 hazard markers in
+the neutral/enemy rows with the **front player rows clear** — distinct from the fixed Slice B demo terrain.
+**Scope / not built:** no enemy roster generation (C2), no obstacle-aware placement + `EnemyEncounterSpawner` (C3),
+no stat/class generation; enemies remain scene-placed + depth-boosted. With no active run the builder keeps the
+authored demo terrain. **Play-verify in a run** (PROJECT_STATE item 1c).
+
 ## 2026-06-25 — Themed encounters Slice B: runtime modular-block arena (ADR-025)
 **Ask:** build the concrete visual of Slice B — a runtime `ArenaBuilder` that constructs the battle board from
 themed cube/block prefabs (checkerboard floor + obstacle blocks), sized to the grid, with a runtime-baked NavMesh,

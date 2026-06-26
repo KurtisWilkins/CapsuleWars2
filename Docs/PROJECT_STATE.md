@@ -3,11 +3,15 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-25 — themed-encounter Slice B: runtime modular-block arena built + wired in Test_M3_Battle (ADR-025); 190 green._
+_Last updated: 2026-06-25 — themed-encounter Slice C1: seeded per-node terrain generation (ADR-026) feeding the arena; 196 green._
 
 ## One-line status
-**Themed-encounter system: Slices A + B built (ADR-024/025).** The battle board is now **built at runtime from
-themed blocks** by `ArenaBuilder` — a checkerboard floor (one tile per grid cell, 1:1 with the deployment grid),
+**Themed-encounter system: Slices A + B + C1 built (ADR-024/025/026).** Combat nodes now **generate their own
+seeded obstacle field** — `EncounterGenerator`+`EncounterBuilder` (`Run.Encounters`) turn `RunState.Seed ^
+CurrentNodeId` + floor into a `TerrainLayout` (player deploy zone kept clear, obstacles scale with depth), applied
+via `DeploymentManager.SetTerrain` before the arena renders + NavMesh-bakes it — closing the data→render→generate
+loop. Deterministic (no save needed); wired into `Test_M3_Battle` + editor preview. **C2 (enemy roster) + C3
+(obstacle-aware placement) are next.** The battle board is **built at runtime from themed blocks** by `ArenaBuilder` — a checkerboard floor (one tile per grid cell, 1:1 with the deployment grid),
 raised obstacle blocks on Impassable cells + markers on Hazard cells, driven by a `ThemeBlockSet`/`EncounterTheme`
 SO (primitive-cube fallback → works with no assets; grass + volcanic placeholders authored). After building it
 re-bakes the `NavMeshSurface` (PhysicsColliders; obstacles = NotWalkable) so agents path around obstacles. The
@@ -23,7 +27,7 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
   branches (ADR-020). `claude/deployment-grid` was pruned (local + remote). The remote still keeps
   `claude/capsule-wars-setup-pBoDq` (an old setup branch, fully contained in `main` — prunable).
 - Rollback point: tag **`pre-trunk-main`** (`852a520`, pushed) = `main` before the consolidation fast-forward.
-- Tests: `Assets/Scripts/Tests/EditMode/` — **190 green**. Run `run_tests` after any C# change.
+- Tests: `Assets/Scripts/Tests/EditMode/` — **196 green**. Run `run_tests` after any C# change.
 
 ## What currently works
 - Milestone base through ~M9 (draft → battle → recruit; combat, abilities, elements, synergies, status, stats;
@@ -52,6 +56,12 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
   path around obstacles; the legacy Plane is hidden but its collider stays as the placement-raycast + walkable ground.
   Editor preview via `Tools/Arena/*` + component ContextMenus. Demo terrain authored (Impassable (2,4)(4,4)(3,5) +
   Hazard (3,3), neutral rows). Real kits (Kubikos/Meshy) drop in by assigning prefabs to a block set — no code change.
+- **Seeded encounter terrain (ADR-026, Slice C1):** `EncounterGenerator` (pure, `Run.Encounters`) + `EncounterDefinition`
+  SO + `EncounterBuilder` (battle-scene, exec order −100). In a run, each combat node generates a reproducible
+  obstacle/hazard `TerrainLayout` from `RunState.Seed ^ CurrentNodeId` (+ floor scaling; player deploy zone kept
+  clear), applied via `DeploymentManager.SetTerrain` before `ArenaBuilder` renders + bakes it. Wired into
+  `Test_M3_Battle` with `EncounterDefinition_Default`; no run → keeps the authored demo terrain. Editor preview:
+  `Tools/Arena/Preview Generated Encounter`. **Enemies are still scene-placed (C2/C3 generate + place them).**
 - **Battle/deployment camera (ADR-022):** `DeploymentCameraController` auto-frames the board clear of the HUD for
   deployment (tilt 84, inset 0.30), eases to a computed **~45° TFT-style** view on Assemble (not the authored
   pose), and allows **free pan/zoom during combat** (`allowControlDuringBattle`; zoom moves along the view
@@ -86,6 +96,11 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
    Play via `Tools/Arena/Build Preview (open scene)` then `Clear Preview`. Tune look by assigning real
    prefabs/materials to the `ThemeBlockSet` assets in `Assets/Settings/Arena/` (no code change), or bump
    floor A/B material contrast for clearer cells.
+1c. **Seeded encounter terrain (ADR-026, Slice C1)** — in a RUN (start from `Test_M7_Map` → a Combat node), verify
+   each combat node shows a generated obstacle/hazard field (not the fixed demo layout); the **player deploy rows
+   stay clear** (every player-zone cell still placeable); re-entering the SAME node regenerates the SAME board
+   (deterministic); deeper floors get more obstacles; agents path around the generated obstacles after Assemble.
+   Eyeball without Play via `Tools/Arena/Preview Generated Encounter (open scene)` → `Clear Preview` (don't save).
 2. **Deployment loop** — load a combat node with a drafted party → tap a bench unit → tap a green player-zone
    cell ⇒ the real unit appears (scale-in); tap a placed cell to bench it; **Clear**; **Assemble** ⇒ those exact
    units start combat (no dupes; not before Assemble). (Placement + enemy inspection + Assemble were Play-verified

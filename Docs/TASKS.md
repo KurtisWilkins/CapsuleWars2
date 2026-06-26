@@ -34,7 +34,7 @@
 - [ ] **Swap placeholder item visuals:** `EquipVisual_Cube` is a stand-in. Assign real `visualPrefab`/`visualMesh`
       per item; optionally re-parent `Socket_*` empties under hand/head bones for animated attachment.
 
-### Themed encounters — continue the system (Slices A + B landed; see `Docs/18_ThemedEncounters.md` + ADR-024/025)
+### Themed encounters — continue the system (Slices A + B + C1 landed; see `Docs/18_ThemedEncounters.md` + ADR-024/025/026)
 - [ ] **Play-verify the runtime arena (ADR-025)** — PROJECT_STATE item 1b: blocks tile with no gaps, checkerboard
       reads, obstacles/hazard on the right cells, NavMesh bakes + agents path around obstacles, placement raycasts
       still land, rebuilds cleanly between encounters.
@@ -43,16 +43,16 @@
       floor A/B material contrast for cell readability; add more `EncounterTheme`s (forest/cave/ship/sewer/…). The
       `ArenaBuilder` scales prefabs to `cellSize` — check chunky-kit prefabs aren't distorted (may want a per-theme
       scale or to skip the auto-scale for authored prefabs).
-- [ ] **Slice C — encounter builder (iterative).** Turn a map node into a fight. Build: an `EncounterDefinition`
-      SO (roster spec by `NodeType` + depth, an obstacle `TerrainLayout` or seeded generator, a placement strategy)
-      + a builder that stamps the layout (`TerrainLayout.ApplyTo`), generates the roster (extends
-      `RandomUnitGenerator` — note stats/class/abilities are still TODO there), and places enemies on **Passable**
-      cells within `config.InEnemyZone` avoiding `IsImpassable` (Hazard per strategy); + a new `EnemyEncounterSpawner`
-      (mirror of player-only `BattlePartySpawner` — enemies are scene-placed static today). **Contract consumed:**
-      `grid.GetTerrain/IsImpassable/IsHazard`, `config.InEnemyZone`, `TerrainLayout`. Generate from
-      `RunState.Seed + nodeId` for reproducibility (no extra save unless terrain becomes non-deterministic). Attach
-      at `MapNode.Type` (Combat/Elite/Boss) via `RunController`/`RunBattleSetup`. Likely wants an enemy-zone analogue
-      of `DeploymentManager.FirstFreeCell`.
+- [ ] **Slice C2 — enemy roster generation.** Add roster spec to `EncounterDefinition` (enemy count by `NodeType` +
+      floor, archetype/parts pool). Generate the roster deterministically (`RunState.Seed ^ CurrentNodeId`); visual
+      identity via `RandomUnitGenerator`, difficulty rides the existing `RunBattleSetup` depth boost (stats/class/
+      abilities stay TODO unless you decide to build them). No placement yet.
+- [ ] **Slice C3 — obstacle-aware enemy placement + `EnemyEncounterSpawner`.** Spawn the C2 roster as `Team.Enemy`
+      from `Unit_Enemy.prefab` (mirror player-only `BattlePartySpawner`), placing on **Passable** cells within
+      `config.InEnemyZone` avoiding `IsImpassable` (Hazard per strategy) — likely an enemy-zone analogue of
+      `DeploymentManager.FirstFreeCell`. Retire the static scene `Unit_Enemy`. Order after `EncounterBuilder` so
+      placement sees the obstacles. **Contract consumed:** `grid.GetTerrain/IsImpassable`, `config.InEnemyZone`.
+      This is the "strategy" — iterate on placement smarts here.
 
 ## Backlog (not yet scheduled)
 - [ ] Bench-item prefab polish: deployment + customization reuse `EquipButton.prefab`; make a dedicated
@@ -64,6 +64,12 @@
       scene's 4 were cleared; these are likely runtime-driven HUD/node labels — clear only if they show through).
 
 ## Done (recent — prune periodically)
+- [x] **Themed encounters — Slice C1 seeded terrain generation (ADR-026, 2026-06-25):** `EncounterGenerator` (pure,
+      `Run.Encounters`) + `EncounterDefinition` SO + `EncounterBuilder` (battle-scene, exec −100) generate a
+      reproducible obstacle/hazard `TerrainLayout` per combat node from `Seed ^ CurrentNodeId` (+ floor scaling,
+      player zone kept clear) and apply it via `DeploymentManager.SetTerrain` before the arena renders/bakes it.
+      Wired into `Test_M3_Battle` (`EncounterDefinition_Default`) + editor preview. **196/196 green** (+6 generator
+      tests); editor-preview self-verified. Enemy roster (C2) + placement (C3) are the next items above.
 - [x] **Themed encounters — Slice B runtime block arena (ADR-025, 2026-06-25):** `ArenaBuilder` (`UI.Arena`) builds
       the board at runtime from `ThemeBlockSet`/`EncounterTheme` SOs (`Data.Arena`, primitive fallback) — checkerboard
       floor 1:1 with the grid, raised obstacles on Impassable cells, hazard markers, sized from cellSize; runtime

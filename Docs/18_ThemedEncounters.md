@@ -14,7 +14,7 @@ on its own:
 |------|------|-------|--------|
 | **A. Terrain/obstacle data** | per-cell `TerrainType`, placement validation, authored layout | `Combat.Deployment` (pure model) | **built (ADR-024)** |
 | **B. Scenery / biome theming** | runtime block arena: checkerboard floor + obstacle blocks, themed, runtime NavMesh bake | `UI.Arena` + `Data.Arena` | **built (ADR-025)** |
-| **C. Encounter builder** | `EncounterDefinition`, enemy roster generation, obstacle-aware placement ("the strategy") | Run / Combat | later, iterative |
+| **C. Encounter builder** | `EncounterDefinition`, enemy roster generation, obstacle-aware placement ("the strategy") | Run / Combat | **C1 (terrain gen) built (ADR-026)**; C2 roster + C3 placement next |
 
 The hard rule that makes this composable: **the terrain layer (A) knows nothing about visuals (B) or
 enemies (C)**. B and C *read* A. A never references UI or Run (assembly layering Core/Combat → … → UI/Run).
@@ -70,8 +70,15 @@ than just prop-scatter, so the floor itself reads as the deployment grid.
 - **Contract used:** `DeploymentManager.Config` + `.Terrain` (the `TerrainLayout`), `config.CellToWorld`/`cellSize`,
   `grid.TerrainCells`. Read-only; B never writes the model.
 
-## Slice C — encounter builder (later, iterative)
+## Slice C — encounter builder (iterative; C1 built)
 Turns a map node into a concrete fight: roster + obstacle layout + obstacle-aware placement.
+
+**C1 — seeded terrain generation (BUILT, ADR-026):** `EncounterGenerator` (pure, `Run.Encounters`) +
+`EncounterDefinition` SO + `EncounterBuilder` (battle-scene, `[DefaultExecutionOrder(-100)]`). On Awake it reads
+the run (`Seed ^ CurrentNodeId`, `CurrentFloor`), generates a `TerrainLayout` of Impassable+Hazard cells (player
+deploy zone kept clear, obstacles scale with floor), and applies it via `DeploymentManager.SetTerrain` before
+ArenaBuilder renders + NavMesh-bakes it. Deterministic → no save needed. Wired into `Test_M3_Battle`; editor
+preview via `Tools/Arena/Preview Generated Encounter`. **C2 (roster) + C3 (placement) still to do, below.**
 
 - **`EncounterDefinition` SO** (or seeded generator config): enemy roster spec (count/tiers/archetypes by
   `NodeType` + depth), an obstacle **`TerrainLayout`** (hand-authored or a generator config), and a

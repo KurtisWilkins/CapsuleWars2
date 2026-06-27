@@ -3,7 +3,7 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-27 — build-to-spec: Slice 1 + BTS-A/B1/B2/C/D/E1 done; BTS-E2 infra + heal synergies (ADR-036) + BTS-G rarity ×s aligned; 226 EditMode green._
+_Last updated: 2026-06-27 — **Head-as-part-type Slice 1** on branch `claude/head-part-type` (ADR-037; sphere head as a swappable part, 232 EditMode green). On `main`: BTS-E2 heal synergies (ADR-036) + BTS-G rarity ×s; BTS-A/B1/B2/C/D/E1 done._
 
 ## Content completeness vs design docs (build-to-spec, ADR-028)
 | Category | Spec | Built | Status |
@@ -104,6 +104,16 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
   Create/Wire verified; Anthropic description needs account credits.
 
 ## Needs human verification (Play mode — Claude can't see it; D3D11 is the project default, no flag needed)
+0. **Head-as-part-type Slice 1 (branch `claude/head-part-type`, ADR-037) — bridge can't read transforms / capture viewport.**
+   (a) Spawn/enter a unit (`Unit_Sample_Prefab`): a **floating sphere head** shows on every unit, **animates with the
+   body** (rides `B_Head`), and the **face leads on turn**. (b) Open `Unit_Sample_Prefab` → `HeadPreviewTuner` →
+   context-menu **"Apply Head Preview"**; tune **sphereSize / floatGap / faceForwardEuler** until the sphere reads as
+   intentional (≈0.6× capsule, detached gap). (c) **Helmets/HeadProps**: `Equip_StarterHelm` + any hat seat on the
+   sphere with no clip/float — `Socket_Helmet` + `Mount_Head` were re-anchored under `B_Head` with world pose preserved,
+   so their **offsets likely need re-measuring** against the sphere. (d) **No double-head**: confirm the Body capsule
+   mesh doesn't already include a head bump (re-author headless if it does). (e) **Persistence**: a unit's head survives
+   save→reload (it's a `partId` in `UnitPartDTO`, like a hand). (f) Downed pose still looks right. *(Swapping heads in
+   the customization screen is Slice 3 — not built yet.)*
 1. **Re-bake the NavMesh first** — `Test_M3_Battle` → `Plane` → `NavMeshSurface` → **Bake** (arena enlarged:
    Plane scale 4, centre (10.5,0,14)); combat movement needs it. (Note: the new `ArenaBuilder` ALSO re-bakes at
    runtime on build — this manual bake is the editor baseline; verify the runtime bake in item 1b.)

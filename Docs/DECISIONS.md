@@ -662,4 +662,38 @@ mechanics that don't exist yet (Def-in-damage, attack-cadence hooks, conditional
 + the sink as those land. **Status:** code + 2 resolver tests (push when active / clear below threshold), **226/226
 EditMode green**. Heal-in-combat is **Play-gated** (needs a live battle with kills/hits).
 
+### ADR-037 — Head as a first-class, swappable part type (default floating sphere) — Slice 1
+**Decided:** the head becomes a real swappable `PartSlot` (the Rayman/Rabbids floating sphere), not a bespoke head
+path. It reuses the *entire* existing body-part pipeline that hands/feet flow through (relates to ADR-012 visuals +
+ADR-015/016 generation pipeline). Investigation (multi-agent, adversarially reviewed) confirmed the customization
+**part-swap path is already complete and fully generic over `PartSlot`**, so Head needs zero new swap/persist code —
+only the enum value, a default part, a prefab mount, and the never-headless guarantee.
+**Slice 1 (this slice):**
+- `Core/PartSlot.cs`: **`Head = 6` appended** — load-bearing rule: `PartSlot` is serialized by int (saves
+  `UnitPartDTO.slot`, assets `BodyPart_SO.slot` via enumValueIndex), so it is **append-only, never insert/reorder**.
+  The two `PartSlot` switches (`MirrorUtil.TryGetOpposite`, `StyleComposer.PartTypeFor`) both have `default` cases and
+  no array is indexed by ordinal, so the append is safe. `AssetPipelineWindow` slot clamp derived from enum length
+  (was a magic `5`).
+- **Mirror-exempt by omission:** Head is absent from `MirrorUtil.TryGetOpposite`, so it is automatically non-sided. Keep it out.
+- **Default head** = `Head_Sphere` `BodyPart_SO` (Unity sphere primitive), authored by `HeadSetupTool` as a **starter**
+  catalog entry (owned by all, resolvable by `GetPart` — required, else the first part-swap freezes `dto.Parts` and the
+  head would drop on reload) + a Head `PartAssignment` on every `UnitDefinition`. `RandomUnitGenerator.BuildSlots`
+  includes Head (graceful when unowned).
+- **Render = the SlotMount path, not the equipment Rebuild diff.** `Mount_Head_Sphere` lives under the **`B_Head` bone**
+  (animates with the head for free); a Head `SlotMount` (PaletteRole.Body) drives it. `SlotMount` gains an optional
+  `fallbackMesh`/`fallbackMaterials`: `Clear()` applies the fallback instead of going empty — the **never-headless
+  guarantee** (also fixes `Clear()` leaving stale materials). Head must NOT touch `UnitEquipmentVisuals`/`EquipmentSlot`.
+- **Persistence** is additive + slot-generic — no DTO/factory change, **SaveVersion stays 1** (old saves lack a Head
+  entry → graceful). Modeled exactly like a hand: a `partId` in `UnitPartDTO`, reassignable.
+- **Tuning:** `HeadPreviewTuner` (`#if UNITY_EDITOR` "Apply Head Preview" ContextMenu + OnValidate) re-seats the mount
+  from serialized `sphereSize`(0.6)/`floatGap`(0.15)/`faceForwardEuler` so feel is dialed without Play.
+- **Helmet/HeadProp** `Socket_Helmet` + `Mount_Head` re-anchored under `B_Head` (worldPositionStays — no jump); exact
+  offsets are dialed against the sphere by hand.
+**Layering:** `PartSlot.Head` is the only Core change (additive, depended on downward-only); data is authored assets;
+render is the Units `SlotMount`; pipeline/templates stay Editor (deferred to Slice 2). **Status:** code + assets +
+prefab, **232/232 EditMode green** (+6 Head tests). The sphere render, animation, helmet seating, and swap visuals are
+**Play-gated** (bridge can't read transforms). **Deferred:** Slice 2 (pipeline `PartType.Head` template + importer +
+icon — generatable heads), Slice 3 (Head appears as a swap slot in the customization screen via the same path), per-class
+heads (version hook + one example variant), Meshy head generation.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

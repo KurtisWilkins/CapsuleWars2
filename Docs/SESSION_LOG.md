@@ -6,6 +6,29 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-27 — Head as a first-class swappable part type, Slice 1 (ADR-037)
+**Branch:** `claude/head-part-type` (off `main`). **Did:** made HEAD a real swappable `PartSlot` (default floating
+sphere, Rayman/Rabbids style) reusing the existing body-part pipeline — NOT a bespoke head path. Step 1 was an
+8-seam investigation (multi-agent, adversarially reviewed) which confirmed the customization **part-swap path is
+already complete + generic over `PartSlot`**, so Head needed no new swap/persist code. Slice 1 build, in compile-safe
+increments:
+- **[code]** `Core/PartSlot.cs` `Head=6` **appended** (append-only — serialized by int); `SlotMount` gains
+  `fallbackMesh`/`fallbackMaterials` so `Clear()` falls back to the sphere (**never-headless**, + resets stale
+  materials); `RandomUnitGenerator.BuildSlots` includes Head; `AssetPipelineWindow` slot clamp derived from enum
+  length; new `HeadPreviewTuner` (`#if UNITY_EDITOR` "Apply Head Preview" ContextMenu, tunable sphereSize/floatGap/face).
+- **[content]** `HeadSetupTool` authored `Head_Sphere` `BodyPart_SO` (slot=Head, sphere primitive) as a **starter**
+  catalog entry + a Head `PartAssignment` on `Unit_Sample`. `HeadPrefabWiringTool` wired `Mount_Head_Sphere` under the
+  **`B_Head` bone** + the Head `SlotMount` (PaletteRole.Body, fallback=sphere) + `HeadPreviewTuner`, and re-anchored
+  `Socket_Helmet` + `Mount_Head` under `B_Head`.
+- **Mirror-exempt** by omission (absent from `MirrorUtil`); **SaveVersion stays 1** (additive). **+6 tests, 232 green.**
+**Commits:** 78f462d (code) · cb57fa3 (assets+tests) · 7bee0bd (prefab). **Two `??`/fake-null + sync-import-style
+gotchas avoided** (explicit `== null` before AddComponent).
+**Play-gated (user's eyes):** sphere on every unit + animates with B_Head + face leads on turn; size/gap intentional;
+helmets/HeadProps seat on the sphere (no clip/float — `Socket_Helmet`/`Mount_Head` offsets need re-measuring); head
+persists across save/reload; no double-head from the Body capsule mesh.
+**Next:** Slice 2 (pipeline `PartType.Head` + importer Head category + icon → generatable heads), Slice 3 (Head as a
+swap slot in the customization screen via the SAME path), per-class heads (hook + 1 example), Meshy head generation.
+
 ## 2026-06-26 — BTS-D: author 24 status effects + 5 behavior assets
 **Did:** `StatusSetupTool` (`Tools/Build-To-Spec/Author Status Effects`, idempotent) authored all 24
 `StatusEffect_SO` (Docs/10) under `Assets/Data/StatusEffects/` + the 5 BTS-B2 behavior assets under `Behaviors/`,

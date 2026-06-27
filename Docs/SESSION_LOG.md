@@ -6,6 +6,17 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-26 — Icons FINAL: equipment/body-parts render → Grok-stylize (flat-emblem)
+**Did:** unblocked the render→stylize path (the intended approach): fixed `GrokImageService.EditAsync` — xAI
+`/v1/images/edits` wants `image` as an object `{url, type:"image_url"}` (base64 data URI ok), not a bare string
+(HTTP 422). Then ran the **mesh-stylized sweep**: each equipment/body-part is rendered (PreviewRenderUtility, with
+the tuned per-item orientation/zoom — `RotOverride`, `DiagonalBlade` sword auto-orient, `ZoomOverride`) and the
+render is fed to Grok's edit endpoint → a flat-emblem icon that RESEMBLES the mesh + matches the class style. **All
+12 stylized OK** (6 equipment + 6 body parts; Eq_LeatherChest skipped — no mesh). User approved the look.
+**Icon set complete:** 16 classes (AI), 12 equipment/body-parts (mesh→stylize), all displayed in the paper-doll
+bag/slots. Render-direct menus remain as a fallback. **Next:** elements/status-effect icons (same AI, if wanted);
+move icons need BTS-F. Other open work: BTS-D/E2/F/G/H.
+
 ## 2026-06-26 — Icons: 16 class (AI flat-emblem) + equipment/parts (direct mesh render)
 **Did:** ran the Grok sweep → **16 class icons** (flat-emblem, user-approved style). For **equipment + body parts**
 the name-only AI prompts didn't match the actual meshes (user feedback), so IconGen now renders each item's

@@ -298,7 +298,7 @@ namespace CapsuleWars.Editor
         // Per-item framing margin (smaller = zoom in / fill more of the frame); default 1.3.
         private static readonly Dictionary<string, float> ZoomOverride = new()
         {
-            { "MikeyMouseHands",    0.5f },
+            { "MikeyMouseHands",    0.167f },   // ~3× closer than 0.5
             { "Eq_IronSword",       1.05f },
             { "Equip_StarterSword", 1.05f },
         };

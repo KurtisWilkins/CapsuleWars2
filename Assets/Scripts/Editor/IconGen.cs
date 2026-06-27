@@ -270,7 +270,7 @@ namespace CapsuleWars.Editor
             else if (so is BodyPart_SO b) { mesh = b.Mesh; mats = b.DefaultMaterials?.ToArray(); }
             if (prefab == null && mesh == null) return null;
 
-            byte[] png = RenderToPng(prefab, mesh, mats, RotationFor(so.name), 512);
+            byte[] png = RenderToPng(prefab, mesh, mats, so.name, 512);
             if (save && png != null)
             {
                 string folder = AssetPipelineImporter.EnsureFolder(RefsRoot);
@@ -287,20 +287,34 @@ namespace CapsuleWars.Editor
         {
             { "Equip_StarterHelm", new Vector3(0f, 180f, 0f) },
             { "TestHelmet",        new Vector3(0f, 180f, 0f) },
-            // Swords: 45° roll → diagonal in frame; broad face (and crossguard width) kept toward the camera.
-            { "Eq_IronSword",       new Vector3(0f, 0f, 45f) },
-            { "Equip_StarterSword", new Vector3(0f, 0f, 45f) },
+        };
+
+        // Long flat items (swords) auto-oriented: blade laid on the screen diagonal (tip → top-right,
+        // hilt → bottom-left), broad face toward the camera — computed from the mesh's long/thin axes.
+        private static readonly HashSet<string> DiagonalBlade = new() { "Eq_IronSword", "Equip_StarterSword" };
+        // If a diagonal-blade item renders tip-down (bottom-left), add it here to flip tip ↔ hilt.
+        private static readonly HashSet<string> DiagonalBladeFlip = new();
+
+        // Per-item framing margin (smaller = zoom in / fill more of the frame); default 1.3.
+        private static readonly Dictionary<string, float> ZoomOverride = new()
+        {
+            { "MikeyMouseHands",    1.0f },
+            { "Eq_IronSword",       1.05f },
+            { "Equip_StarterSword", 1.05f },
         };
 
         private static Quaternion RotationFor(string name) =>
             RotOverride.TryGetValue(name, out var e) ? Quaternion.Euler(e) : Quaternion.identity;
+
+        private static float ZoomFor(string name) =>
+            ZoomOverride.TryGetValue(name, out var z) ? z : 1.3f;
 
         private static Material _fallbackMat;
         private static Material FallbackMat =>
             _fallbackMat != null ? _fallbackMat :
             (_fallbackMat = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard")));
 
-        private static byte[] RenderToPng(GameObject prefab, Mesh mesh, Material[] mats, Quaternion rot, int size)
+        private static byte[] RenderToPng(GameObject prefab, Mesh mesh, Material[] mats, string name, int size)
         {
             var pru = new PreviewRenderUtility();
             GameObject temp = null;
@@ -320,25 +334,31 @@ namespace CapsuleWars.Editor
                 if (mats != null) foreach (var m in mats) if (m != null) { mat = m; break; }
                 if (mat == null) mat = FallbackMat;
 
-                Bounds bounds;
-                Vector3 center;
+                Vector3 viewDir = (Quaternion.Euler(18f, -28f, 0f) * Vector3.forward).normalized;
+
+                // Measure the item at IDENTITY → axes (for auto-orient) + the framing center/size.
+                Bounds local;
                 if (prefab != null)
                 {
                     temp = UnityEngine.Object.Instantiate(prefab);
-                    temp.transform.SetPositionAndRotation(Vector3.zero, rot);
-                    bounds = CalcRendererBounds(temp);   // measured in the rotated pose → center already correct
-                    pru.AddSingleGO(temp);
-                    center = bounds.center;
+                    temp.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                    local = CalcRendererBounds(temp);
                 }
                 else
                 {
-                    bounds = mesh.bounds;                // local, un-rotated
-                    center = rot * bounds.center;        // the mesh is DRAWN rotated about the origin (DrawMesh below), so the framed center must follow it
+                    local = mesh.bounds;
                 }
 
-                float radius = Mathf.Max(bounds.extents.magnitude, 0.1f);
-                float dist = radius / Mathf.Sin(Mathf.Deg2Rad * cam.fieldOfView * 0.5f) * 1.3f;
-                Vector3 viewDir = (Quaternion.Euler(18f, -28f, 0f) * Vector3.forward).normalized;
+                Quaternion rot = DiagonalBlade.Contains(name)
+                    ? DiagonalBladeRotation(local, viewDir, DiagonalBladeFlip.Contains(name))
+                    : RotationFor(name);
+
+                if (prefab != null) { temp.transform.rotation = rot; pru.AddSingleGO(temp); }
+
+                // Frame on the ROTATED center (the item is rotated about the origin); per-item zoom margin.
+                Vector3 center = rot * local.center;
+                float radius = Mathf.Max(local.extents.magnitude, 0.1f);
+                float dist = radius / Mathf.Sin(Mathf.Deg2Rad * cam.fieldOfView * 0.5f) * ZoomFor(name);
                 cam.transform.position = center - viewDir * dist;
                 cam.transform.rotation = Quaternion.LookRotation(viewDir, Vector3.up);
 
@@ -355,6 +375,24 @@ namespace CapsuleWars.Editor
                 if (temp != null) UnityEngine.Object.DestroyImmediate(temp);
                 pru.Cleanup();
             }
+        }
+
+        // Auto-orient a long flat item so its long axis (blade) lies along the screen bottom-left→top-right
+        // diagonal with the broad face toward the camera. flip = swap which end (tip/hilt) sits at top-right.
+        private static Quaternion DiagonalBladeRotation(Bounds local, Vector3 viewDir, bool flip)
+        {
+            Vector3 ext = local.extents;
+            Vector3 blade = (ext.x >= ext.y && ext.x >= ext.z) ? Vector3.right : (ext.y >= ext.z ? Vector3.up : Vector3.forward);
+            Vector3 broad = (ext.x <= ext.y && ext.x <= ext.z) ? Vector3.right : (ext.y <= ext.z ? Vector3.up : Vector3.forward);
+            if (blade == broad) broad = (blade == Vector3.forward) ? Vector3.up : Vector3.forward;   // degenerate guard
+
+            var camRot = Quaternion.LookRotation(viewDir, Vector3.up);
+            Vector3 diagonal = (camRot * Vector3.right + camRot * Vector3.up).normalized;   // screen bottom-left → top-right
+            if (flip) diagonal = -diagonal;
+
+            var localFix = Quaternion.Inverse(Quaternion.LookRotation(broad, blade));   // broad→+Z, blade→+Y
+            var world = Quaternion.LookRotation(-viewDir, diagonal);                    // +Z→toward camera, +Y→diagonal
+            return world * localFix;
         }
 
         private static Bounds CalcRendererBounds(GameObject go)

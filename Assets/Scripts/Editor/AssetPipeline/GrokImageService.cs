@@ -44,14 +44,15 @@ namespace CapsuleWars.Editor.AssetPipeline
         {
             if (string.IsNullOrEmpty(apiKey)) throw new Exception("No Grok/xAI key set.");
             if (referencePng == null || referencePng.Length == 0) throw new Exception("No reference image bytes.");
+            // xAI /v1/images/edits wants `image` as an OBJECT {url, type:"image_url"} — a base64 data URI is
+            // accepted in `url`. The old code sent `image` as a bare string → HTTP 422 "image: invalid type:
+            // string". (docs.x.ai → model-capabilities/images/editing)
             string body = JsonUtility.ToJson(new EditReq
             {
                 model = Model(model),
                 prompt = prompt,
-                image = "data:image/png;base64," + Convert.ToBase64String(referencePng),
-                response_format = "b64_json",
-                aspect_ratio = string.IsNullOrEmpty(aspectRatio) ? "1:1" : aspectRatio,
-                resolution = string.IsNullOrEmpty(resolution) ? "1k" : resolution
+                image = new ImageRef { url = "data:image/png;base64," + Convert.ToBase64String(referencePng), type = "image_url" },
+                response_format = "b64_json"
             });
             return await PostForImage(string.IsNullOrEmpty(endpoint) ? DefaultEditEndpoint : endpoint, apiKey, body);
         }
@@ -79,7 +80,8 @@ namespace CapsuleWars.Editor.AssetPipeline
         }
 
         [Serializable] private class GenReq { public string model; public string prompt; public int n; public string response_format; public string aspect_ratio; public string resolution; }
-        [Serializable] private class EditReq { public string model; public string prompt; public string image; public string response_format; public string aspect_ratio; public string resolution; }
+        [Serializable] private class EditReq { public string model; public string prompt; public ImageRef image; public string response_format; }
+        [Serializable] private class ImageRef { public string url; public string type; }
         [Serializable] private class Resp { public Datum[] data; }
         [Serializable] private class Datum { public string b64_json; public string url; }
     }

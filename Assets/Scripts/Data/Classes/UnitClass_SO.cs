@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CapsuleWars.Core;
 using CapsuleWars.Data.StatusEffects;
 using UnityEngine;
 
@@ -24,6 +25,9 @@ namespace CapsuleWars.Data.Classes
 
         [Tooltip("Buffs applied to the WHOLE team (any class) when active. Rare — high tiers / support classes (Docs/09).")]
         public List<StatBuff> globalBuffs = new();
+
+        [Tooltip("Behavioral [code] effects (heal-on-kill, heal-on-hit, …) granted to same-class units when active (Docs/09). Applied by the unit's ISynergyBehaviorSink, not the stat layer.")]
+        public List<SynergyEffect> synergyEffects = new();
     }
 
     /// <summary>

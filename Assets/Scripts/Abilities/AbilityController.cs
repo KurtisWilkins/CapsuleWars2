@@ -11,7 +11,7 @@ namespace CapsuleWars.Abilities
     /// compatibility at Awake — abilities the unit's weapon doesn't
     /// satisfy are marked Locked and never fire.
     /// </summary>
-    public class AbilityController : MonoBehaviour
+    public class AbilityController : MonoBehaviour, ISynergyBehaviorSink
     {
         [Tooltip("Abilities granted to this unit. Order is authoring-only; runtime checks all.")]
         [SerializeField] private List<Ability_SO> abilities = new();
@@ -20,7 +20,19 @@ namespace CapsuleWars.Abilities
         private UnitRoot root;
         private IBattleEvents subscribedEvents;
 
+        // [code] class-synergy behaviors (Docs/09), pushed by SynergyResolver via ISynergyBehaviorSink each recompute.
+        private readonly List<SynergyEffect> synergyEffects = new();
+
         public IReadOnlyList<AbilityRuntime> Runtimes => runtimes;
+
+        /// <summary>ISynergyBehaviorSink — SynergyResolver pushes this unit's active [code] synergy effects here.
+        /// Passing null/empty clears them (tier no longer active).</summary>
+        public void SetSynergyEffects(IReadOnlyList<SynergyEffect> effects)
+        {
+            synergyEffects.Clear();
+            if (effects == null) return;
+            for (int i = 0; i < effects.Count; i++) synergyEffects.Add(effects[i]);
+        }
 
         private void Awake()
         {
@@ -85,9 +97,9 @@ namespace CapsuleWars.Abilities
 
         private bool IsSelf(IUnitRef u) => u != null && root != null && u.GameObject == root.gameObject;
 
-        private void HandleDamageDealt(DamageEvent e) { if (IsSelf(e.Source)) Stamp(EventKind.HitDealt); }
+        private void HandleDamageDealt(DamageEvent e) { if (!IsSelf(e.Source)) return; Stamp(EventKind.HitDealt); ApplySynergyHeal(SynergyEffectKind.HealOnHit); }
         private void HandleDamageTaken(DamageEvent e) { if (IsSelf(e.Target)) Stamp(EventKind.HitTaken); }
-        private void HandleKill(KillEvent e) { if (IsSelf(e.Source)) Stamp(EventKind.Kill); }
+        private void HandleKill(KillEvent e) { if (!IsSelf(e.Source)) return; Stamp(EventKind.Kill); ApplySynergyHeal(SynergyEffectKind.HealOnKill); }
 
         private void HandleDowned(DownedEvent e)
         {
@@ -98,6 +110,24 @@ namespace CapsuleWars.Abilities
         }
 
         private enum EventKind { HitDealt, HitTaken, Kill, AllyDeath }
+
+        // [code] synergy heals (Docs/09): heal magnitude% of MaxHp on the matching combat event for this unit.
+        private void ApplySynergyHeal(SynergyEffectKind kind)
+        {
+            if (synergyEffects.Count == 0 || root == null || root.Health == null || root.Status == null) return;
+            if (root.Health.IsDowned) return;
+            int maxHp = root.Status.MaxHp;
+            if (maxHp <= 0) return;
+            for (int i = 0; i < synergyEffects.Count; i++)
+            {
+                var se = synergyEffects[i];
+                if (se.kind != kind || se.magnitude <= 0f) continue;
+                int heal = Mathf.RoundToInt(maxHp * (se.magnitude / 100f));
+                if (heal <= 0) continue;
+                int newHp = Mathf.Min(maxHp, root.Health.CurrentHp + heal);
+                root.Health.RestoreToPercent((float)newHp / maxHp);
+            }
+        }
 
         private void Stamp(EventKind kind)
         {

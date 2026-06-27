@@ -26,14 +26,22 @@ namespace CapsuleWars.Editor
 
         private static List<StatBuff> B(params StatBuff[] b) => new List<StatBuff>(b);
 
-        private static ClassSynergyTier Tier(int threshold, string descKey, List<StatBuff> team, List<StatBuff> global = null) =>
+        private static ClassSynergyTier Tier(int threshold, string descKey, List<StatBuff> team, List<StatBuff> global = null, List<SynergyEffect> fx = null) =>
             new ClassSynergyTier
             {
                 threshold = threshold,
                 descTermKey = descKey,
                 teamBuffs = team ?? new List<StatBuff>(),
-                globalBuffs = global ?? new List<StatBuff>()
+                globalBuffs = global ?? new List<StatBuff>(),
+                synergyEffects = fx ?? new List<SynergyEffect>()
             };
+
+        private static List<SynergyEffect> FX(params SynergyEffect[] e) => new List<SynergyEffect>(e);
+
+        // Heal-on-event behavior. Magnitude is % of MaxHp. Repeat on every tier at/above unlock —
+        // GetActiveTier returns only the highest met tier, so effects don't stack across tiers.
+        private static SynergyEffect Heal(SynergyEffectKind kind, float pct) =>
+            new SynergyEffect { kind = kind, magnitude = pct };
 
         [MenuItem("Tools/Build-To-Spec/Author Unit Classes")]
         public static void Author()
@@ -42,12 +50,12 @@ namespace CapsuleWars.Editor
 
             int n = 0;
 
-            // 1 Barbarian — Bloodrage  (T4 +[code] heal-on-kill · T6 +[code] +15% Atk while <50% HP)
+            // 1 Barbarian — Bloodrage  (T4 +[code] heal-on-kill 5% · T6 +[code] +15% Atk while <50% HP, conditional deferred)
             n += Make("Barbarian", new[]
             {
                 Tier(2, "Class.Barbarian.Tier1.Desc", B(P(StatType.Atk, 12))),
-                Tier(4, "Class.Barbarian.Tier2.Desc", B(P(StatType.Atk, 25))),
-                Tier(6, "Class.Barbarian.Tier3.Desc", B(P(StatType.Atk, 40))),
+                Tier(4, "Class.Barbarian.Tier2.Desc", B(P(StatType.Atk, 25)), null, FX(Heal(SynergyEffectKind.HealOnKill, 5f))),
+                Tier(6, "Class.Barbarian.Tier3.Desc", B(P(StatType.Atk, 40)), null, FX(Heal(SynergyEffectKind.HealOnKill, 5f))),
             });
 
             // 2 Fighter — Flurry  (T6 +[code] every-3rd-hit-strikes-twice)
@@ -130,12 +138,12 @@ namespace CapsuleWars.Editor
                 Tier(6, "Class.Assassin.Tier3.Desc", B(P(StatType.CritRate, 15), P(StatType.CritDmg, 40))),
             });
 
-            // 12 Monk — Harmony  (heal-on-hit = [code] · T6 global +5% MaxHp team)
+            // 12 Monk — Harmony  (heal-on-hit 2% = [code], all tiers · T6 global +5% MaxHp team)
             n += Make("Monk", new[]
             {
-                Tier(2, "Class.Monk.Tier1.Desc", B(P(StatType.Atk, 10))),
-                Tier(4, "Class.Monk.Tier2.Desc", B(P(StatType.Atk, 15))),
-                Tier(6, "Class.Monk.Tier3.Desc", B(P(StatType.Atk, 15)), B(P(StatType.MaxHp, 5))),
+                Tier(2, "Class.Monk.Tier1.Desc", B(P(StatType.Atk, 10)), null, FX(Heal(SynergyEffectKind.HealOnHit, 2f))),
+                Tier(4, "Class.Monk.Tier2.Desc", B(P(StatType.Atk, 15)), null, FX(Heal(SynergyEffectKind.HealOnHit, 2f))),
+                Tier(6, "Class.Monk.Tier3.Desc", B(P(StatType.Atk, 15)), B(P(StatType.MaxHp, 5)), FX(Heal(SynergyEffectKind.HealOnHit, 2f))),
             });
 
             // 13 Crossbow — Pierce  (ignore-Def = [code]; T4/T6 add CritDmg [content])
@@ -173,7 +181,8 @@ namespace CapsuleWars.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"[ClassSetupTool] Authored/updated {n} UnitClass_SO assets under {Dir} (16-class roster, 2/4/6 ladder). " +
-                      "[content] stat tiers + globalBuffs filled verbatim from Docs/09; [code] behavioral tiers left as desc-only placeholders (BTS-E2).");
+                      "[content] stat tiers + globalBuffs verbatim from Docs/09; BTS-E2 wires synergyEffects (Barbarian heal-on-kill 5%, Monk heal-on-hit 2% — first-pass). " +
+                      "Remaining [code] tiers (armor-pen, ramps, conditionals, DoT/splash) await their combat-hook slices.");
         }
 
         private static int Make(string id, ClassSynergyTier[] tiers)

@@ -20,6 +20,7 @@ namespace CapsuleWars.Tests.EditMode
         private MockRegistry registry;
         private UnitClass_SO warriorClass;
         private UnitClass_SO wizardClass;
+        private readonly List<UnitClass_SO> extraClasses = new();
 
         [SetUp]
         public void Setup()
@@ -58,6 +59,8 @@ namespace CapsuleWars.Tests.EditMode
             spawned.Clear();
             Object.DestroyImmediate(warriorClass);
             if (wizardClass != null) Object.DestroyImmediate(wizardClass);
+            foreach (var c in extraClasses) if (c != null) Object.DestroyImmediate(c);
+            extraClasses.Clear();
         }
 
         [Test]
@@ -184,11 +187,74 @@ namespace CapsuleWars.Tests.EditMode
             Assert.AreEqual(wizDefBefore + 5, sw1.Def, "wizard should receive its globalBuff");
         }
 
+        [Test]
+        public void SynergyEffects_PushedToSink_WhenTierActive()
+        {
+            // BTS-E2: a threshold-2 tier granting HealOnKill 5% → pushed to every same-class unit's sink.
+            var healClass = ScriptableObject.CreateInstance<UnitClass_SO>();
+            extraClasses.Add(healClass);
+            SetField(healClass, "tiers", new List<ClassSynergyTier>
+            {
+                new ClassSynergyTier
+                {
+                    threshold = 2,
+                    synergyEffects = new List<SynergyEffect>
+                    {
+                        new SynergyEffect { kind = SynergyEffectKind.HealOnKill, magnitude = 5f }
+                    }
+                },
+            });
+
+            var (r1, _, sink1) = SpawnWithSink(Team.Player, healClass);
+            var (r2, _, sink2) = SpawnWithSink(Team.Player, healClass);
+            registry.Register(r1);
+            registry.Register(r2);
+
+            new SynergyResolver(registry).RecomputeSynergies();
+
+            Assert.AreEqual(1, sink1.Effects.Count, "tier active → one synergy effect pushed");
+            Assert.AreEqual(SynergyEffectKind.HealOnKill, sink1.Effects[0].kind);
+            Assert.AreEqual(5f, sink1.Effects[0].magnitude, 0.001f);
+            Assert.AreEqual(1, sink2.Effects.Count, "both same-class units receive the effect");
+        }
+
+        [Test]
+        public void SynergyEffects_NotPushed_BelowThreshold()
+        {
+            var healClass = ScriptableObject.CreateInstance<UnitClass_SO>();
+            extraClasses.Add(healClass);
+            SetField(healClass, "tiers", new List<ClassSynergyTier>
+            {
+                new ClassSynergyTier
+                {
+                    threshold = 2,
+                    synergyEffects = new List<SynergyEffect>
+                    {
+                        new SynergyEffect { kind = SynergyEffectKind.HealOnHit, magnitude = 2f }
+                    }
+                },
+            });
+
+            var (r1, _, sink1) = SpawnWithSink(Team.Player, healClass);
+            registry.Register(r1);   // lone unit → below threshold 2
+
+            new SynergyResolver(registry).RecomputeSynergies();
+
+            Assert.AreEqual(0, sink1.Effects.Count, "below threshold → sink cleared (no effects)");
+        }
+
         // -----------------------------------------------------------------
         // Helpers
         // -----------------------------------------------------------------
 
         private (UnitRoot, UnitStatusController) SpawnWarrior(Team team) => SpawnOf(team, warriorClass);
+
+        private (UnitRoot, UnitStatusController, RecordingSink) SpawnWithSink(Team team, UnitClass_SO cls)
+        {
+            var (root, status) = SpawnOf(team, cls);
+            var sink = root.gameObject.AddComponent<RecordingSink>();
+            return (root, status, sink);
+        }
 
         private (UnitRoot, UnitStatusController) SpawnOf(Team team, UnitClass_SO cls)
         {
@@ -210,6 +276,17 @@ namespace CapsuleWars.Tests.EditMode
             var field = target.GetType().GetField(fieldName,
                 BindingFlags.NonPublic | BindingFlags.Instance);
             field?.SetValue(target, value);
+        }
+
+        // Stand-in for AbilityController (the real ISynergyBehaviorSink) — records what the resolver pushes.
+        private sealed class RecordingSink : MonoBehaviour, ISynergyBehaviorSink
+        {
+            public readonly List<SynergyEffect> Effects = new();
+            public void SetSynergyEffects(IReadOnlyList<SynergyEffect> effects)
+            {
+                Effects.Clear();
+                if (effects != null) Effects.AddRange(effects);
+            }
         }
 
         private sealed class MockRegistry : ICombatRegistry

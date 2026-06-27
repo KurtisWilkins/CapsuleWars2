@@ -17,6 +17,7 @@ namespace CapsuleWars.Combat.Stats
         private readonly ICombatRegistry registry;
         private readonly Dictionary<(Team, UnitClass_SO), int> classCounts = new();
         private readonly Dictionary<UnitStatusController, List<StatBuff>> bufferBuilder = new();
+        private readonly Dictionary<ISynergyBehaviorSink, List<SynergyEffect>> behaviorBuilder = new();
 
         public SynergyResolver(ICombatRegistry registry)
         {
@@ -31,6 +32,7 @@ namespace CapsuleWars.Combat.Stats
 
             classCounts.Clear();
             bufferBuilder.Clear();
+            behaviorBuilder.Clear();
 
             // First pass: count live units per (team, class) and seed buffer for every status controller.
             var units = registry.Units;
@@ -46,6 +48,8 @@ namespace CapsuleWars.Combat.Stats
                 if (root == null || root.Status == null) continue;
 
                 bufferBuilder[root.Status] = new List<StatBuff>();
+                var seedSink = root.GetComponentInChildren<ISynergyBehaviorSink>(true);
+                if (seedSink != null) behaviorBuilder[seedSink] = new List<SynergyEffect>();
 
                 if (u.IsDowned) continue;
                 var cls = root.Status.UnitClass;
@@ -70,11 +74,19 @@ namespace CapsuleWars.Combat.Stats
                 var key = (u.Team, cls);
                 if (!classCounts.TryGetValue(key, out int count)) continue;
                 var tier = cls.GetActiveTier(count);
-                if (tier == null || tier.teamBuffs == null) continue;
+                if (tier == null) continue;
 
-                if (bufferBuilder.TryGetValue(root.Status, out var list))
+                if (tier.teamBuffs != null && bufferBuilder.TryGetValue(root.Status, out var list))
                 {
                     list.AddRange(tier.teamBuffs);
+                }
+
+                // [code] behavioral effects (Docs/09): granted to this same-class unit when its tier is active.
+                if (tier.synergyEffects != null && tier.synergyEffects.Count > 0)
+                {
+                    var sink = root.GetComponentInChildren<ISynergyBehaviorSink>(true);
+                    if (sink != null && behaviorBuilder.TryGetValue(sink, out var fx))
+                        fx.AddRange(tier.synergyEffects);
                 }
             }
 
@@ -101,10 +113,14 @@ namespace CapsuleWars.Combat.Stats
                 }
             }
 
-            // Push computed buffs to each status controller.
+            // Push computed buffs to each status controller, and [code] behaviors to each ability host.
             foreach (var kv in bufferBuilder)
             {
                 kv.Key.SetSynergyBuffs(kv.Value);
+            }
+            foreach (var kv in behaviorBuilder)
+            {
+                kv.Key.SetSynergyEffects(kv.Value);
             }
 
             OnRecomputed?.Invoke();

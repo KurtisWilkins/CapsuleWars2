@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using CapsuleWars.Core;
 using CapsuleWars.Data.Classes;
 using CapsuleWars.Data.Equipment;
 using CapsuleWars.Data.Units;
@@ -104,12 +105,18 @@ namespace CapsuleWars.Editor
         [MenuItem("Tools/Icons/Generate Body Part Icons (mesh render, direct)")]
         public static void GenerateBodyPartIconsDirect() => RenderDirect<BodyPart_SO>("BodyParts");
 
-        private static void RenderDirect<T>(string category) where T : ScriptableObject
+        // Heads only (slot == Head) — basic mesh-render icons for the sphere/capsule heads WITHOUT clobbering
+        // other parts' (possibly stylized) icons. Grok-stylize via the body-part mesh-stylized menu is the upgrade.
+        [MenuItem("Tools/Icons/Generate Head Icons (mesh render, direct)")]
+        public static void GenerateHeadIconsDirect() => RenderDirect<BodyPart_SO>("BodyParts", b => b.Slot == PartSlot.Head);
+
+        private static void RenderDirect<T>(string category, Func<T, bool> filter = null) where T : ScriptableObject
         {
             var assets = LoadAll<T>();
             int ok = 0, skip = 0;
             foreach (var a in assets)
             {
+                if (filter != null && !filter(a)) continue;
                 var png = RenderReference(a, save: false);
                 if (png == null) { skip++; Debug.LogWarning($"[IconGen] {category}/{a.name}: no renderable mesh — skipped."); continue; }
 

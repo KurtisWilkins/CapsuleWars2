@@ -6,6 +6,17 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-27 — BTS-G storage + grant: RunState inventory + LootGrant (main)
+**Did:** gave the loot core somewhere to drop into + a tested grant path. `RunState.Inventory`
+(`List<UnitEquipmentDTO>`) + `AddItem`/`RemoveItem`, mapped through `RunStateDTO` (additive — SaveVersion stays 2,
+old saves load empty), mirroring the party/recruits DTO pattern (id-based → round-trips without a DB).
+`LootGrant.GrantTo(state, table, seed)` (Run) rolls via `LootRoller`, converts each `EquipmentInstance` to a
+save-shaped `UnitEquipmentDTO`, adds it, returns the count — the reward hook calls this then `RunSession.Save()`.
++5 tests (inventory round-trip mapping+JSON, grant adds/determinism/null-safe). **236 green.** Commit b91f236.
+**Remaining BTS-G (Play-gated / editor):** `BattleNodeReturn` grant-on-win (read `CurrentNode.Type`; add
+`RunSession.Save()` — win path doesn't save today) + `EventPanel` treasure hook + authored per-node-type
+LootTable/RollConfig assets + 4 empty armor-slot items + customization bag reads OWNED items.
+
 ## 2026-06-27 — BTS-G loot core: LootTable_SO + LootRoller (main)
 **Did:** built the deterministic, layering-clean heart of the drop system. A multi-agent design + adversarial
 review caught that the original "everything in Data" plan was unbuildable (Data references only Core — it can't

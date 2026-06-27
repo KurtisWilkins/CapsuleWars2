@@ -34,15 +34,16 @@ Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slic
       `SynergyEffectKind` + the sink as each lands. HandGunner-T4 −10% Speed defers with its [code] dmg. Retire
       `Class_Warrior` placeholder once units carry roster classes (BTS-F). Heal-in-combat is Play-gated.
 - [ ] **BTS-F — ability move CONTENT [content].** Author `Ability_SO` move sets per class/weapon using the strategy classes.
-- [~] **BTS-G — equipment + loot system (rarity ×s + loot core done).** Rarity multipliers aligned to Docs/07
-      (1/1.25/1.5/2/3). **Loot generation core built (8394443, 231 green):** `LootTable_SO` (Data — weighted item
-      pool + weighted tier + `EquipmentRollConfig` ref; NO NodeType, that's Run) + deterministic
-      `LootRoller.Roll(table, seed)` reusing `EquipmentRoller`; +5 tests. **Remaining increment (per the BTS-G design
-      critique):** RunState loose inventory + RunStateDTO round-trip (UnitEquipmentDTO-shaped) + `BattleNodeReturn`
-      grant-on-win (read `RunSession.Current.CurrentNode.Type`; add `RunSession.Save()` — the win path doesn't save
-      today) + `EventPanel` Treasure hook; author per-node-type LootTable/RollConfig assets + the 4 empty armor-slot
-      items (Shoulders/Back/Arms/Legs) + fill blank rarity ids; customization bag must read OWNED items (today it lists
-      the whole catalog). Boss = gold-only (matches Docs/07).
+- [~] **BTS-G — equipment + loot system (EditMode foundation done: rarity ×s + generation + storage + grant).**
+      Rarity ×s aligned to Docs/07 (1/1.25/1.5/2/3). **Generation core (8394443):** `LootTable_SO` (Data — weighted
+      item pool + weighted tier + `EquipmentRollConfig` ref; NO NodeType, that's Run) + deterministic
+      `LootRoller.Roll(table, seed)` reusing `EquipmentRoller`. **Storage + grant (b91f236):** `RunState.Inventory`
+      (`List<UnitEquipmentDTO>`) + `RunStateDTO` round-trip (additive, SaveVersion 2) + `LootGrant.GrantTo(state,
+      table, seed)` (Run) rolls→DTO→AddItem. **236 green** (+13 BTS-G tests total). **Remaining (Play-gated / editor):**
+      `BattleNodeReturn` grant-on-win (read `CurrentNode.Type`, pick a per-type LootTable, `LootGrant` + **add
+      `RunSession.Save()`** — the win path doesn't save today) + `EventPanel` Treasure hook; author per-node-type
+      LootTable/RollConfig assets + the 4 empty armor-slot items (Shoulders/Back/Arms/Legs) + fill blank rarity ids;
+      customization bag must read OWNED items (today it lists the whole catalog). Boss = gold-only (Docs/07).
 - [ ] **BTS-H — EVOLUTION system [code] (newly in scope, ADR-028).** XP gained after each battle; stats evolve
       across floors/maps; evolution tiers drive the `Ability_SO` evolution-indexed strategy arrays + `EvolveEffect`
       + `ChangeSizeEffect`. (Also unblocks the deferred VFX/projectile effects when the VFX pipeline lands.)

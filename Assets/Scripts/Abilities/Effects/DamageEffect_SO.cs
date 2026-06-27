@@ -50,7 +50,7 @@ namespace CapsuleWars.Abilities
                     damage = Mathf.Max(1, Mathf.RoundToInt(damage * mult));
                 }
 
-                root.Health.TakeDamage(damage, ctx.Source);
+                root.Health.TakeDamage(damage, ctx.Source, DamageKind.Elemental);
             }
         }
     }

@@ -58,11 +58,14 @@ namespace CapsuleWars.Units.Controllers
         /// Apply damage from <paramref name="source"/>. Always deals at least
         /// 1 to avoid stalemates. No-op if already downed.
         /// </summary>
-        public void TakeDamage(int amount, IUnitRef source)
+        public void TakeDamage(int amount, IUnitRef source, DamageKind kind = DamageKind.Physical)
         {
             EnsureInitialized();
             if (IsDowned) return;
             int actual = Math.Max(1, amount);
+            // Behavioral statuses adjust the hit before HP drops (Marked/Frozen/Protected/Shield/LastStand).
+            if (status != null) actual = status.ModifyIncomingDamage(actual, kind, source);
+            actual = Math.Max(0, actual);
             CurrentHp = Math.Max(0, CurrentHp - actual);
 
             IUnitRef self = root;

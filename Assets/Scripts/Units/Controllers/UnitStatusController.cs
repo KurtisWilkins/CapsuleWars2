@@ -251,7 +251,7 @@ namespace CapsuleWars.Units.Controllers
             }
             if (amount < 0)
             {
-                health.TakeDamage(-amount, e.Source);
+                health.TakeDamage(-amount, e.Source, DamageKind.True);
             }
             else if (amount > 0 && !health.IsDowned)   // a HoT must NOT revive a downed unit (RestoreToPercent clears IsDowned)
             {
@@ -259,6 +259,45 @@ namespace CapsuleWars.Units.Controllers
                 float ratio = (float)newHp / Mathf.Max(1, MaxHp);
                 health.RestoreToPercent(ratio);
             }
+        }
+
+        // -----------------------------------------------------------------
+        // Damage pipeline — behavioral statuses (Docs/10 / BTS-B2)
+        // -----------------------------------------------------------------
+
+        /// <summary>
+        /// Let active status behaviors adjust an incoming damage amount BEFORE HP is reduced — Marked (+%),
+        /// Frozen (×physical), Protected (negate), Shield (absorb), LastStand (reduction). Called by
+        /// UnitHealthController.TakeDamage. Behaviors that ask to be consumed (Protected, spent Shield) are
+        /// removed here. No active behavior → returns the amount unchanged.
+        /// </summary>
+        public int ModifyIncomingDamage(int amount, DamageKind kind, IUnitRef source)
+        {
+            if (amount <= 0 || active.Count == 0) return amount;
+
+            int result = amount;
+            float hpFraction = (health != null && MaxHp > 0) ? (float)health.CurrentHp / MaxHp : 1f;
+            var ctx = new StatusDamageContext { Source = source, Kind = kind, TargetHpFraction = hpFraction };
+
+            for (int i = active.Count - 1; i >= 0; i--)
+            {
+                var e = active[i];
+                var behavior = e.Effect != null ? e.Effect.Behavior : null;
+                if (behavior == null) continue;
+
+                ctx.BehaviorValue = e.BehaviorValue;
+                ctx.Consume = false;
+                result = behavior.ModifyIncomingDamage(ctx, result);
+                e.BehaviorValue = ctx.BehaviorValue;
+
+                if (ctx.Consume)
+                {
+                    var expired = e.Effect;
+                    active.RemoveAt(i);
+                    OnStatusExpired?.Invoke(expired);
+                }
+            }
+            return Mathf.Max(0, result);
         }
 
         // -----------------------------------------------------------------
@@ -372,6 +411,7 @@ namespace CapsuleWars.Units.Controllers
         [NonSerialized] public IUnitRef Source;
         public float RemainingDuration;
         public float TickAccum;
+        public float BehaviorValue;   // per-instance behavior state (e.g. a Shield's remaining absorb pool)
 
         public ActiveStatusEffect(StatusEffect_SO effect, IUnitRef source, float duration)
         {
@@ -379,6 +419,7 @@ namespace CapsuleWars.Units.Controllers
             Source = source;
             RemainingDuration = duration;
             TickAccum = 0f;
+            BehaviorValue = effect != null ? effect.BehaviorMagnitude : 0f;
         }
     }
 }

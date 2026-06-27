@@ -83,7 +83,7 @@ namespace CapsuleWars.Units.Controllers
                 damage = Math.Max(1, (int)Math.Round(damage * mult));
             }
 
-            targetRoot.Health.TakeDamage(damage, root);
+            targetRoot.Health.TakeDamage(damage, root, DamageKind.Physical);
         }
     }
 }

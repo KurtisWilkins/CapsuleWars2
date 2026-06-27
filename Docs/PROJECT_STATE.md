@@ -10,7 +10,7 @@ _Last updated: 2026-06-25 — build-to-spec: Slice 1 + BTS-A (event triggers) + 
 |---|---|---|---|
 | **Elements** (Docs/08) | 15 types + 5×5 chart + dual rule | 15 + chart + multipliers + **dual-element rule (new)** | ✅ **complete to spec** |
 | **Abilities** (Docs/05) | ~30 strategy classes | 8 prior + 9 (targeting/filters/effects) + **8 triggers (BTS-A)** = 25; event-bus wiring done | ⏳ remaining: GetAttacker (BTS-A pt2), HighestThreat (needs dmg stat), BuffStat/KnockBack/Teleport/VFX/Evolve |
-| **Status** (Docs/10) | 24 effects | 1 authored; **stat getters + resistance bugs fixed (BTS-B1)** | ⏳ author 24 assets (BTS-D); 7 behavioral need the `StatusEffectBehavior` damage hook (BTS-B2) |
+| **Status** (Docs/10) | 24 effects | 1 authored; stat getters + resistance fixed (BTS-B1); **`StatusEffectBehavior` damage hook + 5 behaviors (BTS-B2)** | ⏳ author 24 assets (BTS-D) + wire the 5 behavior assets; no status carries a behavior yet (Play-gated) |
 | **Classes** (Docs/09 + roster) | 16 + tiers | **16 `WeaponClass_SO` (BTS-C) + 16 `UnitClass_SO` w/ [content] tiers + `globalBuffs` (BTS-E1)** | ⏳ BTS-E2: [code] behavioral tiers wire once status/effect/hook slices land; assign classes→units (BTS-F); retire `Class_Warrior` placeholder. No class on a live unit yet (Play-gated) |
 | **Equipment** (Docs/07) | 8 slots × 5 rarities | code ✅; 6 items (all Common) | ⏳ 4 empty slots, none above Common, no roll-config/loot assets, rarity ×s to align to doc |
 | **Evolution** (new, in scope) | XP/floor stat growth | — | ⏳ not started (gates EvolveEffect + evolution-indexed strategies) |
@@ -93,6 +93,9 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
   a filled slot unequips. Gear → `UnitStatusController.Equip`; body parts → `UnitCustomization.ApplyParts`; both
   persist (`dto.Equipment` + `dto.Parts`, the latter only when a part was edited). `UnitEquipmentVisuals` still
   shows equipped meshes on sockets, live + on combat units. **Assemble + wire per `Docs/CHECKLIST_PaperDoll.md`.**
+  Preview occlusion fixed (ADR-032); **preview rig (ADR-034) code-complete** — re-run `Tools/Paper-Doll/Build In
+  Open Scene` to switch the preview from in-world to a PreviewUnit-layer camera → RenderTexture → centre RawImage
+  (Play-verify pending, item 4b).
 - **Asset Creation Pipeline (editor-only, `Assets/Scripts/Editor/AssetPipeline/`):** `AssetRequest` queue with a
   Lifecycle (Active/Archived/Rejected); the Asset Pipeline window (stage groups; Grok/Meshy prompt copy + live
   Generate; paste image/model; Create/Wire item; archive/reject/restore; mirror sided parts); `StyleProfile` +
@@ -160,6 +163,16 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
    `UnitInspectionPanel`; equipping a **body part from the Body bag tab**; and the **persistence round-trip**
    (gear + body-part edits survive Close + reopen + show on the combat unit). Note: starter items currently carry
    no stat modifiers, so equipping them doesn't move the numbers (content, not a UI bug).
+4b. **Customization preview RIG (ADR-034) — code-complete, NOT yet verified (Unity bridge was offline).** First run
+   `run_tests` (expect 216/216) + confirm the two changed files compile, then **`Tools/Paper-Doll/Build In Open
+   Scene`** (creates the `PreviewUnit` layer + `CustomizationPreviewRT` asset + a `PaperDoll_PreviewRig`, adds a
+   centre `RawImage`, re-wires `previewAnchor`, and clears the layer from the map camera) and **save the scene**.
+   Then Play-verify in `Test_M7_Map`: open the paper-doll → the unit renders inside the centre RawImage against a
+   dark background (not against the map); equipping gear/body parts updates the preview; the map camera no longer
+   shows a stray unit; drag-drop onto the doll still works. **Tune by eye:** if framing is off, adjust the camera
+   `localPosition`/`fieldOfView` in `PaperDollBuilder.BuildPreviewRig` and re-run. Lighting is the scene sun for now
+   (dedicated preview light deferred — tell me if it looks flat/dark). If the preview is missing entirely, check the
+   console for a "skipping the rig" warning (no free user layer).
 5. **Equipment rolled item** — roll one (`EquipmentRoller.Roll(def, rollConfig, tier, seed)`), equip it →
    inspection shows its stats + generated name while the mesh attaches; a starter/old item keeps stats after load.
 6. **Mirror equip** — equip a mirrored (opposite-side) part and confirm it shows on the correct side.

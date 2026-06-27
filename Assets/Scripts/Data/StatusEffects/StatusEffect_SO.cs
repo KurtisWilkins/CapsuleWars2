@@ -71,6 +71,14 @@ namespace CapsuleWars.Data.StatusEffects
         [Tooltip("Blocks ability casts only (basic attacks still work). (Silenced.)")]
         [SerializeField] private bool preventsAbilities = false;
 
+        [Header("Custom Behavior (Docs/10 — the complex statuses)")]
+        [Tooltip("Optional custom damage-pipeline logic (Marked/Frozen/Protected/Shield/LastStand). Consulted by " +
+                 "UnitStatusController.ModifyIncomingDamage before HP is reduced.")]
+        [SerializeField] private StatusEffectBehavior behaviorSO;
+
+        [Tooltip("Seeds the behavior's per-instance state on apply (e.g. a Shield's absorb pool).")]
+        [SerializeField] private float behaviorMagnitude = 0f;
+
         public string StatusId => statusId;
         public string NameTermKey => nameTermKey;
         public string DescTermKey => descTermKey;
@@ -88,5 +96,7 @@ namespace CapsuleWars.Data.StatusEffects
         public bool PreventsAction => preventsAction;
         public bool PreventsMovement => preventsMovement;
         public bool PreventsAbilities => preventsAbilities;
+        public StatusEffectBehavior Behavior => behaviorSO;
+        public float BehaviorMagnitude => behaviorMagnitude;
     }
 }

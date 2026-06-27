@@ -6,6 +6,16 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-26 — BTS-B2: status behavioral damage hook (ADR-035)
+**Did:** built the `StatusEffectBehavior` custom-SO hook (the complex status mechanism). New Core `DamageKind`
+(Physical/Elemental/True); `UnitHealthController.TakeDamage(amount, source, kind=Physical)` now consults
+`UnitStatusController.ModifyIncomingDamage` before reducing HP — it walks active statuses, lets each behavior
+adjust the amount, removes consumed ones. 5 behaviors: Marked (+25%), Frozen (×1.5 physical), Protected (negate +
+consume), Shield (absorb pool, deplete), LastStand (reduce <20% HP). `StatusEffect_SO` +behaviorSO/behaviorMagnitude;
+`ActiveStatusEffect` +BehaviorValue. Callers pass kind (attack→Physical, ability→Elemental, DoT→True). Layering:
+hook in Data, context Core/Data-only. **224/224 green** (+8 tests). Unblocks BTS-D (7 behavioral statuses) + BTS-E2.
+**Next:** BTS-D authors the 24 status assets (wire the 5 behavior assets to Marked/Frozen/Protected/Shield/LastStand).
+
 ## 2026-06-26 — Icons FINAL: equipment/body-parts render → Grok-stylize (flat-emblem)
 **Did:** unblocked the render→stylize path (the intended approach): fixed `GrokImageService.EditAsync` — xAI
 `/v1/images/edits` wants `image` as an object `{url, type:"image_url"}` (base64 data URI ok), not a bare string

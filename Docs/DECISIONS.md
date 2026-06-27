@@ -594,4 +594,53 @@ tool). Generation itself is **paid + eye-verified** — Claude can't see the ico
 the user runs the sweep and judges quality. Widget consumption of `BodyPart.Icon` (bag/slots) is the remaining
 wiring (gear already reads `Icon`); tracked with #91.
 
+### ADR-034 — Customization preview rig: PreviewUnit-layer camera → RenderTexture → RawImage (implements ADR-032's deferred clean version)
+**Decided:** replace the fragile "in-world unit shown through a transparent overlay panel" preview with an isolated
+render-to-texture rig. The paper-doll spawns its preview unit onto a dedicated **`PreviewUnit`** layer; a dedicated
+**preview Camera** (culling mask = that layer only, solid dark background, framed on the unit) renders to a
+**RenderTexture** (`Assets/Data/Customization/CustomizationPreviewRT.renderTexture`) shown in a **`RawImage`** in the
+panel centre; the **map camera's culling mask excludes** the layer. **Why:** the in-world preview rendered the unit at
+world-origin against whatever the map camera happened to show, so framing/background/lighting were uncontrolled and
+depended on the map camera's transform — fragile and ugly. The RT rig isolates the preview from the map scene and gives
+controllable framing + a fixed background. This is exactly the "clean version" ADR-032 explicitly deferred (it fixed
+the blocker — the opaque `UIThemeApplier` background — but left the in-world preview against the map backdrop).
+**Built:** `PaperDollBuilder` (`Tools/Paper-Doll/Build In Open Scene`) now also (1) ensures the `PreviewUnit` layer
+exists (TagManager via `SerializedObject`; reuses it or claims a free user slot 8-31; on failure returns -1 and the
+rig is **skipped**, keeping the ADR-032 in-world preview — it never falls back to Default, which would blank the main
+camera); (2) creates the RenderTexture asset; (3) (re)builds an idempotent `PaperDoll_PreviewRig` (anchor + camera,
+parked at y=1000 — the culling mask is what really isolates it); (4) builds + wires the centre `RawImage` (texture =
+RT, `raycastTarget=false` so drops still reach the panel-root drop zone, created first so it renders behind the
+overlapping Stats button); (5) wires `CustomizationScreen.previewAnchor` to the rig anchor and clears the layer from
+`Camera.main`'s mask. `CustomizationScreen` propagates the anchor's layer onto the spawned unit + its lazily-added
+equipment/body meshes (re-applied each `RefreshAll`). **Backward-compatible:** until the builder is re-run the anchor
+sits on Default, so the unit renders in-world exactly as ADR-032 — the rig only activates after a build.
+**Deferred follow-ups:** dedicated preview *lighting* (skipped to avoid URP double-lighting the map; the preview unit
+is lit by the existing scene sun for now); making the panel background *opaque* now that see-through is no longer
+needed; *disabling* the preview camera while the panel is closed (currently always-on — cheap, an empty layer).
+**Status:** code done; **NOT compile/Play-verified by Claude** (Unity bridge offline this session; RT/overlay UI
+isn't visible over the user's remote setup). To land: `run_tests` (expect 216/216 — change is additive, no test
+touched), then `Tools/Paper-Doll/Build In Open Scene`, **save the scene**, and Play-verify: open the paper-doll →
+the unit renders in the centre RawImage against the dark background; equipping gear/body parts updates the preview;
+framing looks right (tune `BuildPreviewRig` camera `localPosition`/`fieldOfView` by eye); the map camera no longer
+shows the preview unit; drag-drop onto the doll still works (the RawImage doesn't block it).
+
+### ADR-035 — Status behavioral damage hook: `StatusEffectBehavior` + `ModifyIncomingDamage` (BTS-B2)
+**Decided:** the damage-pipeline behavioral statuses (Docs/10) work through a custom-SO hook (the "complex
+mechanism" the design owner chose to keep, not a stat-fold shortcut). A new abstract `StatusEffectBehavior`
+ScriptableObject (`Data.StatusEffects`) exposes `ModifyIncomingDamage(StatusDamageContext, int) → int`;
+`StatusEffect_SO` gains an optional `behaviorSO` + a `behaviorMagnitude` seed. `UnitHealthController.TakeDamage`
+now takes a **`DamageKind`** (new Core enum: Physical / Elemental / True = basic attacks / abilities / DoT) and,
+before reducing HP, calls `UnitStatusController.ModifyIncomingDamage`, which walks the unit's active statuses,
+lets each behavior adjust the running amount, then removes any that ask to be consumed.
+**Layering:** the hook lives in Data (below Units), so the context carries only Core/Data types — `IUnitRef`,
+`DamageKind`, the target's pre-hit HP fraction, and an in/out `BehaviorValue` (per-instance state, e.g. a Shield's
+remaining absorb — stored on `ActiveStatusEffect`, threaded through the context). Behaviors never reference Units.
+**The 5 behaviors (code; assets authored in BTS-D):** Marked (+25% from all), Frozen (×1.5 **Physical only**),
+Protected (negate next hit + self-consume), Shield (absorb a flat pool, deplete, remove when spent), LastStand
+(reduce damage below an HP threshold — the +Atk half is a separate conditional stat buff, deferred). First-pass numbers.
+**Open/tuning:** multiple simultaneous behaviors compose by simple list-iteration (not sorted) — fine for 1–2
+statuses; DoT ticks pass through as `True` (Marked amps, Frozen doesn't), and Protected/Shield can be spent by a
+DoT tick (acceptable, flagged). **Status:** code + 8 tests, **224/224 EditMode green**. Unblocks BTS-D's 7
+behavioral statuses + the [code] behavioral class-synergy tiers (BTS-E2). No status carries a behavior asset yet → Play-gated.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

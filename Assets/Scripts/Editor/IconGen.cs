@@ -321,19 +321,21 @@ namespace CapsuleWars.Editor
                 if (mat == null) mat = FallbackMat;
 
                 Bounds bounds;
+                Vector3 center;
                 if (prefab != null)
                 {
                     temp = UnityEngine.Object.Instantiate(prefab);
                     temp.transform.SetPositionAndRotation(Vector3.zero, rot);
-                    bounds = CalcRendererBounds(temp);
+                    bounds = CalcRendererBounds(temp);   // measured in the rotated pose → center already correct
                     pru.AddSingleGO(temp);
+                    center = bounds.center;
                 }
                 else
                 {
-                    bounds = mesh.bounds;
+                    bounds = mesh.bounds;                // local, un-rotated
+                    center = rot * bounds.center;        // the mesh is DRAWN rotated about the origin (DrawMesh below), so the framed center must follow it
                 }
 
-                Vector3 center = bounds.center;
                 float radius = Mathf.Max(bounds.extents.magnitude, 0.1f);
                 float dist = radius / Mathf.Sin(Mathf.Deg2Rad * cam.fieldOfView * 0.5f) * 1.3f;
                 Vector3 viewDir = (Quaternion.Euler(18f, -28f, 0f) * Vector3.forward).normalized;

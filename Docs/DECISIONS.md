@@ -643,4 +643,23 @@ statuses; DoT ticks pass through as `True` (Marked amps, Frozen doesn't), and Pr
 DoT tick (acceptable, flagged). **Status:** code + 8 tests, **224/224 EditMode green**. Unblocks BTS-D's 7
 behavioral statuses + the [code] behavioral class-synergy tiers (BTS-E2). No status carries a behavior asset yet → Play-gated.
 
+### ADR-036 — Behavioral class-synergy tiers via granted effects + an ability-host sink (BTS-E2)
+**Decided:** a `ClassSynergyTier` can now grant **behavioral [code] effects**, not only StatBuffs. Rather than a
+parallel event system, the behaviors reuse the existing ability/event stack: `AbilityController` already subscribes
+to the battle event bus (BTS-A) with self-checked `OnKill`/`OnDamageDealt` handlers, so it hosts the synergy heals.
+**Seam:** `Core/SynergyEffect.cs` adds `SynergyEffectKind {HealOnKill, HealOnHit}`, a `SynergyEffect {kind, magnitude}`
+struct, and an `ISynergyBehaviorSink` interface — all in **Core**, so `SynergyResolver` (Combat) pushes effects to each
+unit via `GetComponentInChildren<ISynergyBehaviorSink>()` **without Combat referencing the Abilities assembly**.
+`AbilityController` implements the sink; its kill/hit handlers heal `magnitude%` of MaxHp. No new component, no prefab change.
+**Resolver:** `behaviorBuilder` is seeded per-unit in pass 1 (so units whose tier deactivates get cleared) and filled
+in pass 2 from the unit's own active tier (same-class, like `teamBuffs`), then pushed alongside the buffs.
+**Content:** Barbarian heal-on-kill 5% (T4 + T6), Monk heal-on-hit 2% (all tiers). Effects are **repeated on every
+tier at/above unlock** because `GetActiveTier` returns only the highest met tier (no cross-tier stacking). Heal
+magnitudes are **first-pass** — the roster specifies the trigger, not the %.
+**Scope/deferred:** only the two heal kinds are wired. The other [code] tiers (armor-pen / ignore-Def, atk-speed
+ramps, HP-conditional buffs, DoT/splash, strike-first, double-shot, reposition, pierce, backline-open) need combat
+mechanics that don't exist yet (Def-in-damage, attack-cadence hooks, conditional-stat layer) — extend `SynergyEffectKind`
++ the sink as those land. **Status:** code + 2 resolver tests (push when active / clear below threshold), **226/226
+EditMode green**. Heal-in-combat is **Play-gated** (needs a live battle with kills/hits).
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

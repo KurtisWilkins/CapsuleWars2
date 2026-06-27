@@ -3,7 +3,7 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-25 — build-to-spec: Slice 1 + BTS-A (event triggers) + BTS-B1 (status stat getters + resistance fixes); 215 green._
+_Last updated: 2026-06-27 — build-to-spec: Slice 1 + BTS-A/B1/B2/C/D/E1 done; BTS-E2 infra + heal synergies (ADR-036) + BTS-G rarity ×s aligned; 226 EditMode green._
 
 ## Content completeness vs design docs (build-to-spec, ADR-028)
 | Category | Spec | Built | Status |
@@ -11,8 +11,8 @@ _Last updated: 2026-06-25 — build-to-spec: Slice 1 + BTS-A (event triggers) + 
 | **Elements** (Docs/08) | 15 types + 5×5 chart + dual rule | 15 + chart + multipliers + **dual-element rule (new)** | ✅ **complete to spec** |
 | **Abilities** (Docs/05) | ~30 strategy classes | 8 prior + 9 (targeting/filters/effects) + **8 triggers (BTS-A)** = 25; event-bus wiring done | ⏳ remaining: GetAttacker (BTS-A pt2), HighestThreat (needs dmg stat), BuffStat/KnockBack/Teleport/VFX/Evolve |
 | **Status** (Docs/10) | 24 effects | **24 `StatusEffect_SO` + 5 behaviors authored & wired (BTS-D)**; damage hook (BTS-B2); getters/resistance (BTS-B1) | ✅ content complete; [code] follow-ups: Unlucky ÷2-crit/roll-skew, Madness targeting, LastStand +Atk/one-time. Not yet applied by any ability (BTS-F) |
-| **Classes** (Docs/09 + roster) | 16 + tiers | **16 `WeaponClass_SO` (BTS-C) + 16 `UnitClass_SO` w/ [content] tiers + `globalBuffs` (BTS-E1)** | ⏳ BTS-E2: [code] behavioral tiers wire once status/effect/hook slices land; assign classes→units (BTS-F); retire `Class_Warrior` placeholder. No class on a live unit yet (Play-gated) |
-| **Equipment** (Docs/07) | 8 slots × 5 rarities | code ✅; 6 items (all Common) | ⏳ 4 empty slots, none above Common, no roll-config/loot assets, rarity ×s to align to doc |
+| **Classes** (Docs/09 + roster) | 16 + tiers | **16 `WeaponClass_SO` (BTS-C) + 16 `UnitClass_SO` w/ [content] tiers + `globalBuffs` (BTS-E1) + BTS-E2 heal synergies (Barbarian heal-on-kill, Monk heal-on-hit; ADR-036)** | ⏳ BTS-E2 remaining [code] kinds (armor-pen, ramps, conditionals…) await combat hooks; assign classes→units (BTS-F); retire `Class_Warrior` placeholder. No class on a live unit yet (Play-gated) |
+| **Equipment** (Docs/07) | 8 slots × 5 rarities | code ✅; 6 items (all Common); **rarity ×s aligned to Docs/07 (1/1.25/1.5/2/3, BTS-G)** | ⏳ 4 empty slots, none above Common, no roll-config/loot assets, blank rarity ids, `LootTable_SO` not built |
 | **Evolution** (new, in scope) | XP/floor stat growth | — | ⏳ not started (gates EvolveEffect + evolution-indexed strategies) |
 
 ## One-line status
@@ -39,7 +39,7 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
   branches (ADR-020). `claude/deployment-grid` was pruned (local + remote). The remote still keeps
   `claude/capsule-wars-setup-pBoDq` (an old setup branch, fully contained in `main` — prunable).
 - Rollback point: tag **`pre-trunk-main`** (`852a520`, pushed) = `main` before the consolidation fast-forward.
-- Tests: `Assets/Scripts/Tests/EditMode/` — **215 green**. Run `run_tests` after any C# change.
+- Tests: `Assets/Scripts/Tests/EditMode/` — **226 green**. Run `run_tests` after any C# change.
 
 ## What currently works
 - Milestone base through ~M9 (draft → battle → recruit; combat, abilities, elements, synergies, status, stats;

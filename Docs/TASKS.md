@@ -25,14 +25,19 @@ Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slic
 - [x] **BTS-E1 — `globalBuffs` + 16 classes [content] (done).** Added `ClassSynergyTier.globalBuffs` + 3rd
       `SynergyResolver` pass + test; `ClassSetupTool` authored 16 `UnitClass_SO` (2/4/6 ladder, roster verbatim) with
       the [content] stat tiers + globalBuffs (Paladin fully). 216 green.
-- [ ] **BTS-E2 — [code] behavioral synergy tiers.** Wire the desc-only placeholder tiers (armor-pen, DoT/splash,
-      on-hit/kill heal, atk-speed ramps, front-row/low-HP conditionals, ability-dmg %, healing-power, team regen,
-      strike-first, double-shot, reposition, pierce, backline-open) as ability-effect/status/combat-hook strategies.
-      Gated by BTS-B2 (damage hook), BTS-D (statuses), BTS-F (ability sets). Also HandGunner-T4's −10% Speed (defer
-      with its [code] dmg). Retire/repoint `Class_Warrior` placeholder once units carry roster classes (BTS-F).
+- [~] **BTS-E2 — [code] behavioral synergy tiers (INFRA + heals done, ADR-036; 226 green).** Built the grant-effect
+      infra: `ClassSynergyTier.synergyEffects` (Core `SynergyEffect`/`SynergyEffectKind`) pushed by `SynergyResolver`
+      to each unit's `ISynergyBehaviorSink` (= `AbilityController`, reusing its event handlers). Wired **heal-on-kill**
+      (Barbarian 5%) + **heal-on-hit** (Monk 2%). **Remaining [code] kinds** need combat mechanics that don't exist yet:
+      armor-pen/ignore-Def (no Def-in-damage), atk-speed ramps (no attack-cadence hook), front-row/low-HP conditionals
+      (no conditional-stat layer), DoT/splash, strike-first, double-shot, reposition, pierce, backline-open — extend
+      `SynergyEffectKind` + the sink as each lands. HandGunner-T4 −10% Speed defers with its [code] dmg. Retire
+      `Class_Warrior` placeholder once units carry roster classes (BTS-F). Heal-in-combat is Play-gated.
 - [ ] **BTS-F — ability move CONTENT [content].** Author `Ability_SO` move sets per class/weapon using the strategy classes.
-- [ ] **BTS-G — equipment content [content].** Items across slots×rarities; `EquipmentRollConfig` + `LootTable_SO`
-      assets; align rarity ×s to Docs/07 (1/1.25/1.5/2/3); fill blank ids; update stale Docs/07 data-model section.
+- [~] **BTS-G — equipment content [content] (rarity ×s done).** Rarity multipliers aligned to Docs/07
+      (1/1.25/1.5/2/3: Uncommon 1.5→1.25, Rare 2→1.5, Epic 2.5→2). **Remaining:** items across slots×rarities;
+      `EquipmentRollConfig` + `LootTable_SO` assets (LootTable_SO not yet a class); fill blank rarity ids
+      (`rarityId`/`nameTermKey` empty on all 5); update stale Docs/07 data-model section (now instance-based, ADR-019).
 - [ ] **BTS-H — EVOLUTION system [code] (newly in scope, ADR-028).** XP gained after each battle; stats evolve
       across floors/maps; evolution tiers drive the `Ability_SO` evolution-indexed strategy arrays + `EvolveEffect`
       + `ChangeSizeEffect`. (Also unblocks the deferred VFX/projectile effects when the VFX pipeline lands.)

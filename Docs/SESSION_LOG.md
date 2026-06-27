@@ -6,6 +6,21 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-27 — BTS-G loot core: LootTable_SO + LootRoller (main)
+**Did:** built the deterministic, layering-clean heart of the drop system. A multi-agent design + adversarial
+review caught that the original "everything in Data" plan was unbuildable (Data references only Core — it can't
+reach Run/Persistence). Corrected: `LootTable_SO` (Data — weighted item pool + weighted tier + `EquipmentRollConfig`
+ref; carries NO `NodeType`, since that's a Run type) + `LootRoller.Roll(table, seed)` → `List<EquipmentInstance>`,
+fully deterministic (count/item/tier/per-item seed all from one `System.Random`), delegating the stat roll to
+`EquipmentRoller`; produces instances but never stores them (the Run reward hook grants + saves). +5 EditMode tests
+(determinism, count within [min,max], empty/zero/null graceful, weighted tier). **231 green.** Commit 8394443.
+**Next increment:** RunState loose inventory + RunStateDTO round-trip + `BattleNodeReturn` grant-on-win (reads
+`CurrentNode.Type`; must add `RunSession.Save()` — the win path doesn't save today) + `EventPanel` Treasure hook +
+authored per-node-type LootTable/RollConfig assets + 4 empty armor-slot items + customization bag reads OWNED items.
+
+> Note: the Head-as-part-type feature (Slices 1–3 + icons, ADR-037, 233 green) is on branch
+> `claude/head-part-type`, awaiting a Play pass; see its own log entries + PROJECT_STATE item 0.
+
 ## 2026-06-26 — BTS-D: author 24 status effects + 5 behavior assets
 **Did:** `StatusSetupTool` (`Tools/Build-To-Spec/Author Status Effects`, idempotent) authored all 24
 `StatusEffect_SO` (Docs/10) under `Assets/Data/StatusEffects/` + the 5 BTS-B2 behavior assets under `Behaviors/`,

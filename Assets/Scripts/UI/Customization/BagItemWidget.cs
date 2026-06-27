@@ -36,7 +36,7 @@ namespace CapsuleWars.UI.Customization
         public bool IsGear => gear != null;
         public Equipment_SO Gear => gear;
         public BodyPart_SO Part => part;
-        public Sprite Icon => gear != null ? gear.Icon : null;
+        public Sprite Icon => gear != null ? gear.Icon : (part != null ? part.Icon : null);
         public string Label { get; private set; }
 
         public void ConfigureGear(CustomizationScreen owner, Equipment_SO item, string text)
@@ -48,7 +48,7 @@ namespace CapsuleWars.UI.Customization
         public void ConfigureBody(CustomizationScreen owner, BodyPart_SO bodyPart, string text)
         {
             screen = owner; part = bodyPart; gear = null; Label = text;
-            Build(null, text);
+            Build(bodyPart != null ? bodyPart.Icon : null, text);
         }
 
         public void SetThemeColors(Color normal, Color equipped)

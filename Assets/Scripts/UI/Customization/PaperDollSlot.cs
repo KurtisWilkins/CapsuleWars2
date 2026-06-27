@@ -109,13 +109,20 @@ namespace CapsuleWars.UI.Customization
             ApplyTint();
         }
 
-        /// <summary>Show an equipped body part (name only — parts have no icon) or the placeholder.</summary>
-        public void SetBody(string text, bool isFilled)
+        /// <summary>Show an equipped body part (icon + fallback name) or clear to the placeholder.</summary>
+        public void SetBody(Sprite sprite, string text, bool isFilled)
         {
             filled = isFilled;
-            icon.enabled = false;
-            label.text = isFilled ? text : "";
-            label.enabled = isFilled;
+            if (isFilled && sprite != null)
+            {
+                icon.sprite = sprite; icon.enabled = true; label.enabled = false;
+            }
+            else
+            {
+                icon.enabled = false;
+                label.text = isFilled ? text : "";
+                label.enabled = isFilled;
+            }
             ApplyTint();
         }
 

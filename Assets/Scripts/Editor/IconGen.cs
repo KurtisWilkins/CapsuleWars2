@@ -270,7 +270,7 @@ namespace CapsuleWars.Editor
             else if (so is BodyPart_SO b) { mesh = b.Mesh; mats = b.DefaultMaterials?.ToArray(); }
             if (prefab == null && mesh == null) return null;
 
-            byte[] png = RenderToPng(prefab, mesh, mats, 512);
+            byte[] png = RenderToPng(prefab, mesh, mats, RotationFor(so.name), 512);
             if (save && png != null)
             {
                 string folder = AssetPipelineImporter.EnsureFolder(RefsRoot);
@@ -281,12 +281,23 @@ namespace CapsuleWars.Editor
             return png;
         }
 
+        // Per-item orientation fixes — some meshes' "front" isn't toward the default 3/4 camera (e.g. a helmet
+        // rendered facing away). Euler degrees applied to the item before framing; tune per item as needed.
+        private static readonly Dictionary<string, Vector3> RotOverride = new()
+        {
+            { "Equip_StarterHelm", new Vector3(0f, 180f, 0f) },
+            { "TestHelmet",        new Vector3(0f, 180f, 0f) },
+        };
+
+        private static Quaternion RotationFor(string name) =>
+            RotOverride.TryGetValue(name, out var e) ? Quaternion.Euler(e) : Quaternion.identity;
+
         private static Material _fallbackMat;
         private static Material FallbackMat =>
             _fallbackMat != null ? _fallbackMat :
             (_fallbackMat = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard")));
 
-        private static byte[] RenderToPng(GameObject prefab, Mesh mesh, Material[] mats, int size)
+        private static byte[] RenderToPng(GameObject prefab, Mesh mesh, Material[] mats, Quaternion rot, int size)
         {
             var pru = new PreviewRenderUtility();
             GameObject temp = null;
@@ -310,7 +321,7 @@ namespace CapsuleWars.Editor
                 if (prefab != null)
                 {
                     temp = UnityEngine.Object.Instantiate(prefab);
-                    temp.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                    temp.transform.SetPositionAndRotation(Vector3.zero, rot);
                     bounds = CalcRendererBounds(temp);
                     pru.AddSingleGO(temp);
                 }
@@ -328,7 +339,7 @@ namespace CapsuleWars.Editor
 
                 pru.BeginStaticPreview(new Rect(0, 0, size, size));
                 if (prefab == null && mesh != null)
-                    pru.DrawMesh(mesh, Matrix4x4.identity, mat, 0);
+                    pru.DrawMesh(mesh, Matrix4x4.TRS(Vector3.zero, rot, Vector3.one), mat, 0);
                 cam.Render();
                 var tex = pru.EndStaticPreview();
                 return tex != null ? tex.EncodeToPNG() : null;

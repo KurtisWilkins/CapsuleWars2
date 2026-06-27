@@ -184,6 +184,7 @@ namespace CapsuleWars.UI.Customization
 
             status = preview != null ? preview.Status : null;
             Subscribe();
+            ApplyPreviewLayer();
         }
 
         private void Subscribe()
@@ -385,6 +386,7 @@ namespace CapsuleWars.UI.Customization
             RefreshSlots();
             RefreshBagHighlights();
             RefreshStats();
+            ApplyPreviewLayer();
         }
 
         private void RefreshSlots()
@@ -404,7 +406,7 @@ namespace CapsuleWars.UI.Customization
             {
                 var slot = bodySlots[i];
                 var part = custom != null ? FindAppliedPart(custom, slot.BodySlot) : null;
-                slot.SetBody(part != null ? PartName(part) : "", part != null);
+                slot.SetBody(part != null ? part.Icon : null, part != null ? PartName(part) : "", part != null);
             }
         }
 
@@ -511,6 +513,25 @@ namespace CapsuleWars.UI.Customization
 
         private UnitCustomization PreviewCustom =>
             preview != null ? preview.GetComponentInChildren<UnitCustomization>() : null;
+
+        // Put the preview unit — and any equipment/body meshes added lazily on equip — onto the preview
+        // rig's layer so the dedicated preview Camera renders it to the RawImage (ADR-034). Re-applied
+        // after every change because those child meshes are spawned on demand. Backward-compatible: when
+        // no rig has been built the anchor sits on the Default layer, so this is a no-op and the unit
+        // renders in-world exactly as before (ADR-032).
+        private void ApplyPreviewLayer()
+        {
+            if (preview == null || previewAnchor == null) return;
+            SetLayerRecursively(preview.gameObject, previewAnchor.gameObject.layer);
+        }
+
+        private static void SetLayerRecursively(GameObject go, int layer)
+        {
+            if (go.layer != layer) go.layer = layer;
+            var t = go.transform;
+            for (int i = 0; i < t.childCount; i++)
+                SetLayerRecursively(t.GetChild(i).gameObject, layer);
+        }
 
         private EquippedItem? FindEquipped(EquipmentSlot slot)
         {

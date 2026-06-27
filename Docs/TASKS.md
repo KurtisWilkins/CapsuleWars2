@@ -10,14 +10,17 @@
       `Head=6` appended; `Head_Sphere` BodyPart_SO starter (`HeadSetupTool`); `Mount_Head_Sphere` under `B_Head` +
       Head SlotMount + `HeadPreviewTuner` (`HeadPrefabWiringTool`); SlotMount fallback = never-headless; re-anchored
       `Socket_Helmet`/`Mount_Head`. Play-gated visual checks in PROJECT_STATE item 0.
-- [ ] **Head Slice 2 — generatable heads [code+content].** `PartType.Head` (PartTemplate.cs, append) +
-      `StyleComposer.PartTypeFor` case + `StyleSetupTool` Head template seeder (floating-sphere criteria, empty
-      limbCut); importer already handles a Head category via the slot-folder convention; run IconGen for the head.
-      Keep Head OUT of `MirrorUtil`. ~3–4 code files + 1 template + 1 example variant + icon.
-- [ ] **Head Slice 3 — Head as a swap slot in the customization screen [verify + tiny code].** No new swap/persist
-      code (path is generic over PartSlot). Verify the Head PaperDollSlot + bag head variants appear, tap/drag equip,
-      persist round-trips; unequip honors the mandatory-head default. Optional: itemize Head in `UnitInspectionPanel`.
-      [decision] unlock-gate Head variants? (pre-existing: `AvailableParts` ignores ownership for ALL parts).
+- [x] **Head Slice 2 — generatable heads (done, 232 green).** `PartType.Head=8` (append) + `StyleComposer.PartTypeFor`
+      case + `StyleSetupTool` Head template (`PartTemplate_Head.asset`); importer needs no change (slot-folder
+      convention). Example variant `Head_Capsule` (non-starter) proves the version hook. Head kept OUT of `MirrorUtil`.
+      Self-verified over the bridge. **Remaining (content, need the editor API flow):** Meshy-generated in-style head +
+      Grok icon-stylize for the head; per-class variants (task below).
+- [ ] **Head Slice 3 — Head as a swap slot in the customization screen [verify + tiny code].** **Data-ready** (verified:
+      prefab MountedSlots includes Head; catalog surfaces head_sphere + head_capsule). No new swap/persist code (path is
+      generic over PartSlot). Play-verify: the Head PaperDollSlot + 2 head bag options appear, tap/drag equip swaps the
+      head + the visual updates, persist round-trips; unequip honors the mandatory-head default. Optional [code]: itemize
+      Head in `UnitInspectionPanel`. [decision] unlock-gate Head variants? (pre-existing: `AvailableParts` ignores
+      ownership for ALL parts).
 - [ ] **Per-class heads [content].** Use the Slice-2 version hook to author ONE example per-class head variant; do
       NOT author 16 — that's a later content pass.
 - [ ] **Meshy head generation [content].** Generate an in-style sphere/character head mesh through the Slice-2

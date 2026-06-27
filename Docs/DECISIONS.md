@@ -692,8 +692,12 @@ only the enum value, a default part, a prefab mount, and the never-headless guar
 **Layering:** `PartSlot.Head` is the only Core change (additive, depended on downward-only); data is authored assets;
 render is the Units `SlotMount`; pipeline/templates stay Editor (deferred to Slice 2). **Status:** code + assets +
 prefab, **232/232 EditMode green** (+6 Head tests). The sphere render, animation, helmet seating, and swap visuals are
-**Play-gated** (bridge can't read transforms). **Deferred:** Slice 2 (pipeline `PartType.Head` template + importer +
-icon — generatable heads), Slice 3 (Head appears as a swap slot in the customization screen via the same path), per-class
-heads (version hook + one example variant), Meshy head generation.
+**Play-gated** (bridge can't read transforms).
+**Slice 2 done** (commit 8e5fdbc): `PartType.Head` + `StyleComposer.PartTypeFor` routing + `StyleSetupTool` Head
+template (heads generate in-style; importer needs no change — slot-folder convention); example variant `Head_Capsule`
+(non-starter) proves the version hook. Self-verified over the bridge; Head kept out of `MirrorUtil`. 232 green.
+**Deferred:** Slice 3 (Head as a swap slot in the customization screen — **data-ready**: prefab MountedSlots has Head,
+catalog surfaces both heads; only the UI swap is Play-gated + an optional `UnitInspectionPanel` itemization), per-class
+head variants, Meshy-generated in-style head + Grok icon-stylize (need the editor API flow).
 
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

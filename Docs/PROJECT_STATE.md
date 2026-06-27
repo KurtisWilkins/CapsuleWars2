@@ -3,7 +3,7 @@
 > **This is a SNAPSHOT, not a log.** Overwrite stale lines every handoff so it
 > always describes the project *right now*. Keep it short enough to read in 30s.
 
-_Last updated: 2026-06-27 — **Head-as-part-type Slice 1** on branch `claude/head-part-type` (ADR-037; sphere head as a swappable part, 232 EditMode green). On `main`: BTS-E2 heal synergies (ADR-036) + BTS-G rarity ×s; BTS-A/B1/B2/C/D/E1 done._
+_Last updated: 2026-06-27 — **Head-as-part-type Slices 1+2** on branch `claude/head-part-type` (ADR-037; sphere head as a swappable, generatable part; 232 EditMode green). Slice 3 (customization swap UI) is data-ready/Play-gated. On `main`: BTS-E2 heal synergies (ADR-036) + BTS-G rarity ×s; BTS-A/B1/B2/C/D/E1 done._
 
 ## Content completeness vs design docs (build-to-spec, ADR-028)
 | Category | Spec | Built | Status |

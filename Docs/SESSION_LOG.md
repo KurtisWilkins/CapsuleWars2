@@ -6,6 +6,21 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-27 — Head Slice 2: generatable heads (branch `claude/head-part-type`, ADR-037)
+**Did:** made heads generatable in-style through the EXISTING pipeline (no importer change — the
+`((PartSlot)targetSlot).ToString()` slot-folder convention already routes `Generated/Meshy/Head/`).
+**[code]** `PartType.Head=8` appended (serialized by int — append-only); `StyleComposer.PartTypeFor`
+`PartSlot.Head -> PartType.Head` (distinct from HeadProp->Helmet); `StyleSetupTool` Head template seeder
+(floating-sphere criteria, empty limbCut). **[content]** `PartTemplate_Head.asset` seeded; `HeadSetupTool`
+"Author Example Head Variant" → `Head_Capsule` (capsule primitive, non-starter) to prove the version hook +
+give Slice 3 a swap target. **Self-verified over the bridge** (editor-pipeline convention, no EditMode unit
+since the test asm doesn't reference the editor pipeline): `PartTypeFor(BodyPart,Head)=Head`; Head mirror-sided
+=False (exempt by omission); HeadTemplates=1; Head BodyParts=2. **Slice 3 readiness proven:** prefab MountedSlots
+includes Head (7 mounts) + catalog surfaces both heads (head_sphere starter + head_capsule) → the Head swap slot
++ bag options render with NO new swap code. **232/232 green.** Commit 8e5fdbc.
+**Next:** Slice 3 (verify the UI swap in Play — data-ready; optional `UnitInspectionPanel` Head itemization);
+per-class variants + Meshy-generated in-style head + Grok icon-stylize (need the editor API flow).
+
 ## 2026-06-27 — Head as a first-class swappable part type, Slice 1 (ADR-037)
 **Branch:** `claude/head-part-type` (off `main`). **Did:** made HEAD a real swappable `PartSlot` (default floating
 sphere, Rayman/Rabbids style) reusing the existing body-part pipeline — NOT a bespoke head path. Step 1 was an

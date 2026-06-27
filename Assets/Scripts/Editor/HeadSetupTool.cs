@@ -35,6 +35,43 @@ namespace CapsuleWars.Editor
                       "Prefab Mount_Head_Sphere + SlotMount + socket re-anchor are wired separately on the unit prefab.");
         }
 
+        // Slice 2: one example head variant (a capsule head) — proves the Head VERSION hook (multiple
+        // BodyPart_SO on slot=Head) and gives Slice 3 a real swap target. Non-starter (unlockable). Meshy-
+        // generated in-style heads come later via the generation pipeline (PartType.Head template).
+        [MenuItem("Tools/Build-To-Spec/Author Example Head Variant")]
+        public static void AuthorVariant()
+        {
+            const string variantPath = HeadDir + "/Head_Capsule.asset";
+            const string variantId = "head_capsule";
+
+            var v = AssetDatabase.LoadAssetAtPath<BodyPart_SO>(variantPath);
+            if (v == null)
+            {
+                v = ScriptableObject.CreateInstance<BodyPart_SO>();
+                AssetDatabase.CreateAsset(v, variantPath);
+            }
+            SetField(v, "partId", variantId);
+            SetField(v, "nameTermKey", "Part.HeadCapsule.Name");
+            SetField(v, "slot", PartSlot.Head);
+            SetField(v, "mesh", BuiltinPrimitiveMesh(PrimitiveType.Capsule));
+            EditorUtility.SetDirty(v);
+
+            int touched = 0;
+            foreach (var guid in AssetDatabase.FindAssets("t:PartCatalog_SO"))
+            {
+                var cat = AssetDatabase.LoadAssetAtPath<PartCatalog_SO>(AssetDatabase.GUIDToAssetPath(guid));
+                if (cat == null) continue;
+                var parts = GetField<System.Collections.Generic.List<PartCatalog_SO.PartEntry>>(cat, "parts");
+                if (parts == null || parts.Exists(pe => pe != null && pe.part == v)) continue;
+                parts.Add(new PartCatalog_SO.PartEntry { part = v, cost = 2, starter = false });
+                EditorUtility.SetDirty(cat);
+                touched++;
+            }
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"[HeadSetupTool] Example head variant '{variantId}' (capsule) added to {touched} catalog(s) as a non-starter unlockable — proves the Head version hook; swap target for Slice 3.");
+        }
+
         private static BodyPart_SO CreateOrLoadHead()
         {
             if (!AssetDatabase.IsValidFolder(HeadDir))
@@ -56,15 +93,15 @@ namespace CapsuleWars.Editor
             SetField(head, "partId", HeadId);
             SetField(head, "nameTermKey", "Part.HeadSphere.Name");
             SetField(head, "slot", PartSlot.Head);
-            SetField(head, "mesh", BuiltinSphereMesh());
+            SetField(head, "mesh", BuiltinPrimitiveMesh(PrimitiveType.Sphere));
             EditorUtility.SetDirty(head);
             return head;
         }
 
-        // Unity's built-in Sphere mesh (from the default resources) — a stable shared reference.
-        private static Mesh BuiltinSphereMesh()
+        // Unity's built-in primitive mesh (from the default resources) — a stable shared reference.
+        private static Mesh BuiltinPrimitiveMesh(PrimitiveType type)
         {
-            var temp = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            var temp = GameObject.CreatePrimitive(type);
             var mesh = temp.GetComponent<MeshFilter>().sharedMesh;
             Object.DestroyImmediate(temp);
             return mesh;

@@ -15,7 +15,9 @@ namespace CapsuleWars.Editor.AssetPipeline
         Foot = 4,
         Torso = 5,
         Weapon = 6,
-        Armor = 7
+        Armor = 7,
+        // APPEND-ONLY: serialized by int in PartTemplate assets — never insert/reorder.
+        Head = 8
     }
 
     /// <summary>

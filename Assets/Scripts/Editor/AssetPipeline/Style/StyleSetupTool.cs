@@ -27,6 +27,9 @@ namespace CapsuleWars.Editor.AssetPipeline
             }
 
             int created = 0;
+            created += MaybeCreate(PartType.Head, "Head",
+                "A single floating spherical HEAD ONLY — no body, neck, or shoulders. A smooth simplified cartoon sphere head (Rayman/Rabbids style) with minimal readable facial features; chunky and rounded; detached, meant to float above the torso.",
+                "");
             created += MaybeCreate(PartType.Helmet, "Helmet",
                 "A head-covering helmet ONLY — no head, face, neck, or body inside. Show the hollow opening where a head would go; chunky simplified rounded shell.",
                 "");

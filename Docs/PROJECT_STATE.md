@@ -10,7 +10,7 @@ _Last updated: 2026-06-25 — build-to-spec: Slice 1 + BTS-A (event triggers) + 
 |---|---|---|---|
 | **Elements** (Docs/08) | 15 types + 5×5 chart + dual rule | 15 + chart + multipliers + **dual-element rule (new)** | ✅ **complete to spec** |
 | **Abilities** (Docs/05) | ~30 strategy classes | 8 prior + 9 (targeting/filters/effects) + **8 triggers (BTS-A)** = 25; event-bus wiring done | ⏳ remaining: GetAttacker (BTS-A pt2), HighestThreat (needs dmg stat), BuffStat/KnockBack/Teleport/VFX/Evolve |
-| **Status** (Docs/10) | 24 effects | 1 authored; stat getters + resistance fixed (BTS-B1); **`StatusEffectBehavior` damage hook + 5 behaviors (BTS-B2)** | ⏳ author 24 assets (BTS-D) + wire the 5 behavior assets; no status carries a behavior yet (Play-gated) |
+| **Status** (Docs/10) | 24 effects | **24 `StatusEffect_SO` + 5 behaviors authored & wired (BTS-D)**; damage hook (BTS-B2); getters/resistance (BTS-B1) | ✅ content complete; [code] follow-ups: Unlucky ÷2-crit/roll-skew, Madness targeting, LastStand +Atk/one-time. Not yet applied by any ability (BTS-F) |
 | **Classes** (Docs/09 + roster) | 16 + tiers | **16 `WeaponClass_SO` (BTS-C) + 16 `UnitClass_SO` w/ [content] tiers + `globalBuffs` (BTS-E1)** | ⏳ BTS-E2: [code] behavioral tiers wire once status/effect/hook slices land; assign classes→units (BTS-F); retire `Class_Warrior` placeholder. No class on a live unit yet (Play-gated) |
 | **Equipment** (Docs/07) | 8 slots × 5 rarities | code ✅; 6 items (all Common) | ⏳ 4 empty slots, none above Common, no roll-config/loot assets, rarity ×s to align to doc |
 | **Evolution** (new, in scope) | XP/floor stat growth | — | ⏳ not started (gates EvolveEffect + evolution-indexed strategies) |

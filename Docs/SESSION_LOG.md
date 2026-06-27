@@ -6,6 +6,17 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-26 — BTS-D: author 24 status effects + 5 behavior assets
+**Did:** `StatusSetupTool` (`Tools/Build-To-Spec/Author Status Effects`, idempotent) authored all 24
+`StatusEffect_SO` (Docs/10) under `Assets/Data/StatusEffects/` + the 5 BTS-B2 behavior assets under `Behaviors/`,
+wiring the behavioral statuses to their hooks: Frozen→FrozenBehavior(+preventsAction), Marked→MarkedBehavior,
+Protected→ProtectedBehavior, Shield→ShieldBehavior(magnitude 30), LastStand→LastStandBehavior. Stat pairs
+(Atk/Def/Speed/Accuracy/Crit Up/Down ±25%), Cursed (−25% 5 stats), Empowered (+25% Atk), Bleeding (DoT −5%/s),
+Regenerating (HoT +5%/s), Stunned/Trapped/Silenced (prevent flags), Unlucky (−50% CritRate approx). First-pass
+numbers. Verified YAML (Status_Marked → real behavior guid; Status_AtkUp → StatBuff). **224 green** (data + tool only).
+**[code] follow-ups:** Unlucky ÷2-crit + roll-skew, Madness random targeting, LastStand +Atk/one-time.
+**Next:** statuses aren't applied by anything yet — BTS-F (ability moves) + BTS-E2 (behavioral synergies) reference them.
+
 ## 2026-06-26 — BTS-B2: status behavioral damage hook (ADR-035)
 **Did:** built the `StatusEffectBehavior` custom-SO hook (the complex status mechanism). New Core `DamageKind`
 (Physical/Elemental/True); `UnitHealthController.TakeDamage(amount, source, kind=Physical)` now consults

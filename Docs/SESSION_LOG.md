@@ -6,6 +6,17 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-27 — BTS-G drop loop wired + first-pass loot assets (main)
+**Did:** connected the loot loop end-to-end. `BattleNodeReturn` win path now (non-boss) reads `CurrentNode.Type`,
+picks the serialized combat/elite `LootTable_SO`, `LootGrant.GrantTo` (deterministic per node: `Seed ^ (nodeId*31+17)`)
+→ `RunState.Inventory`, then **`RunSession.Save()`** — the win path didn't persist before the scene load, so the
+drop/gold/recruit would otherwise be lost. Boss = gold-only. `EquipmentLootSetupTool` (idempotent) authored
+`EquipmentRollConfig` (MaxHp/Atk/Def/Speed pool, 3 tiers) + `LootTable_Combat` (0-1, low-tier) + `LootTable_Elite`
+(1, rarity-skewed) over the 4 starter items — first-pass/tunable. **236 green.** Commit 4447f1e.
+**FINAL CONNECT (Play):** assign `LootTable_Combat`/`_Elite` to the `BattleNodeReturn` in `Test_M3_Battle`, win a
+combat node, confirm an item lands in the inventory + survives reload. Then: EventPanel treasure hook, 4 armor-slot
+items, blank rarity ids, bag reads owned items.
+
 ## 2026-06-27 — BTS-G storage + grant: RunState inventory + LootGrant (main)
 **Did:** gave the loot core somewhere to drop into + a tested grant path. `RunState.Inventory`
 (`List<UnitEquipmentDTO>`) + `AddItem`/`RemoveItem`, mapped through `RunStateDTO` (additive — SaveVersion stays 2,

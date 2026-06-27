@@ -6,6 +6,20 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-26 — Icons: 16 class (AI flat-emblem) + equipment/parts (direct mesh render)
+**Did:** ran the Grok sweep → **16 class icons** (flat-emblem, user-approved style). For **equipment + body parts**
+the name-only AI prompts didn't match the actual meshes (user feedback), so IconGen now renders each item's
+`visualPrefab`/`visualMesh`/`Mesh` via `PreviewRenderUtility`. The intended path was render→Grok-**stylize**
+(`EditAsync`), but **xAI's image-edit endpoint rejects the image format — HTTP 422** (`image: invalid type: string`;
+the edit path was always flagged experimental). The mesh **render itself works** (saved a reference under
+`Icons/_refs`), so I fell back to **direct mesh-render icons** — they match the geometry exactly. Result: 6
+equipment + 6 body-part icons assigned (Eq_LeatherChest skipped — no mesh/prefab assigned). Default body parts are
+placeholder primitives (sphere/cubes) → their icons honestly show that until real meshes exist.
+**Open:** the flat-emblem *stylize* on equipment/parts needs the correct xAI `/v1/images/edits` schema (research +
+fix `GrokImageService.EditAsync`); render-direct is the working interim. Eq_LeatherChest needs a mesh.
+**Next:** user reviews the icons (incl. `Icons/_refs/Eq_IronSword_ref.png` for render quality); then BodyPart.Icon
+widget wiring (#91) / decide whether to pursue the stylize.
+
 ## 2026-06-26 — IconGen: Grok AI icon pipeline (flat-emblem), ADR-033
 **Did:** user asked to use Grok for all content icons → built `IconGen` (`Assets/Scripts/Editor/IconGen.cs`,
 `Tools/Icons/*`): per-category flat-emblem prompt → `GrokImageService.GenerateAsync` → PNG → **import as Sprite**

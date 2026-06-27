@@ -15,59 +15,148 @@ using UnityEngine;
 namespace CapsuleWars.Editor
 {
     /// <summary>
-    /// Generates flat-emblem UI ICONS for content SOs via the existing editor-side Grok pipeline
+    /// Generates flat-emblem UI ICONS for content SOs via the editor-side Grok pipeline
     /// (<see cref="GrokImageService"/>; key stays in SecretsConfig, never leaves the editor) and assigns each
-    /// PNG to the SO's <c>icon</c> field. Covers UnitClass / Equipment / BodyPart today; Ability (moves) joins
-    /// once BTS-F authors the move assets (and the editor asmdef references the Abilities assembly).
+    /// imported Sprite to the SO's <c>icon</c> field.
     ///
-    /// Each image is a PAID xAI call, so generation is sequential (one at a time), idempotent (skips SOs that
-    /// already have an icon unless you regenerate), and writes one stable PNG per asset
-    /// (Assets/Generated/Icons/&lt;category&gt;/&lt;assetName&gt;.png). The PNG is imported as a **Sprite**
-    /// (textureType=Sprite) — the one step the AssetRequest image path lacked — so it's UI-ready.
-    /// Curate results in the editor; re-run a category to fill in any you delete.
+    /// Two paths (ADR-033/035):
+    ///  • CLASSES (abstract, no mesh): text→image — a per-class imagery prompt + the shared flat-emblem style.
+    ///  • EQUIPMENT / BODY PARTS (have geometry): MESH-STYLIZED — render the item's visualPrefab/visualMesh/Mesh
+    ///    to a reference image (PreviewRenderUtility), then Grok image-EDIT it into a flat-emblem icon that
+    ///    RESEMBLES the actual mesh while matching the class style. (Name-only prompts can't match a specific mesh.)
+    ///
+    /// Each image is a PAID xAI call → sequential, one stable PNG per asset
+    /// (Assets/Generated/Icons/&lt;category&gt;/&lt;assetName&gt;.png), imported as a Sprite (forced synchronous so
+    /// the ref actually persists). Mesh-stylized menus OVERWRITE existing icons (they redo the name-only ones).
+    /// Reference renders are saved under Icons/_refs so the render itself can be eyeballed.
     /// </summary>
     public static class IconGen
     {
         private const string IconsRoot = "Assets/Generated/Icons";
+        private const string RefsRoot = "Assets/Generated/Icons/_refs";
 
-        // Shared flat-emblem style anchor (the user's chosen direction) — appended to every prompt for consistency.
         private const string Style =
             "professional mobile game UI icon, flat emblem style, single centered subject, bold simple silhouette, " +
             "vibrant flat colors with subtle inner shading, clean vector shapes, dark slate radial-gradient background, " +
             "crisp and readable at small size, centered composition, no text, no words, no letters, no border, no frame";
 
-        // -------- menu entry points --------
+        private const string EditStyle =
+            "Restyle this 3D item render as a flat emblem mobile game UI icon. PRESERVE the overall shape, silhouette " +
+            "and proportions of the item shown. Bold clean vector shapes, vibrant flat colors with subtle inner " +
+            "shading, dark slate radial-gradient background, crisp and readable at small size, centered, no text, no border.";
+
+        // ---------------- menus: classes (text → image) ----------------
 
         [MenuItem("Tools/Icons/Generate ONE Test Class Icon (Grok)")]
-        public static void GenerateOneTest()
+        public static void GenerateOneTestClass()
         {
             var c = LoadAll<UnitClass_SO>().FirstOrDefault();
-            if (c == null) { Debug.LogWarning("[IconGen] No UnitClass_SO assets found."); return; }
+            if (c == null) { Debug.LogWarning("[IconGen] No UnitClass_SO assets."); return; }
             _queue.Enqueue(new Job { prompt = ClassPrompt(c), category = "Classes", id = c.name, so = c });
-            Debug.Log($"[IconGen] TEST: generating ONE icon for {c.name} to validate the pipeline…");
+            Debug.Log($"[IconGen] TEST: one class icon for {c.name}…");
             Pump();
         }
 
         [MenuItem("Tools/Icons/Generate Class Icons (Grok)")]
-        public static void GenerateClassIcons() => Enqueue<UnitClass_SO>("Classes", ClassPrompt);
-
-        [MenuItem("Tools/Icons/Generate Equipment Icons (Grok)")]
-        public static void GenerateEquipmentIcons() => Enqueue<Equipment_SO>("Equipment", EquipmentPrompt);
-
-        [MenuItem("Tools/Icons/Generate Body Part Icons (Grok)")]
-        public static void GenerateBodyPartIcons() => Enqueue<BodyPart_SO>("BodyParts", BodyPartPrompt);
-
-        [MenuItem("Tools/Icons/Generate ALL Item Icons (Grok)")]
-        public static void GenerateAll()
+        public static void GenerateClassIcons()
         {
-            GenerateClassIcons();
-            GenerateEquipmentIcons();
-            GenerateBodyPartIcons();
+            var assets = LoadAll<UnitClass_SO>();
+            int added = 0;
+            foreach (var a in assets)
+            {
+                if (HasIcon(a)) continue;
+                _queue.Enqueue(new Job { prompt = ClassPrompt(a), category = "Classes", id = a.name, so = a });
+                added++;
+            }
+            Debug.Log($"[IconGen] Classes: {assets.Count} asset(s), {added} need icons → queued (one paid Grok call each)…");
+            Pump();
         }
 
-        // -------- prompts --------
+        // ---------------- menus: equipment & body parts (mesh render → Grok stylize) ----------------
 
-        // Per-class imagery for stronger emblems (the class name alone is weak). Falls back to a humanized id.
+        [MenuItem("Tools/Icons/Generate ONE Test Equipment Icon (mesh-stylized)")]
+        public static void GenerateOneTestEquipment()
+        {
+            var e = LoadAll<Equipment_SO>().FirstOrDefault(x => HasGeometry(x));
+            if (e == null) { Debug.LogWarning("[IconGen] No Equipment_SO with a visualPrefab/visualMesh."); return; }
+            var refPng = RenderReference(e, save: true);
+            if (refPng == null) { Debug.LogWarning($"[IconGen] {e.name}: render produced nothing."); return; }
+            _queue.Enqueue(new Job { prompt = $"A {Humanize(e.name)}. {EditStyle}", category = "Equipment", id = e.name, so = e, referencePng = refPng });
+            Debug.Log($"[IconGen] TEST: mesh-stylized equipment icon for {e.name} (ref {refPng.Length} bytes saved under _refs)…");
+            Pump();
+        }
+
+        [MenuItem("Tools/Icons/Generate Equipment Icons (mesh-stylized)")]
+        public static void GenerateEquipmentIcons() =>
+            EnqueueMeshStylized<Equipment_SO>("Equipment", e => $"A {Humanize(e.name)}. {EditStyle}");
+
+        [MenuItem("Tools/Icons/Generate Body Part Icons (mesh-stylized)")]
+        public static void GenerateBodyPartIcons() =>
+            EnqueueMeshStylized<BodyPart_SO>("BodyParts", b => $"A {Humanize(b.name)} character part. {EditStyle}");
+
+        // ---------------- menus: equipment & body parts (DIRECT mesh render — no Grok) ----------------
+        // Reliable fallback / primary path: the rendered mesh thumbnail IS the icon, so it always matches the
+        // actual geometry. Free + synchronous (no paid call), overwrites existing icons.
+
+        [MenuItem("Tools/Icons/Generate Equipment Icons (mesh render, direct)")]
+        public static void GenerateEquipmentIconsDirect() => RenderDirect<Equipment_SO>("Equipment");
+
+        [MenuItem("Tools/Icons/Generate Body Part Icons (mesh render, direct)")]
+        public static void GenerateBodyPartIconsDirect() => RenderDirect<BodyPart_SO>("BodyParts");
+
+        private static void RenderDirect<T>(string category) where T : ScriptableObject
+        {
+            var assets = LoadAll<T>();
+            int ok = 0, skip = 0;
+            foreach (var a in assets)
+            {
+                var png = RenderReference(a, save: false);
+                if (png == null) { skip++; Debug.LogWarning($"[IconGen] {category}/{a.name}: no renderable mesh — skipped."); continue; }
+
+                string folder = AssetPipelineImporter.EnsureFolder($"{IconsRoot}/{category}");
+                string path = $"{folder}/{a.name}.png";
+                File.WriteAllBytes(path, png);
+                AssetDatabase.ImportAsset(path);
+                if (AssetImporter.GetAtPath(path) is TextureImporter imp)
+                {
+                    imp.textureType = TextureImporterType.Sprite;
+                    imp.spriteImportMode = SpriteImportMode.Single;
+                    imp.alphaIsTransparency = true;
+                    imp.SaveAndReimport();
+                }
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                if (sprite == null) { skip++; Debug.LogWarning($"[IconGen] {category}/{a.name}: Sprite import failed."); continue; }
+
+                var so = new SerializedObject(a);
+                var ip = so.FindProperty("icon");
+                if (ip != null) { ip.objectReferenceValue = sprite; so.ApplyModifiedPropertiesWithoutUndo(); }
+                EditorUtility.SetDirty(a);
+                ok++;
+                Debug.Log($"[IconGen] ✓ {category}/{a.name} (direct render)");
+            }
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[IconGen] {category} (direct mesh render): {ok} icons assigned, {skip} skipped.");
+        }
+
+        private static void EnqueueMeshStylized<T>(string category, Func<T, string> prompt) where T : ScriptableObject
+        {
+            var assets = LoadAll<T>();
+            int added = 0, skipped = 0;
+            foreach (var a in assets)
+            {
+                var refPng = RenderReference(a, save: true);
+                if (refPng == null) { skipped++; Debug.LogWarning($"[IconGen] {category}/{a.name}: no renderable mesh — skipped."); continue; }
+                _queue.Enqueue(new Job { prompt = prompt(a), category = category, id = a.name, so = a, referencePng = refPng });
+                added++;
+            }
+            Debug.Log($"[IconGen] {category} (mesh-stylized): {assets.Count} asset(s) → {added} queued, {skipped} skipped " +
+                      "(overwrites existing icons; one paid Grok edit call each)…");
+            Pump();
+        }
+
+        // ---------------- prompts ----------------
+
         private static readonly Dictionary<string, string> ClassDesc = new()
         {
             { "Barbarian",   "a raging barbarian swinging a massive two-handed battle axe" },
@@ -95,34 +184,13 @@ namespace CapsuleWars.Editor
             return $"{desc}, fantasy RPG class emblem. {Style}";
         }
 
-        private static string EquipmentPrompt(Equipment_SO e) =>
-            $"a {Humanize(e.name)} ({e.Slot} equipment), fantasy RPG item. {Style}";
+        // ---------------- queue / pump ----------------
 
-        private static string BodyPartPrompt(BodyPart_SO b) =>
-            $"a {Humanize(b.name)} cosmetic part for a stylized capsule character ({b.Slot}). {Style}";
-
-        // -------- generation queue (sequential; mirrors GenerationActions) --------
-
-        private struct Job { public string prompt; public string category; public string id; public ScriptableObject so; }
+        private struct Job { public string prompt; public string category; public string id; public ScriptableObject so; public byte[] referencePng; }
 
         private static readonly Queue<Job> _queue = new();
         private static bool _busy;
         private static int _ok, _fail;
-
-        private static void Enqueue<T>(string category, Func<T, string> prompt) where T : ScriptableObject
-        {
-            var assets = LoadAll<T>();
-            int added = 0;
-            foreach (var a in assets)
-            {
-                if (HasIcon(a)) continue;   // idempotent — keep existing icons; delete one to regenerate it
-                _queue.Enqueue(new Job { prompt = prompt(a), category = category, id = a.name, so = a });
-                added++;
-            }
-            Debug.Log($"[IconGen] {category}: {assets.Count} asset(s), {added} need icons → queued. Generating sequentially " +
-                      "(one paid Grok call each)…");
-            Pump();
-        }
 
         private static void Pump()
         {
@@ -139,8 +207,11 @@ namespace CapsuleWars.Editor
             string key = GenerationServices.Secrets != null ? GenerationServices.Secrets.grokApiKey : null;
             string model = GenerationServices.GrokModel;
             string endpoint = GenerationServices.GrokEndpoint;
+            byte[] reference = job.referencePng;
 
-            Task.Run(() => GrokImageService.GenerateAsync(job.prompt, key, model, endpoint, "1:1", "1k"))
+            Task.Run(() => reference != null
+                    ? GrokImageService.EditAsync(job.prompt, reference, key, model, "", "1:1", "1k")
+                    : GrokImageService.GenerateAsync(job.prompt, key, model, endpoint, "1:1", "1k"))
                 .ContinueWith(t => GenerationHttp.OnMainThread(() =>
                 {
                     try
@@ -151,10 +222,6 @@ namespace CapsuleWars.Editor
                         string path = $"{folder}/{job.id}.png";
                         File.WriteAllBytes(path, t.Result);
 
-                        // Import as a SPRITE so it's assignable to UI Image.sprite (the step the AssetRequest path
-                        // lacked). Set the importer, then FORCE a synchronous reimport so the Sprite sub-asset
-                        // actually exists before we load it — a plain SaveAndReimport can defer, leaving
-                        // LoadAssetAtPath<Sprite> null and the icon silently unassigned.
                         AssetDatabase.ImportAsset(path);
                         if (AssetImporter.GetAtPath(path) is TextureImporter imp)
                         {
@@ -187,12 +254,103 @@ namespace CapsuleWars.Editor
                     finally
                     {
                         _busy = false;
-                        Pump();   // keep the batch moving even if one fails
+                        Pump();
                     }
                 }));
         }
 
-        // -------- helpers --------
+        // ---------------- mesh render (reference for the stylize edit) ----------------
+
+        private static bool HasGeometry(Equipment_SO e) => e != null && (e.VisualPrefab != null || e.VisualMesh != null);
+
+        private static byte[] RenderReference(ScriptableObject so, bool save)
+        {
+            GameObject prefab = null; Mesh mesh = null; Material[] mats = null;
+            if (so is Equipment_SO e) { prefab = e.VisualPrefab; mesh = e.VisualMesh; mats = e.VisualMaterials?.ToArray(); }
+            else if (so is BodyPart_SO b) { mesh = b.Mesh; mats = b.DefaultMaterials?.ToArray(); }
+            if (prefab == null && mesh == null) return null;
+
+            byte[] png = RenderToPng(prefab, mesh, mats, 512);
+            if (save && png != null)
+            {
+                string folder = AssetPipelineImporter.EnsureFolder(RefsRoot);
+                string refPath = $"{folder}/{so.name}_ref.png";
+                File.WriteAllBytes(refPath, png);
+                AssetDatabase.ImportAsset(refPath);
+            }
+            return png;
+        }
+
+        private static Material _fallbackMat;
+        private static Material FallbackMat =>
+            _fallbackMat != null ? _fallbackMat :
+            (_fallbackMat = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard")));
+
+        private static byte[] RenderToPng(GameObject prefab, Mesh mesh, Material[] mats, int size)
+        {
+            var pru = new PreviewRenderUtility();
+            GameObject temp = null;
+            try
+            {
+                var cam = pru.camera;
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = new Color(0.55f, 0.57f, 0.62f, 1f);
+                cam.fieldOfView = 30f;
+                cam.nearClipPlane = 0.01f;
+                cam.farClipPlane = 1000f;
+                pru.lights[0].intensity = 1.4f;
+                pru.lights[0].transform.rotation = Quaternion.Euler(35f, 35f, 0f);
+                if (pru.lights.Length > 1) { pru.lights[1].intensity = 1.0f; pru.lights[1].transform.rotation = Quaternion.Euler(-25f, -40f, 0f); }
+
+                Material mat = null;
+                if (mats != null) foreach (var m in mats) if (m != null) { mat = m; break; }
+                if (mat == null) mat = FallbackMat;
+
+                Bounds bounds;
+                if (prefab != null)
+                {
+                    temp = UnityEngine.Object.Instantiate(prefab);
+                    temp.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                    bounds = CalcRendererBounds(temp);
+                    pru.AddSingleGO(temp);
+                }
+                else
+                {
+                    bounds = mesh.bounds;
+                }
+
+                Vector3 center = bounds.center;
+                float radius = Mathf.Max(bounds.extents.magnitude, 0.1f);
+                float dist = radius / Mathf.Sin(Mathf.Deg2Rad * cam.fieldOfView * 0.5f) * 1.3f;
+                Vector3 viewDir = (Quaternion.Euler(18f, -28f, 0f) * Vector3.forward).normalized;
+                cam.transform.position = center - viewDir * dist;
+                cam.transform.rotation = Quaternion.LookRotation(viewDir, Vector3.up);
+
+                pru.BeginStaticPreview(new Rect(0, 0, size, size));
+                if (prefab == null && mesh != null)
+                    pru.DrawMesh(mesh, Matrix4x4.identity, mat, 0);
+                cam.Render();
+                var tex = pru.EndStaticPreview();
+                return tex != null ? tex.EncodeToPNG() : null;
+            }
+            catch (Exception ex) { Debug.LogError($"[IconGen] render failed: {ex.Message}"); return null; }
+            finally
+            {
+                if (temp != null) UnityEngine.Object.DestroyImmediate(temp);
+                pru.Cleanup();
+            }
+        }
+
+        private static Bounds CalcRendererBounds(GameObject go)
+        {
+            var rends = go.GetComponentsInChildren<Renderer>();
+            if (rends.Length == 0) return new Bounds(go.transform.position, Vector3.one);
+            var b = rends[0].bounds;
+            for (int i = 1; i < rends.Length; i++) b.Encapsulate(rends[i].bounds);
+            return b;
+        }
+
+        // ---------------- helpers ----------------
 
         private static List<T> LoadAll<T>() where T : ScriptableObject
         {
@@ -217,7 +375,7 @@ namespace CapsuleWars.Editor
             string s = raw;
             foreach (var pre in new[] { "Eq_", "Equip_", "WC_", "Class_", "Body_", "Part_" })
                 if (s.StartsWith(pre)) { s = s.Substring(pre.Length); break; }
-            s = Regex.Replace(s, "([a-z0-9])([A-Z])", "$1 $2");   // camelCase → spaced
+            s = Regex.Replace(s, "([a-z0-9])([A-Z])", "$1 $2");
             s = s.Replace('_', ' ').Replace('-', ' ');
             return s.Trim().ToLowerInvariant();
         }

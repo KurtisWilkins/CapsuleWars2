@@ -287,6 +287,9 @@ namespace CapsuleWars.Editor
         {
             { "Equip_StarterHelm", new Vector3(0f, 180f, 0f) },
             { "TestHelmet",        new Vector3(0f, 180f, 0f) },
+            // Swords: 45° roll → diagonal in frame; broad face (and crossguard width) kept toward the camera.
+            { "Eq_IronSword",       new Vector3(0f, 0f, 45f) },
+            { "Equip_StarterSword", new Vector3(0f, 0f, 45f) },
         };
 
         private static Quaternion RotationFor(string name) =>

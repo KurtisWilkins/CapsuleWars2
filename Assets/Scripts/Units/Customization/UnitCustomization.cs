@@ -133,11 +133,29 @@ namespace CapsuleWars.Units.Customization
         [Tooltip("Which palette color this mount picks up, or None to keep the part's default materials.")]
         [SerializeField] private PaletteRole paletteRole = PaletteRole.None;
 
+        [Tooltip("Optional mesh shown when this slot has NO assigned part — e.g. the default sphere head, so a unit is never headless. Leave null for slots that should be empty when unassigned (hands/feet).")]
+        [SerializeField] private Mesh fallbackMesh;
+
+        [Tooltip("Materials paired with fallbackMesh.")]
+        [SerializeField] private Material[] fallbackMaterials;
+
         public PartSlot Slot => slot;
 
         public void Clear()
         {
-            if (meshFilter != null) meshFilter.sharedMesh = null;
+            if (meshFilter == null) return;
+            if (fallbackMesh != null)
+            {
+                // Mandatory-part slots (e.g. Head) fall back to a default mesh instead of going empty.
+                // Also resets materials so no previously-applied part's materials linger on the fallback.
+                meshFilter.sharedMesh = fallbackMesh;
+                if (meshRenderer != null && fallbackMaterials != null && fallbackMaterials.Length > 0)
+                    meshRenderer.sharedMaterials = (Material[])fallbackMaterials.Clone();
+            }
+            else
+            {
+                meshFilter.sharedMesh = null;
+            }
         }
 
         public void Apply(BodyPart_SO part, Palette_SO palette)

@@ -255,7 +255,10 @@ namespace CapsuleWars.Editor.AssetPipeline
         {
             if (r.category == AssetCategory.BodyPart)
             {
-                r.targetSlot = (int)(PartSlot)EditorGUILayout.EnumPopup("Slot", (PartSlot)Mathf.Clamp(r.targetSlot, 0, 5));
+                // PartSlot is contiguous from 0, so the last ordinal = count-1. Derived (not a magic 5)
+                // so newly appended slots like Head stay selectable in the dropdown.
+                int maxPartSlot = System.Enum.GetValues(typeof(PartSlot)).Length - 1;
+                r.targetSlot = (int)(PartSlot)EditorGUILayout.EnumPopup("Slot", (PartSlot)Mathf.Clamp(r.targetSlot, 0, maxPartSlot));
             }
             else if (r.category != AssetCategory.Undecided)
             {

@@ -14,15 +14,17 @@ namespace CapsuleWars.Tests.EditMode
     public class UnitDataTests
     {
         [Test]
-        public void PartSlot_HasSixSlots()
+        public void PartSlot_HasSevenSlots()
         {
-            Assert.AreEqual(6, Enum.GetNames(typeof(PartSlot)).Length);
+            Assert.AreEqual(7, Enum.GetNames(typeof(PartSlot)).Length);
             Assert.IsTrue(Enum.IsDefined(typeof(PartSlot), PartSlot.Body));
             Assert.IsTrue(Enum.IsDefined(typeof(PartSlot), PartSlot.LeftHand));
             Assert.IsTrue(Enum.IsDefined(typeof(PartSlot), PartSlot.RightHand));
             Assert.IsTrue(Enum.IsDefined(typeof(PartSlot), PartSlot.LeftFoot));
             Assert.IsTrue(Enum.IsDefined(typeof(PartSlot), PartSlot.RightFoot));
             Assert.IsTrue(Enum.IsDefined(typeof(PartSlot), PartSlot.HeadProp));
+            Assert.IsTrue(Enum.IsDefined(typeof(PartSlot), PartSlot.Head));
+            Assert.AreEqual(6, (int)PartSlot.Head, "Head must be appended as 6 (append-only enum).");
         }
 
         [Test]

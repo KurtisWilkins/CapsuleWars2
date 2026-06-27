@@ -18,9 +18,11 @@ namespace CapsuleWars.Persistence
     /// </summary>
     public static class RandomUnitGenerator
     {
+        // Head is included so generated units get a head from the unlocked pool (the default sphere is a
+        // starter, so it's always available). HeadProp stays excluded — head props are optional.
         private static readonly PartSlot[] BuildSlots =
         {
-            PartSlot.Body, PartSlot.LeftHand, PartSlot.RightHand, PartSlot.LeftFoot, PartSlot.RightFoot
+            PartSlot.Body, PartSlot.Head, PartSlot.LeftHand, PartSlot.RightHand, PartSlot.LeftFoot, PartSlot.RightFoot
         };
 
         private static readonly string[] Names =

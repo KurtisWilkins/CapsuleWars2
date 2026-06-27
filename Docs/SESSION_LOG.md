@@ -6,6 +6,14 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-27 — Head Slice 3 (code): inspection + persistence (branch `claude/head-part-type`, ADR-037)
+**Did:** the swap path is already generic over PartSlot, so Slice 3 needed no swap code. Built the two verifiable
+pieces: `UnitInspectionPanel.FormatEquipment` itemizes the chosen Head ("Head: <partId>") from AppliedParts; a
+`UnitPartsPipelineTests.FromDTO_RestoresHeadPart_FromCatalog` test locks the persistence guarantee (a saved Head
+partId resolves via the catalog + re-applies on load). **233/233 green.** Commit c473133. **The whole Head feature
+is now code-complete across all 3 slices.** Remaining: the Slice-1/2/3 PLAY verifications (PROJECT_STATE item 0) +
+content that needs the editor xAI/Meshy flow (Meshy-generated in-style head, Grok icon-stylize, per-class variants).
+
 ## 2026-06-27 — Head Slice 2: generatable heads (branch `claude/head-part-type`, ADR-037)
 **Did:** made heads generatable in-style through the EXISTING pipeline (no importer change — the
 `((PartSlot)targetSlot).ToString()` slot-folder convention already routes `Generated/Meshy/Head/`).

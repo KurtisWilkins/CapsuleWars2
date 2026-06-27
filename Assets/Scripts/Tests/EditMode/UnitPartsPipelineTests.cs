@@ -85,6 +85,44 @@ namespace CapsuleWars.Tests.EditMode
         }
 
         [Test]
+        public void FromDTO_RestoresHeadPart_FromCatalog()
+        {
+            // Head-as-part-type Slice 3 persistence guarantee: a saved Head partId must resolve via
+            // the catalog (GetPart) and be re-applied on load, exactly like a hand. If the default head
+            // weren't a catalog entry, the first swap would freeze dto.Parts and the head would drop here.
+            var go = new GameObject("u");
+            var root = go.AddComponent<UnitRoot>();
+            var custom = go.AddComponent<UnitCustomization>();
+
+            var body = MakePart("body_a", PartSlot.Body);
+            var head = MakePart("head_sphere", PartSlot.Head);
+            var catalog = MakeCatalog(
+                new List<PartCatalog_SO.PartEntry>
+                {
+                    new PartCatalog_SO.PartEntry { part = body },
+                    new PartCatalog_SO.PartEntry { part = head },
+                },
+                new List<PartCatalog_SO.PaletteEntry>());
+
+            var dto = new UnitDTO("u_head", "Head", null);
+            dto.Parts.Add(new UnitPartDTO(PartSlot.Body, "body_a"));
+            dto.Parts.Add(new UnitPartDTO(PartSlot.Head, "head_sphere"));
+
+            UnitFactory.FromDTO(dto, root, null, catalog);
+
+            var applied = custom.AppliedParts;
+            bool hasHead = false;
+            for (int i = 0; i < applied.Count; i++)
+                if (applied[i].slot == PartSlot.Head && applied[i].part == head) hasHead = true;
+            Assert.IsTrue(hasHead, "a saved Head partId should restore via FromDTO -> ApplyParts");
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(body);
+            Object.DestroyImmediate(head);
+            Object.DestroyImmediate(catalog);
+        }
+
+        [Test]
         public void FromDTO_WithParts_PrefersPartsOverDefinition()
         {
             var go = new GameObject("u");

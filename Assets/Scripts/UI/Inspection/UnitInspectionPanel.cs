@@ -1,5 +1,6 @@
 using System.Text;
 using CapsuleWars.Abilities;
+using CapsuleWars.Core;
 using CapsuleWars.Data.StatusEffects;
 using CapsuleWars.Units.Controllers;
 using CapsuleWars.Units.Customization;
@@ -152,6 +153,18 @@ namespace CapsuleWars.UI.Inspection
             // whole-unit definition when one is set.
             if (customization != null && customization.Definition != null)
                 sb.Append('\n').Append($"Body: {customization.Definition.UnitId}");
+
+            // Head is a swappable part (Head-as-part-type) — show the chosen head version.
+            if (customization != null)
+            {
+                var parts = customization.AppliedParts;
+                for (int i = 0; i < parts.Count; i++)
+                    if (parts[i].slot == PartSlot.Head && parts[i].part != null)
+                    {
+                        sb.Append('\n').Append($"Head: {parts[i].part.PartId}");
+                        break;
+                    }
+            }
 
             return sb.ToString();
         }

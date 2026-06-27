@@ -41,6 +41,22 @@ namespace CapsuleWars.Tests.EditMode
         }
 
         [Test]
+        public void SetPart_Head_RoundTripsIndependently()
+        {
+            // Head is a swappable part modeled exactly like other slots — saved/restored by partId.
+            var dto = new UnitDTO("u", "U", null);
+            UnitAppearance.SetPart(dto, PartSlot.Head, "head_sphere");
+            UnitAppearance.SetPart(dto, PartSlot.Body, "body_a");
+
+            Assert.AreEqual("head_sphere", UnitAppearance.GetPart(dto, PartSlot.Head));
+            Assert.AreEqual("body_a", UnitAppearance.GetPart(dto, PartSlot.Body), "Head and Body are independent slots");
+
+            // Reassignable like any other part.
+            UnitAppearance.SetPart(dto, PartSlot.Head, "head_pumpkin");
+            Assert.AreEqual("head_pumpkin", UnitAppearance.GetPart(dto, PartSlot.Head));
+        }
+
+        [Test]
         public void SetPart_ReplacesSameSlot()
         {
             var dto = new UnitDTO("u", "U", null);

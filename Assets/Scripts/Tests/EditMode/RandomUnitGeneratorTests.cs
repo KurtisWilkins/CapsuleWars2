@@ -121,5 +121,48 @@ namespace CapsuleWars.Tests.EditMode
 
             Cleanup(cleanup);
         }
+
+        [Test]
+        public void Generate_DrawsHead_WhenOwned()
+        {
+            // Head is in BuildSlots now; an owned head must be drawn like any other part.
+            var body = MakePart("body_a", PartSlot.Body);
+            var head = MakePart("head_sphere", PartSlot.Head);
+            var catalog = MakeCatalog(
+                new List<PartCatalog_SO.PartEntry>
+                {
+                    new PartCatalog_SO.PartEntry { part = body },
+                    new PartCatalog_SO.PartEntry { part = head },
+                },
+                new List<PartCatalog_SO.PaletteEntry>());
+            var profile = new PlayerProfileDTO();
+            profile.GrantPart("body_a");
+            profile.GrantPart("head_sphere");
+
+            var dto = RandomUnitGenerator.Generate(catalog, profile, new System.Random(7), 1, 0);
+
+            Assert.IsTrue(dto.Parts.Exists(p => p.slot == PartSlot.Head && p.partId == "head_sphere"),
+                "a generated unit should receive a Head when the profile owns one");
+
+            Cleanup(new Object[] { catalog, body, head });
+        }
+
+        [Test]
+        public void Generate_SkipsHead_WhenNotOwned_Gracefully()
+        {
+            // Head is in BuildSlots, but an unowned head must not crash or fabricate a part.
+            var body = MakePart("body_a", PartSlot.Body);
+            var catalog = MakeCatalog(
+                new List<PartCatalog_SO.PartEntry> { new PartCatalog_SO.PartEntry { part = body } },
+                new List<PartCatalog_SO.PaletteEntry>());
+            var profile = new PlayerProfileDTO();
+            profile.GrantPart("body_a");   // no head owned
+
+            var dto = RandomUnitGenerator.Generate(catalog, profile, new System.Random(7), 1, 0);
+
+            Assert.IsFalse(dto.Parts.Exists(p => p.slot == PartSlot.Head), "no head drawn when none owned");
+
+            Cleanup(new Object[] { catalog, body });
+        }
     }
 }

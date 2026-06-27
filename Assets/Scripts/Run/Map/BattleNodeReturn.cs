@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using CapsuleWars.Combat.Stats;
 using CapsuleWars.Combat.State;
 using CapsuleWars.Core;
+using CapsuleWars.Data.Equipment;
 using CapsuleWars.Data.Units;
 using CapsuleWars.Persistence;
 using UnityEngine;
@@ -28,6 +29,13 @@ namespace CapsuleWars.Run.Map
         [Tooltip("Part catalog the random recruit generator draws unlocked parts from. Optional — without it recruits are identity-only.")]
         [SerializeField] private PartCatalog_SO partCatalog;
 
+        [Header("Loot drops (BTS-G)")]
+        [Tooltip("Loot table rolled on a regular Combat win — drops into the run inventory. None = no item drop.")]
+        [SerializeField] private LootTable_SO combatLootTable;
+
+        [Tooltip("Loot table rolled on an Elite win (rarity-skewed). None = falls back to the combat table.")]
+        [SerializeField] private LootTable_SO eliteLootTable;
+
         private BattleStateManager stateManager;
 
         private void Awake()
@@ -50,17 +58,28 @@ namespace CapsuleWars.Run.Map
             {
                 state.AddGold(state.IsBossEncounter ? goldOnBossWin : goldOnCombatWin);
 
-                // Roguelike-only unit drop on non-boss wins (Combat/Elite), added
-                // to the run's recruit pool and offered for legacy promotion at
-                // run end. Draws from the player's unlocked parts.
+                // Non-boss wins (Combat/Elite): an equipment drop + a roguelike unit recruit.
+                // Boss = gold-only (Docs/07). The drop is rolled deterministically per node, so a
+                // reload reproduces it, and lands in the run's loose inventory (BTS-G).
                 if (!state.IsBossEncounter)
+                {
+                    var nodeType = state.CurrentNode != null ? state.CurrentNode.Type : NodeType.Combat;
+                    var table = nodeType == NodeType.Elite && eliteLootTable != null ? eliteLootTable : combatLootTable;
+                    if (table != null)
+                        LootGrant.GrantTo(state, table, state.Seed ^ (state.CurrentNodeId * 31 + 17));
+
                     state.AddRecruit(RandomUnitGenerator.Generate(
                         partCatalog, LegacyStore.Current?.PlayerProfile, null,
                         state.CurrentFloor, state.Recruits.Count));
+                }
 
                 // Clear the node; the player picks their next node on the map. The
                 // controller stitches a new segment when a top-row boss is cleared.
                 state.MarkCurrentCleared();
+
+                // Persist NOW: the win path didn't save before the scene load, so a loose
+                // drop (and the gold/recruit) would be lost on the way back to the map.
+                RunSession.Save();
             }
             else
             {

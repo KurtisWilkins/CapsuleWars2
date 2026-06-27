@@ -99,5 +99,9 @@ namespace CapsuleWars.Persistence.Dto
 
         /// <summary>The player's last deployment-grid placement per unit (spawn-then-arrange persistence).</summary>
         public List<UnitPlacementDTO> Placements = new List<UnitPlacementDTO>();
+
+        /// <summary>Loose run-scoped item inventory — dropped/unassigned equipment (BTS-G). Additive: old saves
+        /// load with an empty list, so SaveVersion stays 2 (no migration).</summary>
+        public List<UnitEquipmentDTO> Inventory = new List<UnitEquipmentDTO>();
     }
 }

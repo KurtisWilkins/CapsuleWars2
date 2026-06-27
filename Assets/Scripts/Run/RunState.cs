@@ -49,6 +49,10 @@ namespace CapsuleWars.Run
         private readonly Dictionary<string, GridCoord> placements = new();
         public IReadOnlyDictionary<string, GridCoord> Placements => placements;
 
+        private readonly List<UnitEquipmentDTO> inventory = new();
+        /// <summary>Loose run-scoped items the player owns but hasn't equipped (combat/treasure drops; BTS-G).</summary>
+        public IReadOnlyList<UnitEquipmentDTO> Inventory => inventory;
+
         public RunState(RunMap map, int startingGold = 0, int seed = 0)
         {
             Map = map;
@@ -70,6 +74,9 @@ namespace CapsuleWars.Run
 
         public void AddRecruit(UnitDTO unit) { if (unit != null) recruits.Add(unit); }
         public void RemoveRecruit(UnitDTO unit) { if (unit != null) recruits.Remove(unit); }
+
+        public void AddItem(UnitEquipmentDTO item) { if (item != null) inventory.Add(item); }
+        public void RemoveItem(UnitEquipmentDTO item) { if (item != null) inventory.Remove(item); }
 
         public void SetPlacement(string unitId, GridCoord coord)
         {
@@ -178,6 +185,7 @@ namespace CapsuleWars.Run
             foreach (var u in recruits) if (u != null) dto.Recruits.Add(u);
             foreach (var kv in placements)
                 dto.Placements.Add(new UnitPlacementDTO(kv.Key, kv.Value.col, kv.Value.row));
+            foreach (var item in inventory) if (item != null) dto.Inventory.Add(item);
             return dto;
         }
 
@@ -215,6 +223,8 @@ namespace CapsuleWars.Run
             if (dto.Placements != null)
                 foreach (var p in dto.Placements)
                     if (p != null) state.SetPlacement(p.unitId, new GridCoord(p.col, p.row));
+            if (dto.Inventory != null)
+                foreach (var item in dto.Inventory) state.AddItem(item);
             return state;
         }
     }

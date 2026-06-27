@@ -156,5 +156,36 @@ namespace CapsuleWars.Tests.EditMode
             RunSession.Clear();
             Assert.IsFalse(RunSession.HasSavedRun);
         }
+
+        [Test]
+        public void Inventory_SurvivesRoundTrip()
+        {
+            // BTS-G: loose dropped items survive RunState -> RunStateDTO -> RunState (id + rolled tier/seed).
+            var state = MakeRun();
+            state.AddItem(new UnitEquipmentDTO(EquipmentSlot.Helmet, "iron_helm") { tier = 2, seed = 99, displayName = "Helm of Health" });
+            state.AddItem(new UnitEquipmentDTO(EquipmentSlot.Chest, "leather_chest"));
+
+            var restored = RunState.FromDTO(state.ToDTO());
+
+            Assert.AreEqual(2, restored.Inventory.Count);
+            Assert.AreEqual("iron_helm", restored.Inventory[0].equipmentId);
+            Assert.AreEqual(EquipmentSlot.Helmet, restored.Inventory[0].slot);
+            Assert.AreEqual(2, restored.Inventory[0].tier);
+            Assert.AreEqual(99, restored.Inventory[0].seed);
+            Assert.AreEqual("leather_chest", restored.Inventory[1].equipmentId);
+        }
+
+        [Test]
+        public void Inventory_SurvivesJsonRoundTrip()
+        {
+            var state = MakeRun();
+            state.AddItem(new UnitEquipmentDTO(EquipmentSlot.Legs, "greaves") { tier = 1 });
+
+            var back = JsonConvert.DeserializeObject<RunStateDTO>(JsonConvert.SerializeObject(state.ToDTO()));
+
+            Assert.AreEqual(1, back.Inventory.Count);
+            Assert.AreEqual("greaves", back.Inventory[0].equipmentId);
+            Assert.AreEqual(EquipmentSlot.Legs, back.Inventory[0].slot);
+        }
     }
 }

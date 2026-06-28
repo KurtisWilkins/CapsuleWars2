@@ -6,6 +6,21 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-28 — Tint milestone: runtime grayscale tinting + TintPreset (main)
+**Did:** built the runtime tint system end-to-end — any neutral-grayscale part renders in an arbitrary color at runtime
+with NO asset regen; color never baked (ADR-039). **Data layer (9e8bde7):** `EquipmentInstance` gains `primaryTint`
+(Color.clear = untinted) + a per-`PartSlot` accent map; pure `TintRamp` derives shadow/mid/high from one color
+(untinted → identity black/gray/white so grayscale is exact); `TintPreset` SO (explicit ramp + accents) with
+`ApplyTo`/`CaptureFrom` round-trip; +5 tests. **Render layer (07f879b):** URP `CapsuleWars/TintRamp` shader
+(luminance → 3-stop ramp, identity at neutral, compiles clean); `UnitTintApplier` ([ExecuteAlways]) derives the ramp +
+pushes `_TintShadow/_TintMid/_TintHigh` per part renderer via **MaterialPropertyBlock** (no per-unit material
+instances) — both teams via `UnitCustomization.Mounts`, recolor-live, `ApplyFrom`/`CaptureInto` an `EquipmentInstance`,
+Save/Load a `TintPreset`; `UnitTintApplierEditor` previews in-Scene without play mode + saves/applies presets; sample
+`Mat_TintRamp.mat`. Bridge self-test: green tint → mid (0,1,0)/shadow (0,.3,0)/high (.55,1,.55). **250 green.**
+**REMAINING — visual-verify only (PROJECT_STATE item 11):** the on-screen render is the sole unconfirmed piece.
+**Tradeoff:** MPB drops SRP-batching on tinted renderers (v1-fine; GPU-instancing is the follow-up). **OUT OF SCOPE
+(next milestone):** cross-run save; ThemeProfile.
+
 ## 2026-06-27 — BTS-F part 2: class→ability wiring + uniform activation (main)
 **Did:** units now cast real CLASS move kits (was a single placeholder QuickStrike for everyone). A 5-angle read-only
 design Workflow surfaced the prerequisite — NO per-unit class exists (every unit inherits Warrior+QuickStrike from the

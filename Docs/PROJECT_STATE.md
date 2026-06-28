@@ -196,6 +196,15 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
    wired to `ClassAbilitySet.asset` and `UnitStatusController.unitClass` = Class_Monk. Note: this is the UNIFORM slice
    — every unit is a Monk on purpose; per-unit class variety (varied moves) is the next BTS-F follow-up. To revert,
    re-run `Tools/Build-To-Spec/Activate…` after re-pointing, or `git revert df10d1f`.
+11. **Tint system v1 — visual-verify (no code; ADR-039).** Code-complete + bridge-verified at the data level; the
+   ON-SCREEN look is the only thing unconfirmed. (a) Put a grayscale capsule part in a scene; assign
+   `Assets/Art/Materials/Mat_TintRamp.mat` to its `MeshRenderer`. (b) Add `UnitTintApplier`; set `primaryTint` in the
+   inspector → the part renders that color **in the Scene view without play mode** ("renders convincingly green from
+   tint alone"); at `Color.clear` it looks like the original grayscale. (c) Change the color → recolors live. (d) On a
+   multi-part unit, add a per-slot **accent** → that slot overrides the primary. (e) **Save current tint → NEW preset
+   asset**, then on a DIFFERENT unit set that `TintPreset` + **Apply preset → unit** → same look. Tradeoff: MPB drops
+   SRP-batching on tinted renderers (fine at v1 counts; GPU-instancing is the noted follow-up). If a part stays
+   grayscale, confirm its material is `Mat_TintRamp` (the new shader, not URP/Lit).
 
 ## Known issues / notes
 - **GPU crash FIXED:** Graphics API for Windows is **Direct3D11 only** (Auto off, D3D12 removed) in

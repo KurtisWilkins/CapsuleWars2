@@ -5,15 +5,16 @@
 
 ## Next up (work top-down)
 
-### 🎨 MILESTONE (active): Runtime tint system + TintPreset (URP grayscale tinting)
-- [~] **Tint v1 — luminance-ramp tinting of grayscale parts.** Any neutral-grayscale part renders in an arbitrary
-      color at runtime (no asset regen); color is NEVER baked — the grayscale library stays the source of truth.
-      Deliverables: (1) tint on `EquipmentInstance` (`primaryTint` + per-part accent map); (2) `TintPreset` SO
-      (shadow/mid/high ramp + accents) + bidirectional apply/capture helpers; (3) URP luminance-ramp shader
-      (`_TintShadow/_TintMid/_TintHigh`, identity at neutral, prefab-safe); (4) runtime applier (MaterialPropertyBlock,
-      no per-unit material instances, recolor-live); (5) editor preview + save-to-preset + apply-preset (no play mode).
-      **Invariants:** `Equipment_SO` stays color-free; tint on `EquipmentInstance` (Instance side of ADR-019);
-      grayscale source assets untouched. **OUT OF SCOPE:** cross-run savegame persistence; ThemeProfile (next milestone).
+### 🎨 MILESTONE: Runtime tint system + TintPreset — CODE-COMPLETE (250 green); visual-verify pending
+- [~] **Tint v1 — luminance-ramp tinting of grayscale parts. All 5 deliverables built (ADR-039).** (1) tint on
+      `EquipmentInstance` (`primaryTint` + per-part accent map) + (2) `TintPreset` SO (shadow/mid/high + accents) +
+      apply/capture helpers + 5 tests (9e8bde7); (3) URP `CapsuleWars/TintRamp` shader (identity at neutral, compiles
+      clean) + (4) `UnitTintApplier` (MPB, recolor-live, both teams via mounts) + (5) editor preview/save/apply +
+      `Mat_TintRamp.mat` (07f879b). Bridge self-test: green tint → mid(0,1,0)/shadow(0,.3,0)/high(.55,1,.55).
+      **REMAINING — visual-verify (your eyes, no code):** drop `Mat_TintRamp.mat` on a grayscale part, add
+      `UnitTintApplier`, set `primaryTint` → part renders that color in-Scene (no play mode); recolor live; per-part
+      accents; Save→preset then Apply to another unit = same look. **Invariants honored:** `Equipment_SO` color-free;
+      tint on the Instance (ADR-019); grayscale assets untouched. **OUT OF SCOPE (next):** cross-run save; ThemeProfile.
 
 ### Build-to-spec content backlog (Docs/05/07/08/09/10 + class roster; ADR-028) — dependency-ordered
 Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slices, each a discrete approved unit:

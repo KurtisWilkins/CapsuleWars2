@@ -710,4 +710,28 @@ caveat:** all 32 abilities require a weapon, so any non-Unarmed class spawned wi
 until equipment loadouts exist. **Status:** code-complete + base-prefab wired, **245/245 EditMode green** (registry
 resolution + `SetAbilities` rebuild). Live in-combat casting is **Play-gated**.
 
+### ADR-039 — Runtime grayscale tinting via a URP luminance ramp + MaterialPropertyBlock (tint milestone)
+**Decided:** any neutral-grayscale part can render in an arbitrary color at runtime with NO asset regeneration; color
+is never baked — the grayscale library stays the single source of truth. A URP shader (`CapsuleWars/TintRamp`) maps a
+part's LUMINANCE through a 3-stop ramp (`_TintShadow`/`_TintMid`/`_TintHigh`); at the neutral default (black→gray→white)
+the ramp is the identity, so an untinted part is pixel-unchanged. `UnitTintApplier` ([ExecuteAlways]) derives the ramp
+from a tint via the pure `TintRamp` helper and writes the three colors per part renderer through a
+**MaterialPropertyBlock** — so NO per-unit material instances are created (one shared material per part).
+**Data split (respects ADR-019):** the per-unit tint lives on `EquipmentInstance` (`primaryTint` + a per-`PartSlot`
+accent map); `Equipment_SO` stays color-free. A single `primaryTint` (the headline color) is expanded to the ramp by
+the applier; the reusable, saveable `TintPreset` ScriptableObject stores the explicit shadow/mid/high (so it can be
+hand-tuned + referenced by ThemeProfile next), with `ApplyTo`/`CaptureFrom` bridging preset↔instance (`primaryTint`
+default `Color.clear` = untinted → identity ramp). Editor authoring (`UnitTintApplierEditor`) previews in the Scene
+view without play mode and Saves/Applies presets; the applier's serialized tint is what persists the painted color
+(MPB values do not).
+**Tradeoff (documented):** MaterialPropertyBlock disables the SRP Batcher for tinted renderers. Accepted for v1 (a
+handful of on-screen units); if counts grow, move to GPU-instanced per-instance color properties — a follow-up, not
+built now. **Lighting:** v1 shader is Lambert + SH ambient + main/additional lights + shadows (not full PBR) — fine for
+stylized parts; a PBR-exact variant is a follow-up if needed.
+**Scope:** tint + `TintPreset` ONLY. Cross-run savegame persistence of per-unit tint is OUT (presets persist as assets;
+runtime tint need not survive restart yet). ThemeProfile/themes ride on top NEXT milestone — not started.
+**Status:** code-complete, **250/250 EditMode green** (ramp + instance accents + preset round-trip); shader compiles
+clean; applier bridge-verified (green tint → mid (0,1,0)/shadow (0,0.3,0)/high (0.55,1,0.55)). On-screen render is the
+only Play/editor-gated item (visual-verify in PROJECT_STATE item 11).
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

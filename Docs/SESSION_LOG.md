@@ -6,6 +6,24 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-28 — Big Cats generation run: reconciliation + tint variants (staged); mesh-gen GATED
+**Did (free, no API spend):** started the Big Cats asset-generation batch (RACE_ROSTER category 2, races 64–72).
+**Reconciled** live pipeline vs the backlog: TintPreset/tint system confirmed live (ADR-039); mirror = 2D image-flip
++ linked AssetRequest (`MirrorAction`); staging = `Assets/Generated/*` + AssetRequests in `Assets/Editor/AssetPipeline/
+Requests/`; lifecycle Active/Archived/Rejected; **Grok image-gen = automated PAID xAI call, Meshy = automated PAID call
++ 5–20 min poll** (both bridge-drivable). **Slot mismatch found + adapted:** the batch's anatomical 6 (Head/Torso/
+UpperArm/Forearm/Thigh/Shin) don't map to the live floating-limb rig (`PartSlot` Body/LeftHand/RightHand/LeftFoot/
+RightFoot/HeadProp) — felid base = HeadProp+Body+1 hand+1 foot (+2 mirrors), not 6+4 (→ QUESTIONS.md).
+**Authored §3 tint variants — 8 `TintPreset` assets, STAGED `Assets/Generated/Tints/` (uncommitted; human review
+gate):** Tint_Pantherfolk (near-black) + Tint_Pumafolk (tawny) = LIVE; Tigerfolk/Leopardfolk/Jaguarfolk/Cheetahfolk/
+Snowcatfolk = base color (pattern parked); Tint_Lynxfolk (gray-brown). Pattern markings parked once to QUESTIONS.md
+(luminance ramp can't do stripes/spots — needs a shader pattern-layer; its own milestone).
+**GATED — paid mesh generation (§1 base geometry, §2 mirrors, §4 Lynxfolk head, §5 gear):** the pipeline CAN run
+Grok+Meshy headless via the bridge, but it spends real xAI + Meshy budget (~11 mesh items × 5–20 min Meshy each).
+Held for explicit go-ahead + a budget/limit + confirmation the `Tools/Editor/SecretsConfig.json` keys are present.
+**Next-run pickup:** on go-ahead → §1 base (5 parts, live slots) → §2 mirror hand+foot → §4 Lynxfolk head → §5 gear;
+resolve the pattern-layer question before any pattern race ships looking correct.
+
 ## 2026-06-28 — Tint milestone: runtime grayscale tinting + TintPreset (main)
 **Did:** built the runtime tint system end-to-end — any neutral-grayscale part renders in an arbitrary color at runtime
 with NO asset regen; color never baked (ADR-039). **Data layer (9e8bde7):** `EquipmentInstance` gains `primaryTint`

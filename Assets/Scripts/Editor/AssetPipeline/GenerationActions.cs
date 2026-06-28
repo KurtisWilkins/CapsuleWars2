@@ -128,6 +128,7 @@ namespace CapsuleWars.Editor.AssetPipeline
                     File.WriteAllBytes(path, result.data);
                     AssetDatabase.ImportAsset(path);
                     r.importedModel = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                    if (result.textureData != null) AssignBaseColor(path, result.textureData);
                     if (r.stage < PipelineStage.ModelImported) r.stage = PipelineStage.ModelImported;
                     Persist(r);
                     Done($"Model imported: {path}");
@@ -167,6 +168,40 @@ namespace CapsuleWars.Editor.AssetPipeline
             r.category == AssetCategory.BodyPart
                 ? ((PartSlot)r.targetSlot).ToString()
                 : ((EquipmentSlot)r.targetSlot).ToString();
+
+        // Save Meshy's baked grayscale base-color texture next to the model and assign it to the model's material
+        // (Meshy ships the FBX textureless — the map is a separate URL). The grayscale is the part's source of truth
+        // + the region-tint shader's luminance. Remaps the FBX's embedded material to a new Lit material that
+        // references the texture, so the staged mesh renders with its grayscale instead of bare white.
+        private static void AssignBaseColor(string modelPath, byte[] texPng)
+        {
+            try
+            {
+                string dir = Path.GetDirectoryName(modelPath).Replace('\\', '/');
+                string baseName = Path.GetFileNameWithoutExtension(modelPath);
+                string texPath = $"{dir}/{baseName}_BaseColor.png";
+                File.WriteAllBytes(texPath, texPng);
+                AssetDatabase.ImportAsset(texPath);
+                var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
+                if (tex == null) return;
+
+                string matName = null;
+                foreach (var a in AssetDatabase.LoadAllAssetsAtPath(modelPath))
+                    if (a is Material m) { matName = m.name; break; }
+                if (string.IsNullOrEmpty(matName)) return;
+
+                var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                mat.SetTexture("_BaseMap", tex);
+                string matPath = $"{dir}/{baseName}_Mat.mat";
+                AssetDatabase.CreateAsset(mat, matPath);
+
+                var imp = (ModelImporter)AssetImporter.GetAtPath(modelPath);
+                imp.AddRemap(new AssetImporter.SourceAssetIdentifier(typeof(Material), matName), mat);
+                imp.SaveAndReimport();
+                Debug.Log($"[AssetPipeline] base-color texture grabbed + assigned: {texPath}");
+            }
+            catch (Exception e) { Debug.LogWarning("[AssetPipeline] base-color assign failed: " + e.Message); }
+        }
 
         private static void Persist(AssetRequest r)
         {

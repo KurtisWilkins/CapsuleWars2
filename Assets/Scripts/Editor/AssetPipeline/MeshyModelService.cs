@@ -74,7 +74,16 @@ namespace CapsuleWars.Editor.AssetPipeline
                     if (string.IsNullOrEmpty(url) && st.model_urls != null) { url = st.model_urls.glb; ext = "glb"; }
                     if (string.IsNullOrEmpty(url)) throw new Exception("Meshy succeeded but returned no fbx/glb url. Raw: " + json);
                     byte[] data = await GenerationHttp.Http.GetByteArrayAsync(url);
-                    return new ModelResult { data = data, ext = ext };
+
+                    // Also grab the baked grayscale BASE-COLOR texture: the FBX ships textureless (the map is a
+                    // separate URL). It's the part's grayscale source of truth + the region-tint shader's luminance.
+                    byte[] texData = null;
+                    if (st.texture_urls != null && st.texture_urls.Length > 0 && !string.IsNullOrEmpty(st.texture_urls[0].base_color))
+                    {
+                        try { texData = await GenerationHttp.Http.GetByteArrayAsync(st.texture_urls[0].base_color); }
+                        catch (Exception e) { Debug.LogWarning("[Meshy] base-color texture download failed: " + e.Message); }
+                    }
+                    return new ModelResult { data = data, ext = ext, textureData = texData };
                 }
                 if (st.status == "FAILED" || st.status == "EXPIRED" || st.status == "CANCELED")
                     throw new Exception($"Meshy task {st.status}. Raw: {json}");
@@ -82,10 +91,11 @@ namespace CapsuleWars.Editor.AssetPipeline
             throw new Exception("Meshy timed out waiting for the model.");
         }
 
-        public struct ModelResult { public byte[] data; public string ext; }
+        public struct ModelResult { public byte[] data; public string ext; public byte[] textureData; }
 
         [Serializable] private class CreateResp { public string result; }
-        [Serializable] private class TaskResp { public string status; public int progress; public ModelUrls model_urls; }
+        [Serializable] private class TaskResp { public string status; public int progress; public ModelUrls model_urls; public TextureSet[] texture_urls; }
         [Serializable] private class ModelUrls { public string fbx; public string glb; public string obj; public string usdz; }
+        [Serializable] private class TextureSet { public string base_color; }
     }
 }

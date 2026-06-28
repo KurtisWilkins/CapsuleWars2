@@ -6,6 +6,12 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-28 — RACE_ROSTER reference saved; smooth-neck regen on torsos + heads
+- **RACE_ROSTER.md (213/18) saved as reference** (`Docs/RACE_ROSTER.md`); no change to current Big Cats work.
+- **Smooth-neck fix:** regenerated both torsos + both heads — no neck socket / stump / collar / fur-ruff; clean
+  floating-limb parts (head floats above a smooth body). Each request's chosenImage now points at the smooth version
+  for Meshy. Image set finalized.
+
 ## 2026-06-28 — Big Cats run: ALL 10 felid images nailed + Meshy texture-grab fix; batch-Meshy is the remaining run
 **Image phase COMPLETE** (each judged by reading the rendered PNG; 4-attempt cap; staged in `Assets/Generated/Images`):
 - **Base (gendered torso+head; paws/feet gender-neutral, reuse male):** `Head_M`, `Torso_M` (#2 lean+ruff), `Hand_L`,

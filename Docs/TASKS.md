@@ -42,11 +42,13 @@ Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slic
       table, seed)` (Run) rolls→DTO→AddItem. **Wiring + assets (4447f1e):** `BattleNodeReturn` grants on combat/elite
       win (reads `CurrentNode.Type`, picks the serialized combat/elite `LootTable`, `LootGrant` + **`RunSession.Save()`**)
       — Boss = gold-only; `EquipmentLootSetupTool` authored `EquipmentRollConfig` + `LootTable_Combat`/`_Elite`
-      (first-pass, tunable). **236 green** (+13 BTS-G tests). **Remaining:** (1) **FINAL CONNECT (Play-gated):** assign
-      `LootTable_Combat`/`_Elite` to the `BattleNodeReturn` component in `Test_M3_Battle`, then win a combat node →
-      confirm an item lands in the inventory + survives reload; (2) `EventPanel` Treasure hook; (3) the 4 empty
-      armor-slot items (Shoulders/Back/Arms/Legs) + fill blank rarity ids; (4) customization bag reads OWNED items
-      (today it lists the whole catalog).
+      (first-pass, tunable). **Drop sources complete (5c1edc4):** `EventPanel` treasure-node drops + `LootTable_Treasure`
+      (1-2). **Content complete (5ebd0e8):** 4 armor-slot items (Shoulders/Back/Arms/Legs, identity-only) + filled rarity
+      ids → all 8 slots covered + droppable. **236 green** (+13 BTS-G tests). **Remaining:** (1) **SCENE-ASSIGN +
+      PLAY-VERIFY (yours):** drag `LootTable_Combat`/`_Elite` onto `BattleNodeReturn` (`Test_M3_Battle`) and
+      `LootTable_Treasure` onto the `EventPanel`, then win a combat/treasure node → item lands in inventory + survives
+      reload. (2) **Customization bag reads OWNED items** (Play-gated UI slice — today it lists the whole catalog;
+      needs the equip-the-rolled-instance flow, not just a definition). (3) armor-item meshes/icons (Meshy/Grok follow-up).
 - [ ] **BTS-H — EVOLUTION system [code] (newly in scope, ADR-028).** XP gained after each battle; stats evolve
       across floors/maps; evolution tiers drive the `Ability_SO` evolution-indexed strategy arrays + `EvolveEffect`
       + `ChangeSizeEffect`. (Also unblocks the deferred VFX/projectile effects when the VFX pipeline lands.)

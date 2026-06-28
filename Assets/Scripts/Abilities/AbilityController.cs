@@ -37,6 +37,15 @@ namespace CapsuleWars.Abilities
         private void Awake()
         {
             root = GetComponentInParent<UnitRoot>();
+            BuildRuntimes();
+        }
+
+        /// <summary>(Re)build the per-ability runtimes from the current <see cref="abilities"/>, locking those the
+        /// unit's equipped weapon doesn't satisfy. Idempotent (clears first) so it's safe to call again after Awake
+        /// when <see cref="SetAbilities"/> swaps in a class kit at spawn.</summary>
+        private void BuildRuntimes()
+        {
+            runtimes.Clear();
             var equipped = root != null && root.Attack != null ? root.Attack.WeaponClass : null;
 
             for (int i = 0; i < abilities.Count; i++)
@@ -49,6 +58,19 @@ namespace CapsuleWars.Abilities
                 };
                 runtimes.Add(rt);
             }
+        }
+
+        /// <summary>Replace this unit's ability set and rebuild its runtimes (BTS-F part 2 — <see cref="ClassAbilityLoader"/>
+        /// installs the unit's class kit at spawn). Null → empty. Safe before or after Awake: resolves <see cref="root"/>
+        /// lazily, so a self-wiring loader works regardless of component execution order.</summary>
+        public void SetAbilities(IReadOnlyList<Ability_SO> newAbilities)
+        {
+            abilities.Clear();
+            if (newAbilities != null)
+                for (int i = 0; i < newAbilities.Count; i++)
+                    if (newAbilities[i] != null) abilities.Add(newAbilities[i]);
+            if (root == null) root = GetComponentInParent<UnitRoot>();
+            BuildRuntimes();
         }
 
         private void Update()

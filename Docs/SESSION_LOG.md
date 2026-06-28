@@ -6,6 +6,24 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-28 — Big Cats human review + corrections applied (final set: 6 base + 3 gear)
+Human archive/reject pass done in the Asset Review window; rejected first passes regenerated + re-Meshed:
+- **Hand → CLOSED FIST** (was open paw). Re-imaged ("tightly clenched fist, grip channel for a weapon") + re-Meshed
+  (`LeftHand/Felid_Base_Hand_L 2.fbx`, textured). The user wants ALL hands as fists (grip/punch read).
+- **Foot → NORMAL foot** (was pads-on-top, then a misfired sole-up). Final read of the note: pads belong on the
+  hidden underside, smooth furry top, claws at the toes. Re-imaged + re-Meshed (`LeftFoot/Felid_Base_Foot_L 1.fbx`,
+  textured).
+- **Gauntlet → DROPPED.** "Gauntlet/glove" is NOT an equipment slot (`EQUIPMENT_CATALOG.md`: Helmet/Chest/Shoulders/
+  Back/Right-hand/Left-hand). Request + stale mesh abandoned; gear set is now helm + pauldron + claw-blade (3).
+- **Mirrors:** R hand + foot refreshed from the corrected L images; the R **mesh** = L mesh `localScale.x=-1` in
+  Unity at wiring (no separate asset, no R Meshy). Gauntlet_R dropped with the gauntlet.
+- **Process fix:** the batch Meshed by request name and ignored Reject status, so rejected images were built. Now I
+  Busy-gate AND approval-gate each Meshy. **Future hardening:** make the Meshy step skip `Rejected` requests in code
+  (small pipeline change; separate quiet step — recompile is unsafe mid-Meshy).
+
+Final staged felid set (`Assets/Generated/Meshy/MANIFEST.md`, `_contact_sheet_final.png`): torso M/F, head M/F, fist
+hand, normal foot, fanged helm, clawed pauldron, claw-blade — all textured. R hand/foot via Unity mirror.
+
 ## 2026-06-28 — Big Cats batch-Meshy COMPLETE (10 textured meshes + 3 mirror pairs staged)
 **Done — all staged UNCOMMITTED for human review** (`Assets/Generated/Meshy/MANIFEST.md`, `_contact_sheet.png`):
 - **6 base parts**, all textured (FBX + `_BaseColor.png` + `_Mat`): torso M/F (smooth necks), head M/F (cat ears), hand L, foot L.

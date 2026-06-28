@@ -55,12 +55,15 @@ Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slic
       `LootTable_Treasure` onto the `EventPanel`, then win a combat/treasure node → item lands in inventory + survives
       reload. (2) **Customization bag reads OWNED items** (Play-gated UI slice — today it lists the whole catalog;
       needs the equip-the-rolled-instance flow, not just a definition). (3) armor-item meshes/icons (Meshy/Grok follow-up).
-- [~] **BTS-H — EVOLUTION system (core done: 39ae764, 240 green).** `EvolutionConfig_SO` (xpThresholds + per-tier
-      growth + xpPerBattleWin) + pure `UnitEvolution` math (XP→tier→base-stat multiplier) + 4 tests. **Remaining
-      wiring:** `UnitDTO.xp` persistence (additive round-trip) + `EvolutionGrant.GrantXp(party, config)` on battle win
-      (BattleNodeReturn, Play-gated) + `UnitStatusController` applies `GrowthMultiplier` to base stats (set at spawn
-      from `dto.xp`+config via UnitFactory). Later/Docs: evolution-indexed `Ability_SO` strategy arrays + `EvolveEffect`
-      + `ChangeSizeEffect` (unblocks deferred VFX).
+- [~] **BTS-H — EVOLUTION system (math + wiring + earn-hook DONE; 243 green).** Done: `EvolutionConfig_SO`
+      (xpThresholds + per-tier growth + xpPerBattleWin) + pure `UnitEvolution` math (XP→tier→multiplier, 39ae764) +
+      `UnitDTO.Xp` persistence + `UnitStatusController.SetEvolutionMultiplier` scaling base stats + `EvolutionGrant`
+      (e2a7dcc) + `BattleNodeReturn` grants XP on any win + authored `Assets/Data/Units/EvolutionConfig.asset`
+      (df41f8c). 10 tests across `UnitEvolutionTests` + `EvolutionWiringTests`.
+      **LAST 10% (Play-gated):** find the live player-party spawn path (NOT a direct `UnitFactory.FromDTO` caller in
+      Assets/Scripts — needs investigation) and there call `status.SetEvolutionMultiplier(UnitEvolution.GrowthMultiplier(dto.Xp, config))`
+      so accrued XP actually grows stats; + assign `EvolutionConfig` to `BattleNodeReturn` in Test_M3_Battle.
+      Later/Docs: evolution-indexed `Ability_SO` strategy arrays + `EvolveEffect` + `ChangeSizeEffect` (unblocks deferred VFX).
 
 #### Build-to-spec adversarial review follow-ups (2026-06-25; 8 confirmed, 4 fixed inline)
 Fixed: resistance "always lands" boundary (Random.value inclusive of 1.0); Regenerating HoT no longer revives a

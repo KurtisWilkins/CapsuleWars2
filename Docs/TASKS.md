@@ -5,6 +5,16 @@
 
 ## Next up (work top-down)
 
+### 🎨 MILESTONE (active): Runtime tint system + TintPreset (URP grayscale tinting)
+- [~] **Tint v1 — luminance-ramp tinting of grayscale parts.** Any neutral-grayscale part renders in an arbitrary
+      color at runtime (no asset regen); color is NEVER baked — the grayscale library stays the source of truth.
+      Deliverables: (1) tint on `EquipmentInstance` (`primaryTint` + per-part accent map); (2) `TintPreset` SO
+      (shadow/mid/high ramp + accents) + bidirectional apply/capture helpers; (3) URP luminance-ramp shader
+      (`_TintShadow/_TintMid/_TintHigh`, identity at neutral, prefab-safe); (4) runtime applier (MaterialPropertyBlock,
+      no per-unit material instances, recolor-live); (5) editor preview + save-to-preset + apply-preset (no play mode).
+      **Invariants:** `Equipment_SO` stays color-free; tint on `EquipmentInstance` (Instance side of ADR-019);
+      grayscale source assets untouched. **OUT OF SCOPE:** cross-run savegame persistence; ThemeProfile (next milestone).
+
 ### Build-to-spec content backlog (Docs/05/07/08/09/10 + class roster; ADR-028) — dependency-ordered
 Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slices, each a discrete approved unit:
 - [x] **BTS-A — ability event-trigger infra (ADR-029, done).** `IBattleEvents` Core seam + `CombatServices.Events`;

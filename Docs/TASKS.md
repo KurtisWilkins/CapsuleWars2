@@ -55,9 +55,12 @@ Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slic
       `LootTable_Treasure` onto the `EventPanel`, then win a combat/treasure node → item lands in inventory + survives
       reload. (2) **Customization bag reads OWNED items** (Play-gated UI slice — today it lists the whole catalog;
       needs the equip-the-rolled-instance flow, not just a definition). (3) armor-item meshes/icons (Meshy/Grok follow-up).
-- [ ] **BTS-H — EVOLUTION system [code] (newly in scope, ADR-028).** XP gained after each battle; stats evolve
-      across floors/maps; evolution tiers drive the `Ability_SO` evolution-indexed strategy arrays + `EvolveEffect`
-      + `ChangeSizeEffect`. (Also unblocks the deferred VFX/projectile effects when the VFX pipeline lands.)
+- [~] **BTS-H — EVOLUTION system (core done: 39ae764, 240 green).** `EvolutionConfig_SO` (xpThresholds + per-tier
+      growth + xpPerBattleWin) + pure `UnitEvolution` math (XP→tier→base-stat multiplier) + 4 tests. **Remaining
+      wiring:** `UnitDTO.xp` persistence (additive round-trip) + `EvolutionGrant.GrantXp(party, config)` on battle win
+      (BattleNodeReturn, Play-gated) + `UnitStatusController` applies `GrowthMultiplier` to base stats (set at spawn
+      from `dto.xp`+config via UnitFactory). Later/Docs: evolution-indexed `Ability_SO` strategy arrays + `EvolveEffect`
+      + `ChangeSizeEffect` (unblocks deferred VFX).
 
 #### Build-to-spec adversarial review follow-ups (2026-06-25; 8 confirmed, 4 fixed inline)
 Fixed: resistance "always lands" boundary (Random.value inclusive of 1.0); Regenerating HoT no longer revives a

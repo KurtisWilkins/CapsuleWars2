@@ -8,6 +8,9 @@
 
 ## 2026-06-28 — RACE_ROSTER reference saved; smooth-neck regen on torsos + heads
 - **RACE_ROSTER.md (213/18) saved as reference** (`Docs/RACE_ROSTER.md`); no change to current Big Cats work.
+- **EQUIPMENT_CATALOG.md (6-slot taxonomy) saved as reference** (`Docs/EQUIPMENT_CATALOG.md`); no change to current
+  work. (Catalog flags two future CODE tasks — handedness/weapon-slot rules + gender-neutral gear — for when equipment
+  work happens; not started this run.)
 - **Smooth-neck fix:** regenerated both torsos + both heads — no neck socket / stump / collar / fur-ruff; clean
   floating-limb parts (head floats above a smooth body). Each request's chosenImage now points at the smooth version
   for Meshy. Image set finalized.

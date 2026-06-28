@@ -57,6 +57,9 @@ namespace CapsuleWars.Units.Customization
             }
         }
 
+        /// <summary>The configured slot mounts (slot + renderer) — read by UnitTintApplier to push per-slot tint.</summary>
+        public IReadOnlyList<SlotMount> Mounts => mounts;
+
         private void Awake()
         {
             // Apply in Awake (not Start) so meshes are present before the
@@ -134,6 +137,9 @@ namespace CapsuleWars.Units.Customization
         [SerializeField] private PaletteRole paletteRole = PaletteRole.None;
 
         public PartSlot Slot => slot;
+
+        /// <summary>The renderer this mount drives — UnitTintApplier pushes the tint ramp here via MPB.</summary>
+        public MeshRenderer Renderer => meshRenderer;
 
         public void Clear()
         {

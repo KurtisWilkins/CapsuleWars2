@@ -1,3 +1,4 @@
+using CapsuleWars.Data.Equipment;
 using CapsuleWars.Run;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,6 +19,9 @@ namespace CapsuleWars.UI
 
         [Tooltip("Gold awarded when player clicks Continue.")]
         [SerializeField, Min(0)] private int goldReward = 15;
+
+        [Tooltip("Loot table rolled on a Treasure node (BTS-G) — drops into the run inventory. None = gold only.")]
+        [SerializeField] private LootTable_SO treasureLootTable;
 
         private void OnEnable()
         {
@@ -51,7 +55,18 @@ namespace CapsuleWars.UI
         private void OnContinue()
         {
             var state = RunSession.Current;
-            if (state != null) state.AddGold(goldReward);
+            if (state != null)
+            {
+                state.AddGold(goldReward);
+
+                // Treasure nodes also drop equipment into the run inventory (BTS-G, Docs/07). Deterministic
+                // per node; persist immediately so the drop survives the node-completion scene flow.
+                if (state.CurrentNode != null && state.CurrentNode.Type == NodeType.Treasure && treasureLootTable != null)
+                {
+                    LootGrant.GrantTo(state, treasureLootTable, state.Seed ^ (state.CurrentNodeId * 31 + 53));
+                    RunSession.Save();
+                }
+            }
 
             var controller = FindAnyObjectByType<RunController>();
             if (controller != null) controller.CompleteCurrentNode();

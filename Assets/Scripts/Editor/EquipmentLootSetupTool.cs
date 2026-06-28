@@ -21,6 +21,7 @@ namespace CapsuleWars.Editor
         private const string ConfigPath = Dir + "/EquipmentRollConfig.asset";
         private const string CombatPath = Dir + "/LootTable_Combat.asset";
         private const string ElitePath = Dir + "/LootTable_Elite.asset";
+        private const string TreasurePath = Dir + "/LootTable_Treasure.asset";
 
         private static readonly string[] DroppableItemPaths =
         {
@@ -72,11 +73,20 @@ namespace CapsuleWars.Editor
             SetField(elite, "rollConfig", config);
             EditorUtility.SetDirty(elite);
 
+            // Treasure: 1 guaranteed + a chance of a 2nd (Docs/07), mid-tier mix.
+            var treasure = CreateOrLoad<LootTable_SO>(TreasurePath);
+            SetField(treasure, "minDrops", 1);
+            SetField(treasure, "maxDrops", 2);
+            SetField(treasure, "items", WeightedDrops(items));
+            SetField(treasure, "tiers", Tiers((0, 2f), (1, 2f), (2, 1f)));
+            SetField(treasure, "rollConfig", config);
+            EditorUtility.SetDirty(treasure);
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"[EquipmentLootSetupTool] Authored EquipmentRollConfig + LootTable_Combat (0-1) + LootTable_Elite " +
-                      $"(1, rarity-skewed) referencing {items.Count} droppable items. First-pass numbers — assign the " +
-                      "tables to BattleNodeReturn in the battle scene to fire drops on win.");
+                      $"(1, rarity-skewed) + LootTable_Treasure (1-2) referencing {items.Count} droppable items. First-pass " +
+                      "numbers — assign Combat/Elite to BattleNodeReturn and Treasure to the EventPanel.");
         }
 
         private static EquipmentRollConfig.RollableStat Stat(StatType s, float min, float max, float w, string suffix) =>

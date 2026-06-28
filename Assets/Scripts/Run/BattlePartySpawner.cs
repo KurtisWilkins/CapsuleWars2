@@ -45,6 +45,9 @@ namespace CapsuleWars.Run
         [Tooltip("Part catalog used to resolve a party member's explicit parts (generated/recruited units). Optional.")]
         [SerializeField] private PartCatalog_SO partCatalog;
 
+        [Tooltip("Evolution config (BTS-H): scales each spawned PLAYER unit's base stats by the growth its accrued XP has earned. Optional — none = no evolution.")]
+        [SerializeField] private EvolutionConfig_SO evolutionConfig;
+
         [Tooltip("Spawn transforms for player units, one per party slot. Extra party members fall back to spacing offsets.")]
         [SerializeField] private Transform[] playerSpawnPoints;
 
@@ -100,8 +103,9 @@ namespace CapsuleWars.Run
 
             for (int i = 0; i < party.Count; i++)
             {
-                UnitFactory.Spawn(party[i], baseUnitPrefab, database, SpawnPosition(i, party[i]?.Id), SpawnRotation(i),
+                var unit = UnitFactory.Spawn(party[i], baseUnitPrefab, database, SpawnPosition(i, party[i]?.Id), SpawnRotation(i),
                                   parent: null, partDatabase: partCatalog);
+                ApplyEvolution(unit, party[i]);
             }
         }
 
@@ -135,6 +139,7 @@ namespace CapsuleWars.Run
             var unit = UnitFactory.Spawn(dto, baseUnitPrefab, Database(), pos, Quaternion.identity,
                                          parent: DeployedContainer(), partDatabase: partCatalog);
             if (unit == null) return false;
+            ApplyEvolution(unit, dto);
             placed[unitId] = unit;
             return true;
         }
@@ -161,6 +166,19 @@ namespace CapsuleWars.Run
             // Deactivate before destroy so a registration sweep can't grab a dying unit.
             unit.gameObject.SetActive(false);
             Destroy(unit.gameObject);
+        }
+
+        /// <summary>
+        /// BTS-H: scale this freshly-spawned PLAYER unit's base stats by the evolution growth its accrued
+        /// XP (<c>dto.Xp</c>) has earned. Player-only by construction — enemies (EnemyEncounterSpawner) and
+        /// the customization preview share <see cref="UnitFactory.Spawn"/> but never call this, so they don't
+        /// evolve. No-op without a config or a status controller.
+        /// </summary>
+        private void ApplyEvolution(UnitRoot unit, UnitDTO dto)
+        {
+            if (unit == null || dto == null || evolutionConfig == null) return;
+            if (unit.TryGetComponent<UnitStatusController>(out var status))
+                status.SetEvolutionMultiplier(UnitEvolution.GrowthMultiplier(dto.Xp, evolutionConfig));
         }
 
         private UnitDTO FindPartyMember(string unitId)

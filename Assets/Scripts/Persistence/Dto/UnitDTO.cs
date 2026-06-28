@@ -115,6 +115,10 @@ namespace CapsuleWars.Persistence.Dto
         /// </summary>
         public List<UnitEquipmentDTO> Equipment = new List<UnitEquipmentDTO>();
 
+        /// <summary>Accumulated experience (BTS-H). Drives the evolution tier + base-stat growth via
+        /// EvolutionConfig/UnitEvolution. Additive — absent in old saves → 0, so <see cref="SaveVersion"/> stays 1.</summary>
+        public int Xp;
+
         public UnitDTO() { }
 
         public UnitDTO(string id, string displayName, string unitDefinitionId)

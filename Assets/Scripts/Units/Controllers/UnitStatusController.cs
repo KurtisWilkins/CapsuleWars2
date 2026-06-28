@@ -52,6 +52,12 @@ namespace CapsuleWars.Units.Controllers
 
         public IReadOnlyList<EquippedItem> Equipment => equipment;
 
+        // BTS-H: evolution scales BASE stats by this multiplier (1 = no growth). Set at spawn from the unit's
+        // XP + EvolutionConfig (UnitFactory) via UnitEvolution.GrowthMultiplier.
+        private float evolutionMultiplier = 1f;
+        public float EvolutionMultiplier => evolutionMultiplier;
+        public void SetEvolutionMultiplier(float multiplier) => evolutionMultiplier = Mathf.Max(0f, multiplier);
+
         public int MaxHp => GetModifiedStat(StatType.MaxHp, baseMaxHp);
         public int Atk => GetModifiedStat(StatType.Atk, baseAtk);
         public int Def => GetModifiedStat(StatType.Def, baseDef);
@@ -307,14 +313,17 @@ namespace CapsuleWars.Units.Controllers
         private int GetModifiedStat(StatType type, int baseValue)
         {
             ComputeMods(type, out float flatMod, out float percentMod);
-            int result = baseValue + Mathf.RoundToInt(flatMod) + Mathf.RoundToInt(baseValue * percentMod / 100f);
+            // Evolution scales the BASE stat (BTS-H); buffs + equipment then layer on the evolved base.
+            float evolvedBase = baseValue * evolutionMultiplier;
+            int result = Mathf.RoundToInt(evolvedBase) + Mathf.RoundToInt(flatMod) + Mathf.RoundToInt(evolvedBase * percentMod / 100f);
             return Mathf.Max(0, result);
         }
 
         private float GetModifiedStatF(StatType type, float baseValue)
         {
             ComputeMods(type, out float flatMod, out float percentMod);
-            float result = baseValue + flatMod + baseValue * percentMod / 100f;
+            float evolvedBase = baseValue * evolutionMultiplier;
+            float result = evolvedBase + flatMod + evolvedBase * percentMod / 100f;
             return Mathf.Max(0f, result);
         }
 

@@ -662,4 +662,29 @@ mechanics that don't exist yet (Def-in-damage, attack-cadence hooks, conditional
 + the sink as those land. **Status:** code + 2 resolver tests (push when active / clear below threshold), **226/226
 EditMode green**. Heal-in-combat is **Play-gated** (needs a live battle with kills/hits).
 
+### ADR-037 — Unit evolution: persisted XP grows BASE stats, applied at the player spawn (BTS-H)
+**Decided:** units gain XP per battle and "evolve" — higher evolution tiers scale their BASE stats. The math is a
+pure, testable helper: `EvolutionConfig_SO` (Data) holds ascending cumulative `xpThresholds`, `statGrowthPerTier`,
+and `xpPerBattleWin`; `UnitEvolution` (Data, static) maps `TierFor(xp, thresholds)` → tier and
+`GrowthMultiplier(tier, rate)` = `1 + tier*rate`. XP lives on `UnitDTO.Xp` (additive; SaveVersion stays 1).
+`UnitStatusController.SetEvolutionMultiplier(m)` scales **only the BASE stat** inside `GetModifiedStat/F`, so
+buffs/equipment/synergy layer on top of the evolved base (order-independent; no change to `SumBuffs`).
+**Earn + apply seams:** `EvolutionGrant.GrantXp(state, config)` (Run) adds `xpPerBattleWin` to each party
+`UnitDTO` and is called by `BattleNodeReturn` on ANY win, inside the existing `RunSession.Save()` path. The
+multiplier is applied at spawn by **`BattlePartySpawner.ApplyEvolution`** — the sole live player-party spawner —
+at BOTH its spawn paths (standalone `SpawnParty` + deployment `SpawnOrMoveAt`), reading that member's `dto.Xp`.
+**Why apply in the spawner, not `UnitFactory.Spawn`:** the factory is shared by `EnemyEncounterSpawner` + the
+customization preview; injecting there would evolve enemies + previews. `BattlePartySpawner` is player-team-exclusive
+by construction, so evolution stays player-only with no per-team flag leaking into the persistence layer. The
+injection point was confirmed by a 5-angle read-only spawn-trace workflow (the live path is `UnitFactory.Spawn`,
+NOT the `FromDTO` overload, which has no live caller). No asmdef change — `CapsuleWars.Run` already references
+Data + Units; usings already present.
+**Config plumbing:** a `[SerializeField] EvolutionConfig_SO` on `BattlePartySpawner` (mirrors the one already on
+`BattleNodeReturn`); the asset is `Assets/Data/Units/EvolutionConfig.asset` (thresholds 100/250/450/700, +12%/tier,
+60 XP/win — first-pass, tunable). Null config = multiplier 1 (no-op), so evolution is optional per scene.
+**Status:** code-complete, **243/243 EditMode green** (`UnitEvolutionTests` + `EvolutionWiringTests`).
+**Play-gated:** assign the config asset on `BattlePartySpawner` (battle scene) + `BattleNodeReturn` (`Test_M3_Battle`),
+then verify a post-win unit spawns with grown stats. **Deferred:** evolution-indexed `Ability_SO` strategy arrays +
+`EvolveEffect` + `ChangeSizeEffect` (needs the VFX pipeline).
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

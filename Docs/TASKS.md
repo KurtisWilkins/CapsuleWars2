@@ -55,15 +55,18 @@ Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slic
       `LootTable_Treasure` onto the `EventPanel`, then win a combat/treasure node → item lands in inventory + survives
       reload. (2) **Customization bag reads OWNED items** (Play-gated UI slice — today it lists the whole catalog;
       needs the equip-the-rolled-instance flow, not just a definition). (3) armor-item meshes/icons (Meshy/Grok follow-up).
-- [~] **BTS-H — EVOLUTION system (math + wiring + earn-hook DONE; 243 green).** Done: `EvolutionConfig_SO`
-      (xpThresholds + per-tier growth + xpPerBattleWin) + pure `UnitEvolution` math (XP→tier→multiplier, 39ae764) +
-      `UnitDTO.Xp` persistence + `UnitStatusController.SetEvolutionMultiplier` scaling base stats + `EvolutionGrant`
-      (e2a7dcc) + `BattleNodeReturn` grants XP on any win + authored `Assets/Data/Units/EvolutionConfig.asset`
-      (df41f8c). 10 tests across `UnitEvolutionTests` + `EvolutionWiringTests`.
-      **LAST 10% (Play-gated):** find the live player-party spawn path (NOT a direct `UnitFactory.FromDTO` caller in
-      Assets/Scripts — needs investigation) and there call `status.SetEvolutionMultiplier(UnitEvolution.GrowthMultiplier(dto.Xp, config))`
-      so accrued XP actually grows stats; + assign `EvolutionConfig` to `BattleNodeReturn` in Test_M3_Battle.
-      Later/Docs: evolution-indexed `Ability_SO` strategy arrays + `EvolveEffect` + `ChangeSizeEffect` (unblocks deferred VFX).
+- [~] **BTS-H — EVOLUTION system CODE-COMPLETE (243 green); only a Play-gated inspector assign remains.**
+      Full loop in code: `EvolutionConfig_SO` (xpThresholds + per-tier growth + xpPerBattleWin) + pure `UnitEvolution`
+      math (XP→tier→multiplier, 39ae764) + `UnitDTO.Xp` persistence + `UnitStatusController.SetEvolutionMultiplier`
+      scaling base stats + `EvolutionGrant` (e2a7dcc) + `BattleNodeReturn` grants XP on any win + authored
+      `Assets/Data/Units/EvolutionConfig.asset` (df41f8c) + **spawn-compute** — `BattlePartySpawner.ApplyEvolution`
+      sets the multiplier from `dto.Xp` at BOTH player spawn paths (SpawnParty + SpawnOrMoveAt), player-only by
+      construction so enemies/previews (shared `UnitFactory.Spawn`) don't evolve (804bd19; injection point confirmed
+      via a 5-angle read-only spawn-trace workflow). 10 tests across `UnitEvolutionTests` + `EvolutionWiringTests`.
+      **REMAINING (Play-gated, inspector only):** assign `EvolutionConfig.asset` to **`BattlePartySpawner`** in the
+      battle scene + to **`BattleNodeReturn`** in `Test_M3_Battle`, then Play-verify a post-win unit spawns with grown
+      stats next battle. Later/Docs: evolution-indexed `Ability_SO` strategy arrays + `EvolveEffect` + `ChangeSizeEffect`
+      (unblocks deferred VFX).
 
 #### Build-to-spec adversarial review follow-ups (2026-06-25; 8 confirmed, 4 fixed inline)
 Fixed: resistance "always lands" boundary (Random.value inclusive of 1.0); Regenerating HoT no longer revives a

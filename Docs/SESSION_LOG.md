@@ -6,6 +6,20 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-27 — BTS-H evolution system: code-complete (main)
+**Did:** built the evolution system end-to-end in code (units gain XP per battle → higher tiers scale BASE stats),
+in four verified increments. Pure math first — `EvolutionConfig_SO` (thresholds/growth/xpPerWin) + `UnitEvolution`
+`TierFor`/`GrowthMultiplier` (39ae764). Then runtime wiring: `UnitDTO.Xp` persistence + `UnitStatusController.SetEvolutionMultiplier`
+scaling the base stat inside `GetModifiedStat/F` (buffs/equipment layer on top, order-independent) + `EvolutionGrant.GrantXp`
+(e2a7dcc). Then the earn-hook: `BattleNodeReturn` grants XP on ANY win inside the existing Save path + authored
+`Assets/Data/Units/EvolutionConfig.asset` (df41f8c). Then the **spawn-compute**: a 5-angle read-only spawn-trace
+Workflow (5 investigators → adversarial synthesis) pinpointed `BattlePartySpawner` (the sole live player-party
+spawner) as the injection point — its new `ApplyEvolution` sets the multiplier from `dto.Xp` at BOTH spawn paths
+(standalone `SpawnParty` + deployment `SpawnOrMoveAt`), **player-only** so enemies + customization previews (which
+share `UnitFactory.Spawn`) don't evolve (804bd19). ADR-037. **243 green** (+10: `UnitEvolutionTests` + `EvolutionWiringTests`).
+**REMAINING (Play-gated, inspector only):** assign `EvolutionConfig.asset` to `BattlePartySpawner` (battle scene) +
+`BattleNodeReturn` (`Test_M3_Battle`); then Play-verify a post-win unit spawns with grown stats next battle.
+
 ## 2026-06-27 — BTS-F part 1: 32 ability move kits authored (main)
 **Did:** the ability/status/element/synergy systems are no longer inert — every class has moves. A multi-agent
 design Workflow (4 designers → synthesis → adversarial critique, "no invalid refs") produced first-pass move kits;

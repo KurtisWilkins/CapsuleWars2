@@ -687,4 +687,27 @@ Data + Units; usings already present.
 then verify a post-win unit spawns with grown stats. **Deferred:** evolution-indexed `Ability_SO` strategy arrays +
 `EvolveEffect` + `ChangeSizeEffect` (needs the VFX pipeline).
 
+### ADR-038 — Units acquire their class ability kit via a registry + self-wiring loader (BTS-F part 2)
+**Decided:** a unit's move kit is driven by its CLASS, resolved at spawn. A new `ClassAbilitySet_SO` (in the
+**Abilities** assembly — the lowest layer that can name BOTH `UnitClass_SO`/Data and `Ability_SO`/Abilities) maps each
+class → its `Ability_SO[]`; `AbilitiesFor` matches by class reference, falling back to the stable `ClassId`.
+`AbilityController` gains `SetAbilities(...)` + a re-runnable `BuildRuntimes()` (idempotent, lazy-`root` → **order-
+independent**). A self-wiring `ClassAbilityLoader` MonoBehaviour on the **shared base unit prefab** reads
+`UnitStatusController.UnitClass` at Awake and installs the kit — so BOTH player (`BattlePartySpawner`) and enemy
+(`EnemyEncounterSpawner`) units, which clone that prefab through `UnitFactory.Spawn`, are covered with **zero spawner
+edits**. `ClassAbilitySetupTool` authors `ClassAbilitySet.asset` (16 classes / 32 abilities) idempotently.
+**Why a registry + loader (not a field on `UnitClass_SO`, nor logic in `UnitFactory`):** Data must not reference
+Abilities, so `UnitClass_SO` can't hold `Ability_SO`; `UnitFactory` (Persistence) also can't see Abilities; and
+`UnitFactory.Spawn` is shared with enemies + the customization preview, so wiring there would over-apply. The
+injection point + layering were confirmed by a 5-angle read-only design Workflow.
+**Prerequisite surfaced:** NO per-unit class existed — every unit inherited Warrior + a placeholder QuickStrike from
+the base prefab (`UnitDTO`/`UnitDefinition_SO` carry no class; generators TODO it). **First-pass activation (chosen
+"see it live"):** repoint the base prefab to `Class_Monk` (WC_Unarmed → casts with no weapon, dodging the weapon-gate)
++ add the loader + clear QuickStrike; `Unit_Enemy` inherits via its variant. So every unit is uniformly a Monk for now.
+**Deferred:** per-unit class VARIETY (`UnitDTO.ClassId` + a class catalog + generator rolls writing
+`UnitStatusController.unitClass`) is the real follow-up that retires the uniform slice + `Class_Warrior`. **Weapon-gate
+caveat:** all 32 abilities require a weapon, so any non-Unarmed class spawned without matching equipment cast-locks
+until equipment loadouts exist. **Status:** code-complete + base-prefab wired, **245/245 EditMode green** (registry
+resolution + `SetAbilities` rebuild). Live in-combat casting is **Play-gated**.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

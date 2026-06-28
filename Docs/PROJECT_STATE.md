@@ -11,7 +11,7 @@ _Last updated: 2026-06-27 — build-to-spec: Slice 1 + BTS-A/B1/B2/C/D/E1 done; 
 | **Elements** (Docs/08) | 15 types + 5×5 chart + dual rule | 15 + chart + multipliers + **dual-element rule (new)** | ✅ **complete to spec** |
 | **Abilities** (Docs/05) | ~30 strategy classes | 8 prior + 9 (targeting/filters/effects) + **8 triggers (BTS-A)** = 25; event-bus wiring done | ⏳ remaining: GetAttacker (BTS-A pt2), HighestThreat (needs dmg stat), BuffStat/KnockBack/Teleport/VFX/Evolve |
 | **Status** (Docs/10) | 24 effects | **24 `StatusEffect_SO` + 5 behaviors authored & wired (BTS-D)**; damage hook (BTS-B2); getters/resistance (BTS-B1) | ✅ content complete; [code] follow-ups: Unlucky ÷2-crit/roll-skew, Madness targeting, LastStand +Atk/one-time. Not yet applied by any ability (BTS-F) |
-| **Classes** (Docs/09 + roster) | 16 + tiers | **16 `WeaponClass_SO` (BTS-C) + 16 `UnitClass_SO` w/ [content] tiers + `globalBuffs` (BTS-E1) + BTS-E2 heal synergies (Barbarian heal-on-kill, Monk heal-on-hit; ADR-036)** | ⏳ BTS-E2 remaining [code] kinds (armor-pen, ramps, conditionals…) await combat hooks; assign classes→units (BTS-F); retire `Class_Warrior` placeholder. No class on a live unit yet (Play-gated) |
+| **Classes** (Docs/09 + roster) | 16 + tiers | **16 `WeaponClass_SO` (BTS-C) + 16 `UnitClass_SO` w/ [content] tiers + `globalBuffs` (BTS-E1) + BTS-E2 heal synergies (Barbarian heal-on-kill, Monk heal-on-hit; ADR-036)** | ⏳ BTS-E2 remaining [code] kinds (armor-pen, ramps, conditionals…) await combat hooks. **BTS-F part 2 DONE in code (df10d1f): units carry a class + self-load its move kit at spawn; uniform first-pass = every unit is Monk. Per-unit class VARIETY + live-cast Play-verify next; retire `Class_Warrior` then.** |
 | **Equipment** (Docs/07) | 8 slots × 5 rarities | code ✅; 6 items (all Common); **rarity ×s aligned to Docs/07 (1/1.25/1.5/2/3, BTS-G)** | ⏳ 4 empty slots, none above Common, no roll-config/loot assets, blank rarity ids, `LootTable_SO` not built |
 | **Evolution** (new, in scope) | XP/floor stat growth | — | ⏳ not started (gates EvolveEffect + evolution-indexed strategies) |
 
@@ -189,6 +189,13 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
    units **spawn with grown BASE stats** (HP/Atk/Def/Speed scale +12% per evolution tier crossed at 100/250/450/700 XP).
    Verify enemies + the customization preview do **not** grow (player-only by construction). Until assigned, multiplier
    stays 1 (no evolution, safe). Numbers are first-pass — tune on the `EvolutionConfig` asset, no code change.
+10. **BTS-F part 2 — units cast class moves (uniform first-pass; df10d1f).** Code + base-prefab wiring done (no
+   inspector step needed — already wired). Enter a battle in a run, deploy, press **Battle Start**: every unit on
+   BOTH teams should now cast **Monk's** two moves (palm-strike + harmony-flow) instead of the old QuickStrike, with
+   no equipped weapon needed (Monk = Unarmed). If nothing casts, check the unit prefab has a `ClassAbilityLoader`
+   wired to `ClassAbilitySet.asset` and `UnitStatusController.unitClass` = Class_Monk. Note: this is the UNIFORM slice
+   — every unit is a Monk on purpose; per-unit class variety (varied moves) is the next BTS-F follow-up. To revert,
+   re-run `Tools/Build-To-Spec/Activate…` after re-pointing, or `git revert df10d1f`.
 
 ## Known issues / notes
 - **GPU crash FIXED:** Graphics API for Windows is **Direct3D11 only** (Auto off, D3D12 removed) in

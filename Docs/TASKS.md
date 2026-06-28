@@ -33,13 +33,20 @@ Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slic
       (no conditional-stat layer), DoT/splash, strike-first, double-shot, reposition, pierce, backline-open — extend
       `SynergyEffectKind` + the sink as each lands. HandGunner-T4 −10% Speed defers with its [code] dmg. Retire
       `Class_Warrior` placeholder once units carry roster classes (BTS-F). Heal-in-combat is Play-gated.
-- [~] **BTS-F — ability move CONTENT (part 1 done: 32 move kits authored, 2bff2b4, 236 green).** Multi-agent
-      designed + adversarially verified; `AbilitySetupTool` authored 32 `Ability_SO` (basic + signature per class) +
-      54 strategy assets under `Assets/Data/Abilities/Generated/`, weapon-gated via `requiredWeaponClasses`.
-      Self-verified 32/32 fully composed. **PART 2 (the gap):** wire abilities to units — `AbilityController.abilities`
-      is per-prefab, but units carry NO class yet, so this needs (a) class→unit assignment + (b) a spawner step that
-      populates each unit's AbilityController from its class's abilities (or weapon-gates a shared full list). Retire
-      `Class_Warrior` placeholder. Combat-Play-gated. Then per-class move icons (IconGen/Grok) + balance tuning.
+- [~] **BTS-F — ability moves. Part 1 (content) + part 2 (wiring) DONE in code; 245 green.**
+      **Part 1 (2bff2b4):** `AbilitySetupTool` authored 32 `Ability_SO` (basic + signature per class) + 54 strategy
+      assets under `Assets/Data/Abilities/Generated/`, weapon-gated; 32/32 fully composed.
+      **Part 2 infra (4ff2bed):** layering-correct wiring (designed via a 5-angle read-only sweep) — `ClassAbilitySet_SO`
+      (Abilities asm, the lowest that sees both UnitClass_SO/Data + Ability_SO/Abilities) maps class→kit;
+      `AbilityController.SetAbilities`/`BuildRuntimes` (re-runnable, order-independent); `ClassAbilityLoader` self-wires
+      the kit at spawn from `UnitStatusController.UnitClass` (both teams via the shared base prefab, zero spawner edits);
+      `ClassAbilitySetupTool` authored `ClassAbilitySet.asset` (16 classes/32 abilities verified). +2 tests.
+      **Part 2 activation, uniform first-pass (df10d1f):** base prefab repointed to `Class_Monk` (WC_Unarmed →
+      casts without a weapon) + loader added + placeholder QuickStrike cleared; `Unit_Enemy` inherits via variant.
+      **REMAINING:** (a) **Play-verify** units cast Monk's moves in a live battle (both teams); (b) per-unit class
+      VARIETY — `UnitDTO.ClassId` + a class catalog + generators roll/assign a class per unit (the real feature, retires
+      the uniform slice + `Class_Warrior`); (c) per-class move icons + balance tuning. **Weapon-gate caveat:** any
+      non-Unarmed class spawned without matching equipment cast-locks until equipment loadouts exist.
 - [~] **BTS-G — equipment + loot system (EditMode foundation done: rarity ×s + generation + storage + grant).**
       Rarity ×s aligned to Docs/07 (1/1.25/1.5/2/3). **Generation core (8394443):** `LootTable_SO` (Data — weighted
       item pool + weighted tier + `EquipmentRollConfig` ref; NO NodeType, that's Run) + deterministic

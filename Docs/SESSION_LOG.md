@@ -6,6 +6,21 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-27 — BTS-F part 2: class→ability wiring + uniform activation (main)
+**Did:** units now cast real CLASS move kits (was a single placeholder QuickStrike for everyone). A 5-angle read-only
+design Workflow surfaced the prerequisite — NO per-unit class exists (every unit inherits Warrior+QuickStrike from the
+base prefab) — and the layering-correct injection point. Built the infra (4ff2bed): `ClassAbilitySet_SO` (in the
+Abilities asm — the lowest layer that sees both `UnitClass_SO`/Data and `Ability_SO`/Abilities; it can't live on
+UnitClass_SO or in UnitFactory) maps class→kit; `AbilityController.SetAbilities` + a re-runnable `BuildRuntimes`
+(order-independent); a self-wiring `ClassAbilityLoader` on the shared base prefab installs the kit at spawn from
+`UnitStatusController.UnitClass` (covers BOTH teams, zero spawner edits); `ClassAbilitySetupTool` authored
+`ClassAbilitySet.asset` (16 classes / 32 abilities / 0 bad refs, bridge-verified). +2 EditMode tests. Then activated
+the **uniform first-pass** (df10d1f, user-chosen "see it live"): base prefab → `Class_Monk` (WC_Unarmed, so it casts
+without a weapon) + loader + QuickStrike cleared; `Unit_Enemy` inherits via its variant. **245 green** (the prefab
+change broke no test). **REMAINING:** Play-verify live casting (both teams); then per-unit class VARIETY
+(`UnitDTO.ClassId` + a class catalog + generator rolls) is the real follow-up. **Weapon-gate caveat:** a non-Unarmed
+class spawned without matching equipment cast-locks until loadouts exist.
+
 ## 2026-06-27 — BTS-H evolution system: code-complete (main)
 **Did:** built the evolution system end-to-end in code (units gain XP per battle → higher tiers scale BASE stats),
 in four verified increments. Pure math first — `EvolutionConfig_SO` (thresholds/growth/xpPerWin) + `UnitEvolution`

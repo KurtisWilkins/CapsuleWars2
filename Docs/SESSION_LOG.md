@@ -6,6 +6,31 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-28 — Big Cats batch-Meshy COMPLETE (10 textured meshes + 3 mirror pairs staged)
+**Done — all staged UNCOMMITTED for human review** (`Assets/Generated/Meshy/MANIFEST.md`, `_contact_sheet.png`):
+- **6 base parts**, all textured (FBX + `_BaseColor.png` + `_Mat`): torso M/F (smooth necks), head M/F (cat ears), hand L, foot L.
+- **4 gear**, all textured, gender-neutral: fanged helm, clawed pauldron, claw gauntlet (L), claw-blade.
+- **3 mirror pairs** via the mirror utility (flipped image + linked `_R` request, `mirrorOf` set): hand_R, foot_R,
+  gauntlet_R. **No R Meshy** — R mesh = L mesh `localScale.x = -1` at wiring ("mirror, never regenerate").
+- **Texture-grab fix validated live**: every mesh imported with its grayscale base-color map + a Lit material
+  referencing it (Meshy ships the FBX textureless; the map is a separate URL — now downloaded + remapped on import).
+
+**Incident + fix (mid-run):** a Unity domain reload fired while a Meshy job was in flight. It broke the MCP bridge
+(disposed-handler spam → every main-thread command timed out) and, separately, a fire-while-busy hit
+`GenerationActions.Begin()`'s `EditorUtility.DisplayDialog("Busy", …)` — a **modal that blocks Unity's main
+thread**. That dialog (not a lost job) was the freeze. The in-flight jobs actually completed via the pump once the
+dialog cleared; nothing was lost. **Mitigation adopted for the rest of the batch:** check `GenerationActions.Busy
+== false` over the bridge before firing each next job, so the Busy modal can never re-appear. (Future hardening
+worth doing: make `Begin()` non-modal under automation, and clear the `GenerationHttp` queue on
+`AssemblyReloadEvents.beforeAssemblyReload`.)
+
+**Parked review notes:** heads + helm baked light/low-contrast (may need a midtone pass); hand/foot blobby (confirm
+at scale). Live recolor PENDS the region-tint shader (ADR-040).
+
+**Next-run pickup:** human archive/reject pass on the staged set → on approval, wire R meshes (L-mirror), build the
+region-tint shader, then the gender-axis runtime mesh-pick (code task). Remaining Big Cat variants (tint/pattern
+presets exist; Lynxfolk geometry-delta + Sabertooth spilled) and the rest of the roster are future category runs.
+
 ## 2026-06-28 — RACE_ROSTER reference saved; smooth-neck regen on torsos + heads
 - **RACE_ROSTER.md (213/18) saved as reference** (`Docs/RACE_ROSTER.md`); no change to current Big Cats work.
 - **EQUIPMENT_CATALOG.md (6-slot taxonomy) saved as reference** (`Docs/EQUIPMENT_CATALOG.md`); no change to current

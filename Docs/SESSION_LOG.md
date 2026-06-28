@@ -6,6 +6,17 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-28 — Big Cats run: gender axis added (M+F per part); torso #2 locked; foot pads→sole; Meshy spike then batch
+**Structural:** gender (Male/Female) is now FIXED at origination + immutable — every base part doubles (M+F); naming
+carries `_M`/`_F`; existing parts = the MALE set, the FEMALE set is new parallel work. Tint/masks/presets stay
+**gender-agnostic** (one per race). The runtime gender-mesh-pick (Gender enum + dual-mesh refs + spawn-time selection)
+is recorded as a CODE task in TASKS — this run does the ASSET doubling, not the code.
+**Decisions:** torso = design **#2** (lean + fur-ruff), locked for both genders; **foot pads moved dorsal-top →
+plantar sole** (first foot image was anatomically wrong, corrected before Meshy).
+**Path (recommended):** foot fix → Meshy **validation spike on the MALE trio** (torso#2 + hand + fixed foot) → nail the
+female base + §5 gear images → batch-Meshy approved. The spike de-risks the felid style through Meshy before doubling
+image spend. Single Grok/Meshy `Busy` lock = one generation at a time (can't truly parallelize Meshy + image gen).
+
 ## 2026-06-28 — Tint model pivot → region-tint (primary/secondary/accent + mask); Big Cats masks generated
 **Pivot (mid-run chat injection):** preset model → primary/secondary/accent + region mask; masks now generated; live
 render pending the region-tint shader. **Code (committed):** `TintPreset` reshaped to 3 region color slots +

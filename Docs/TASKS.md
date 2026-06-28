@@ -20,6 +20,12 @@
 - [ ] **MILESTONE (pending): region-tint shader.** Build the shader consuming `TintPreset` (3 colors + grayscale region
       mask) → part: black mask region = primary, white = secondary, luminance-shaded within each, + accent. Then
       live-preview the staged Big Cat presets/masks (`Assets/Generated/Tints` + `/Masks`). Data already authored.
+- [ ] **CODE (pending): gender axis runtime.** Gender (Male/Female) is FIXED at unit origination + immutable (not
+      player-swappable, not a tint toggle). Add: a `Gender` enum + `UnitDTO.gender` (assigned by the generator,
+      persisted); `BodyPart_SO`/`Equipment_SO` reference a MALE mesh AND a FEMALE mesh; `UnitCustomization`/`UnitFactory`
+      pick the gender mesh at spawn; `RandomUnitGenerator` assigns a gender. Tint/masks/presets stay gender-agnostic
+      (one per race, both genders). The generation run does the ASSET doubling (M/F meshes); THIS is the runtime
+      selection code. (Big Cats run, gender-axis injection 2026-06-28.)
 
 ### Build-to-spec content backlog (Docs/05/07/08/09/10 + class roster; ADR-028) — dependency-ordered
 Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slices, each a discrete approved unit:

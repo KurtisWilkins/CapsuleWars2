@@ -6,6 +6,19 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-28 — Big Cats run: ALL 10 felid images nailed + Meshy texture-grab fix; batch-Meshy is the remaining run
+**Image phase COMPLETE** (each judged by reading the rendered PNG; 4-attempt cap; staged in `Assets/Generated/Images`):
+- **Base (gendered torso+head; paws/feet gender-neutral, reuse male):** `Head_M`, `Torso_M` (#2 lean+ruff), `Hand_L`,
+  `Foot_L` (pads on sole), `Head_F`, `Torso_F`. Heads made via the Generic template (real cat heads, not the
+  faceless-helmet template — un-parks the head on `main`).
+- **Gear:** `Helm_Fanged`, `Pauldron_Clawed`, `Gauntlet_Claw`, `Weapon_ClawBlade` (att.2, hand removed).
+- Retries that mattered: hand+foot pushed to 3D-sculpt (not 2D illustration); foot pads dorsal→sole; weapon hand removed.
+**Meshy texture-grab fix (committed 1dcdb88):** Meshy ships the FBX textureless (base-color is a separate `texture_urls`)
+— `MeshyModelService` now downloads it + `GenerationActions.AssignBaseColor` saves `{id}_BaseColor.png` and remaps the
+FBX material to use it. Future Meshy gets the grayscale; the spike meshes (torso/hand) need re-Meshy for textures.
+**Meshy spike validated** earlier (torso+hand → faithful felid 3D). **REMAINING = batch-Meshy** all 10 nailed images
+(~10 jobs × 5–20 min, now textured) + mirror hand_R/foot_R/gauntlet_R (2D flip). Single gen lock → Meshy is sequential.
+
 ## 2026-06-28 — Big Cats run: gender axis added (M+F per part); torso #2 locked; foot pads→sole; Meshy spike then batch
 **Structural:** gender (Male/Female) is now FIXED at origination + immutable — every base part doubles (M+F); naming
 carries `_M`/`_F`; existing parts = the MALE set, the FEMALE set is new parallel work. Tint/masks/presets stay

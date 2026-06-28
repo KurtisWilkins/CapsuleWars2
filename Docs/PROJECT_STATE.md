@@ -177,6 +177,18 @@ Earlier features (paper-doll ADR-021, battle camera ADR-022) still await a human
    inspection shows its stats + generated name while the mesh attaches; a starter/old item keeps stats after load.
 6. **Mirror equip** — equip a mirrored (opposite-side) part and confirm it shows on the correct side.
 7. **Generated Meshy mesh** — check scale/orientation at the socket (generated models sometimes need a tweak).
+8. **BTS-G loot drops (inspector assign + Play).** Assign the loot-table assets (`Assets/Data/Equipment/`):
+   `LootTable_Combat` + `LootTable_Elite` → the **`BattleNodeReturn`** component (battle scene / `Test_M3_Battle`);
+   `LootTable_Treasure` → the **`EventPanel`** (the treasure/event UI). Then in a run: win a **Combat** node → an item
+   lands in the run inventory and **survives reload** (re-entering the SAME node reproduces the same drop — seeded);
+   win an **Elite** → rarer drop; a **Treasure** node grants on continue; a **Boss** win is gold-only. Until assigned,
+   no drops occur (null table = no-op, safe).
+9. **BTS-H evolution (inspector assign + Play; ADR-037).** Assign `Assets/Data/Units/EvolutionConfig.asset` to BOTH
+   **`BattlePartySpawner`** (battle scene — the `evolutionConfig` field) and **`BattleNodeReturn`** (`Test_M3_Battle`).
+   Then: win a battle → each surviving party unit gains 60 XP (persists across save/load); on the NEXT battle those
+   units **spawn with grown BASE stats** (HP/Atk/Def/Speed scale +12% per evolution tier crossed at 100/250/450/700 XP).
+   Verify enemies + the customization preview do **not** grow (player-only by construction). Until assigned, multiplier
+   stays 1 (no evolution, safe). Numbers are first-pass — tune on the `EvolutionConfig` asset, no code change.
 
 ## Known issues / notes
 - **GPU crash FIXED:** Graphics API for Windows is **Direct3D11 only** (Auto off, D3D12 removed) in

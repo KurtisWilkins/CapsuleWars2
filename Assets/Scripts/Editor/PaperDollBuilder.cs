@@ -14,13 +14,21 @@ namespace CapsuleWars.Editor
     /// wires every serialized ref via SerializedObject, so the scene assembly is deterministic instead
     /// of hand-wired. Idempotent: re-running deletes the previous build first. The slot/bag item
     /// widgets themselves are generated at runtime by CustomizationScreen — this only builds the
-    /// containers it generates INTO. Editor-only; never ships.
+    /// containers it generates INTO. Also builds the preview rig (ADR-034): a dedicated PreviewUnit
+    /// layer + off-map camera → RenderTexture → centre RawImage, replacing the fragile in-world preview.
+    /// Editor-only; never ships.
     /// </summary>
     public static class PaperDollBuilder
     {
         private const string Marker = "PaperDoll_Built";
         private const string Font = "LegacyRuntime.ttf";
         private const string PalettePath = "Assets/Data/DarkTheme.asset";
+
+        // Preview rig (ADR-034): a dedicated layer + camera → RenderTexture → RawImage, so the preview
+        // unit renders isolated from the map instead of in-world behind a transparent panel.
+        private const string PreviewLayerName = "PreviewUnit";
+        private const string RigMarker = "PaperDoll_PreviewRig";
+        private const string PreviewRtPath = "Assets/Data/Customization/CustomizationPreviewRT.renderTexture";
 
         [MenuItem("Tools/Paper-Doll/Build In Open Scene")]
         public static void Build()
@@ -56,9 +64,35 @@ namespace CapsuleWars.Editor
             var btnColor = palette != null ? palette.buttonNormal : new Color(0.22f, 0.26f, 0.34f, 1f);
             var panelColor = palette != null ? palette.panelBackground : new Color(0.10f, 0.12f, 0.16f, 0.92f);
 
+            // Preview rig (ADR-034): ensure the PreviewUnit layer + RenderTexture exist, then (re)build the
+            // off-map camera rig that renders the preview unit into the RT. If no dedicated layer can be
+            // claimed we SKIP the rig entirely and fall back to the in-world preview (ADR-032), rather than
+            // risk hijacking a builtin layer / blanking the main camera.
+            int previewLayer = EnsurePreviewLayer();
+            RenderTexture previewRt = null;
+            Transform previewAnchor = null;
+            if (previewLayer >= 0)
+            {
+                previewRt = EnsurePreviewRenderTexture();
+                previewAnchor = BuildPreviewRig(previewLayer, previewRt);
+            }
+
             // Root holder for everything we generate (one child → easy idempotent cleanup).
             var root = NewRect(Marker, panel.transform);
             Stretch(root);
+
+            // Live preview surface: a RawImage fed by the rig's RenderTexture, in the centre column. Created
+            // first so it renders BEHIND the slots/footer/Stats button that overlap it; raycastTarget off so
+            // drops fall through to the panel-root drop zone. (Skipped if the rig couldn't be built.)
+            if (previewRt != null)
+            {
+                var preview = NewRect("PreviewImage", root);
+                Anchor(preview, new Vector2(0.18f, 0.31f), new Vector2(0.60f, 0.93f));
+                preview.SetAsFirstSibling();
+                var previewImg = preview.gameObject.AddComponent<RawImage>();
+                previewImg.texture = previewRt;
+                previewImg.raycastTarget = false;
+            }
 
             // Two flanking gear columns.
             var left = Column("LeftColumn", root, new Vector2(0.02f, 0.28f), new Vector2(0.17f, 0.93f), panelColor);
@@ -109,10 +143,12 @@ namespace CapsuleWars.Editor
             scroll.viewport = viewport; scroll.content = content;
 
             // Theme applier on the panel.
-            // Assign the palette but DON'T let the applier recolor the panel's OWN background: the root Image is
-            // intentionally transparent (line ~52) so the in-world 3D preview shows through. colorOwnBackground=true
-            // repaints it opaque (palette.panelBackground) and buries the preview — the cause of the "preview
-            // doesn't show up" bug. Children (buttons/text) are still themed.
+            // Assign the palette but DON'T let the applier recolor the panel's OWN background. Historically the
+            // root Image was kept transparent (line ~52) so the IN-WORLD preview showed through, and
+            // colorOwnBackground=true buried it (the "preview doesn't show up" bug, ADR-032). With the preview now
+            // rendered to a RawImage via the rig (ADR-034) the see-through is no longer required, but we keep the
+            // root transparent + colorOwnBackground=false here too — making the panel opaque is deferred polish
+            // (see ADR-034). Children (buttons/text) are still themed.
             var applier = panel.GetComponent<UIThemeApplier>() ?? panel.AddComponent<UIThemeApplier>();
             {
                 var aso = new SerializedObject(applier);
@@ -131,6 +167,7 @@ namespace CapsuleWars.Editor
             }
 
             // --- wire everything ---
+            if (previewAnchor != null) Set(so, "previewAnchor", previewAnchor);
             Set(so, "leftColumnRoot", left);
             Set(so, "rightColumnRoot", right);
             Set(so, "bodyRoot", body);
@@ -147,7 +184,9 @@ namespace CapsuleWars.Editor
 
             EditorUtility.SetDirty(cs);
             EditorSceneManager.MarkSceneDirty(cs.gameObject.scene);
-            Debug.Log("PaperDollBuilder: built + wired the paper-doll panel. Review layout, then save the scene.");
+            AssetDatabase.SaveAssets(); // flush the RenderTexture asset + any new TagManager layer
+            Debug.Log("PaperDollBuilder: built + wired the paper-doll panel + preview rig (ADR-034). " +
+                      "Review layout/framing, then SAVE THE SCENE.");
             Selection.activeGameObject = panel;
         }
 
@@ -158,6 +197,95 @@ namespace CapsuleWars.Editor
             var p = so.FindProperty(field);
             if (p == null) { Debug.LogWarning($"PaperDollBuilder: field '{field}' not found."); return; }
             p.objectReferenceValue = value;
+        }
+
+        // ---- preview rig (ADR-034) -----------------------------------------------------------
+
+        // Ensure a user layer named PreviewLayerName exists; return its index, or -1 if one can't be
+        // claimed (caller then skips the rig and keeps the in-world preview — never falls back to Default,
+        // which would make the preview camera render the whole map and blank the main camera).
+        private static int EnsurePreviewLayer()
+        {
+            var assets = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset");
+            if (assets == null || assets.Length == 0)
+            {
+                Debug.LogWarning("PaperDollBuilder: couldn't load TagManager — skipping the preview rig (in-world preview kept).");
+                return -1;
+            }
+            var tm = new SerializedObject(assets[0]);
+            var layers = tm.FindProperty("layers");
+            for (int i = 0; i < layers.arraySize; i++)
+                if (layers.GetArrayElementAtIndex(i).stringValue == PreviewLayerName) return i;
+            for (int i = 8; i < layers.arraySize; i++)
+            {
+                var el = layers.GetArrayElementAtIndex(i);
+                if (string.IsNullOrEmpty(el.stringValue))
+                {
+                    el.stringValue = PreviewLayerName;
+                    tm.ApplyModifiedPropertiesWithoutUndo();
+                    Debug.Log($"PaperDollBuilder: created layer '{PreviewLayerName}' at index {i}.");
+                    return i;
+                }
+            }
+            Debug.LogWarning("PaperDollBuilder: no free user layer (8-31) for the preview — skipping the rig (in-world preview kept). Free one and re-run.");
+            return -1;
+        }
+
+        private static RenderTexture EnsurePreviewRenderTexture()
+        {
+            var rt = AssetDatabase.LoadAssetAtPath<RenderTexture>(PreviewRtPath);
+            if (rt != null) return rt;
+
+            if (!AssetDatabase.IsValidFolder("Assets/Data/Customization"))
+            {
+                if (!AssetDatabase.IsValidFolder("Assets/Data")) AssetDatabase.CreateFolder("Assets", "Data");
+                AssetDatabase.CreateFolder("Assets/Data", "Customization");
+            }
+            rt = new RenderTexture(512, 768, 16, RenderTextureFormat.ARGB32)
+            {
+                name = "CustomizationPreviewRT",
+                antiAliasing = 2,
+            };
+            AssetDatabase.CreateAsset(rt, PreviewRtPath);
+            Debug.Log($"PaperDollBuilder: created preview RenderTexture at {PreviewRtPath}.");
+            return rt;
+        }
+
+        // (Re)build the off-map preview rig: an anchor (where the unit spawns) + a camera that renders only
+        // the preview layer into the RT. Idempotent. Returns the anchor transform to wire into the screen.
+        private static Transform BuildPreviewRig(int previewLayer, RenderTexture rt)
+        {
+            var prev = GameObject.Find(RigMarker);
+            if (prev != null) Object.DestroyImmediate(prev);
+
+            var rig = new GameObject(RigMarker) { layer = previewLayer };
+            // Parked far from the map; the camera's culling mask is what really isolates it.
+            rig.transform.position = new Vector3(0f, 1000f, 0f);
+
+            var anchor = new GameObject("PreviewAnchor") { layer = previewLayer };
+            anchor.transform.SetParent(rig.transform, false);
+
+            var camGo = new GameObject("PreviewCamera") { layer = previewLayer };
+            camGo.transform.SetParent(rig.transform, false);
+            var cam = camGo.AddComponent<Camera>();
+            cam.cullingMask = 1 << previewLayer;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.06f, 0.07f, 0.10f, 1f); // matches the dark theme panel
+            cam.orthographic = false;
+            cam.fieldOfView = 30f;
+            cam.nearClipPlane = 0.05f;
+            cam.farClipPlane = 50f;
+            cam.targetTexture = rt;
+            // Front-on, slightly raised; tune by eye for the unit's height/scale.
+            camGo.transform.localPosition = new Vector3(0f, 1.2f, -3.5f);
+            camGo.transform.LookAt(anchor.transform.position + Vector3.up * 1.0f);
+
+            // Keep the preview unit out of the gameplay (main) camera.
+            var main = Camera.main;
+            if (main != null) main.cullingMask &= ~(1 << previewLayer);
+            else Debug.LogWarning("PaperDollBuilder: no Camera.main — manually clear the 'PreviewUnit' layer from the map camera's Culling Mask.");
+
+            return anchor.transform;
         }
 
         // Test helper: open the paper-doll for the first party unit, bypassing the in-scene button

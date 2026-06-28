@@ -28,6 +28,11 @@ namespace CapsuleWars.Editor
             Dir + "/Equip_StarterPlate.asset",
             Dir + "/Equip_StarterSword.asset",
             Dir + "/Equip_StarterShield.asset",
+            // BTS-G armor-slot items (EquipmentContentTool) — identity-only until meshed, but droppable for stats.
+            Dir + "/Eq_Shoulderpad.asset",
+            Dir + "/Eq_Cape.asset",
+            Dir + "/Eq_Bracers.asset",
+            Dir + "/Eq_Greaves.asset",
         };
 
         [MenuItem("Tools/Build-To-Spec/Author Loot Tables + Roll Config")]

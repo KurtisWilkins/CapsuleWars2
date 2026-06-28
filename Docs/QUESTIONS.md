@@ -3,7 +3,11 @@
 > Items an autonomous run couldn't resolve without a human/design decision. Each: ambiguity / tried /
 > recommend. Parked, not blocking — the run continued past them.
 
-### Pattern markings (stripes / spots / rosettes) — Big Cats run, 5 races
+### ✅ RESOLVED — Pattern markings (stripes / spots / rosettes) — Big Cats run, 5 races
+- **resolution (2026-06-28, region-tint pivot ADR-040):** the TintPreset model became primary/secondary/accent + a
+  region mask, so a marking IS the secondary region of a mask. Patterns are now produced as DATA, not deferred — all
+  5 grayscale marking masks were generated (`Assets/Generated/Masks/`) and attached to their presets. Live render
+  still pends the region-tint shader milestone. Original park below for history:
 - **ambiguity:** Tigerfolk (stripes), Leopardfolk (spots), Jaguarfolk (rosettes), Cheetahfolk (small spots),
   and Snowcatfolk (pale + dark spots) need surface *markings*, but the runtime tint system (ADR-039) is a
   luminance→3-color ramp — it can recolor but **cannot produce patterns**. Faking patterns via the ramp is

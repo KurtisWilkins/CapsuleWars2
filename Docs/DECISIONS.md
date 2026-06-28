@@ -734,4 +734,24 @@ runtime tint need not survive restart yet). ThemeProfile/themes ride on top NEXT
 clean; applier bridge-verified (green tint → mid (0,1,0)/shadow (0,0.3,0)/high (0.55,1,0.55)). On-screen render is the
 only Play/editor-gated item (visual-verify in PROJECT_STATE item 11).
 
+### ADR-040 — Tint model pivot: region-tint (primary/secondary/accent + mask) supersedes the ramp (mid-run)
+**Decided (mid-generation-run redirect):** the `TintPreset` is no longer a shadow/mid/high luminance ramp (ADR-039).
+It is three player-facing color slots — `primaryColor` / `secondaryColor` / `accentColor` — assigned across a
+grayscale part by a region MASK (white = secondary/marking region, black = primary/base), with grayscale luminance
+shading WITHIN each region. A pattern (stripes/spots/rosettes) is simply the secondary region of a mask, so markings
+are plain data — no longer parked.
+**Why:** one preset shape covers solid races (no mask) AND patterned races (a mask), with player-overridable color
+slots — more expressive than a single ramp, and it lets a run PRODUCE patterns as data (masks) instead of deferring
+them.
+**Changed:** `TintPreset` reshaped (3 `Color` slots + `Texture2D regionMask`; removed shadow/mid/high +
+`ApplyTo`/`CaptureFrom`/`SetRamp`); `UnitTintApplier` lost its `SaveToPreset`/`LoadPreset` bridges; `UnitTintApplierEditor`
+lost its preset buttons; new editor `MaskGen` generates flat grayscale masks via Grok, bypassing the 3D-part
+`StyleProfile` framing (a mask is a 2D pattern map, not an image-to-3D object). The OLD per-unit ramp tint
+(`EquipmentInstance.primaryTint` + `TintRamp` + the `TintRamp` shader/applier) remains but is legacy — the (pending)
+**region-tint shader milestone** will consume the new model. ADR-039 stands for that legacy ramp; this supersedes its
+*preset* model.
+**Status:** code-complete, **249/249 EditMode green**. Big Cats batch: 9 `TintPreset`s + 5 region masks staged for
+review (`Assets/Generated/Tints` + `/Masks`, `MANIFEST.md`). Live render is PENDING the region-tint shader (not
+built) — no tinted preview this run.
+
 <!-- Add new decisions below as ADR-011, ADR-012, ... -->

@@ -126,22 +126,7 @@ namespace CapsuleWars.Units.Customization
             instance.accentTints = new List<PartTint>(accentTints);
         }
 
-        /// <summary>Capture the current tint into a (reusable) TintPreset asset — bridges via a temp instance.</summary>
-        public void SaveToPreset(TintPreset preset)
-        {
-            if (preset == null) return;
-            var temp = new EquipmentInstance();
-            CaptureInto(temp);
-            preset.CaptureFrom(temp);
-        }
-
-        /// <summary>Load a TintPreset onto this applier and apply (preview/equip).</summary>
-        public void LoadPreset(TintPreset preset)
-        {
-            if (preset == null) return;
-            var temp = new EquipmentInstance();
-            preset.ApplyTo(temp);
-            ApplyFrom(temp);
-        }
+        // NOTE: TintPreset save/load bridges were removed in the region-tint pivot (ADR-040) — the new TintPreset is
+        // 3 region colors + a mask, consumed by the pending region-tint shader, not this per-unit ramp applier.
     }
 }

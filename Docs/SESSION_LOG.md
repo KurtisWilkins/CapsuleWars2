@@ -6,6 +6,18 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-28 — Tint model pivot → region-tint (primary/secondary/accent + mask); Big Cats masks generated
+**Pivot (mid-run chat injection):** preset model → primary/secondary/accent + region mask; masks now generated; live
+render pending the region-tint shader. **Code (committed):** `TintPreset` reshaped to 3 region color slots +
+`regionMask` (was shadow/mid/high ramp); removed the ramp `ApplyTo`/`CaptureFrom` + the applier's `Save`/`LoadPreset`
++ the editor preset buttons; new `MaskGen` (Grok flat-mask, framing-bypassed); `TintSystemTests` updated. **249 green.
+ADR-040.** **Staged (uncommitted — human review gate):** 9 Big Cat `TintPreset`s re-authored in the new shape
+(`Assets/Generated/Tints/`) + 5 grayscale region masks (`Assets/Generated/Masks/`: tiger stripes [inverted to
+white=marking], leopard/jaguar/cheetah/snowcat spots+rosettes) attached to their presets; solid races
+(Panther/Puma/Lynx/Saber) slots-only; `MANIFEST.md` in the Tints folder, all "render pending region-tint shader."
+**Geometry untouched** (base torso ×2 candidates, hand NAILED on attempt 2; foot + mirrors + Lynx head + gear still
+pending — continue the backlog). Image-gen judged by reading each PNG; 4-attempt cap; nothing over-iterated.
+
 ## 2026-06-28 — Big Cats generation run: reconciliation + tint variants (staged); mesh-gen GATED
 **Did (free, no API spend):** started the Big Cats asset-generation batch (RACE_ROSTER category 2, races 64–72).
 **Reconciled** live pipeline vs the backlog: TintPreset/tint system confirmed live (ADR-039); mirror = 2D image-flip

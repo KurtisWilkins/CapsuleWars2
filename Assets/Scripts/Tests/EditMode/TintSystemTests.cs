@@ -55,43 +55,23 @@ namespace CapsuleWars.Tests.EditMode
         }
 
         [Test]
-        public void Preset_CaptureThenApply_RoundTripsToSameLook()
+        public void TintPreset_RegionModel_StoresColorsAndMask()
         {
-            var src = new EquipmentInstance { primaryTint = Color.green };
-            src.SetAccent(PartSlot.HeadProp, Color.magenta);
-
+            // Region-tint model (ADR-040): primary/secondary/accent color slots + an optional grayscale region mask.
             var preset = ScriptableObject.CreateInstance<TintPreset>();
-            preset.CaptureFrom(src);
-            Assert.AreEqual(Color.green, preset.Mid, "captured mid == the painted primary");
-            Assert.AreEqual(1, preset.AccentTints.Count);
+            Assert.IsFalse(preset.HasMask, "no mask by default → solid primary");
 
-            var dst = new EquipmentInstance();
-            preset.ApplyTo(dst);
-            Assert.AreEqual(src.primaryTint, dst.primaryTint, "primary transfers across units");
-            Assert.AreEqual(Color.magenta, dst.TintFor(PartSlot.HeadProp), "accent transfers across units");
+            preset.SetColors(Color.red, Color.black, Color.yellow);
+            Assert.AreEqual(Color.red, preset.PrimaryColor);
+            Assert.AreEqual(Color.black, preset.SecondaryColor);
+            Assert.AreEqual(Color.yellow, preset.AccentColor);
 
-            // same primary → applier derives the same ramp → same on-screen look
-            TintRamp.FromColor(src.primaryTint, out var s1, out var m1, out var h1);
-            TintRamp.FromColor(dst.primaryTint, out var s2, out var m2, out var h2);
-            Assert.AreEqual(m1, m2);
-            Assert.AreEqual(s1, s2);
-            Assert.AreEqual(h1, h2);
+            var mask = new Texture2D(2, 2);
+            preset.SetMask(mask);
+            Assert.IsTrue(preset.HasMask, "mask set → patterned");
+            Assert.AreSame(mask, preset.RegionMask);
 
-            Object.DestroyImmediate(preset);
-        }
-
-        [Test]
-        public void Preset_AppliedToTwoUnits_ProducesIdenticalPrimary()
-        {
-            var preset = ScriptableObject.CreateInstance<TintPreset>();
-            preset.CaptureFrom(new EquipmentInstance { primaryTint = new Color(0.1f, 0.6f, 0.9f, 1f) });
-
-            var a = new EquipmentInstance();
-            var b = new EquipmentInstance();
-            preset.ApplyTo(a);
-            preset.ApplyTo(b);
-            Assert.AreEqual(a.primaryTint, b.primaryTint);
-
+            Object.DestroyImmediate(mask);
             Object.DestroyImmediate(preset);
         }
     }

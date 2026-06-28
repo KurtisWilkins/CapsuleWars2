@@ -15,6 +15,11 @@
       `UnitTintApplier`, set `primaryTint` → part renders that color in-Scene (no play mode); recolor live; per-part
       accents; Save→preset then Apply to another unit = same look. **Invariants honored:** `Equipment_SO` color-free;
       tint on the Instance (ADR-019); grayscale assets untouched. **OUT OF SCOPE (next):** cross-run save; ThemeProfile.
+      **PIVOT (ADR-040):** the *preset* model changed to region-tint — `TintPreset` is now primary/secondary/accent +
+      a `regionMask` (white = secondary/marking, black = primary). The old per-unit ramp shader/applier are now legacy.
+- [ ] **MILESTONE (pending): region-tint shader.** Build the shader consuming `TintPreset` (3 colors + grayscale region
+      mask) → part: black mask region = primary, white = secondary, luminance-shaded within each, + accent. Then
+      live-preview the staged Big Cat presets/masks (`Assets/Generated/Tints` + `/Masks`). Data already authored.
 
 ### Build-to-spec content backlog (Docs/05/07/08/09/10 + class roster; ADR-028) — dependency-ordered
 Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slices, each a discrete approved unit:

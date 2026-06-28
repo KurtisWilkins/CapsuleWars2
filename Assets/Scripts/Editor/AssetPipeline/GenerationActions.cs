@@ -98,6 +98,13 @@ namespace CapsuleWars.Editor.AssetPipeline
 
         public static void GenerateModel(AssetRequest r)
         {
+            // Reject-gate: never build a 3D model from a request the human rejected in review.
+            // Non-modal (log, not dialog) so bridge/automation calls can't hang on a popup.
+            if (r.lifecycle == Lifecycle.Rejected)
+            {
+                Debug.LogWarning($"[AssetPipeline] '{r.id}' is marked Rejected — skipping Meshy. Restore it to Active (or approve it) first.");
+                return;
+            }
             if (r.chosenImage == null)
             {
                 EditorUtility.DisplayDialog("Need an image first",

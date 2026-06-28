@@ -6,6 +6,17 @@
 
 <!-- NEW ENTRIES GO HERE (top = newest) -->
 
+## 2026-06-27 — BTS-F part 1: 32 ability move kits authored (main)
+**Did:** the ability/status/element/synergy systems are no longer inert — every class has moves. A multi-agent
+design Workflow (4 designers → synthesis → adversarial critique, "no invalid refs") produced first-pass move kits;
+`AbilitySetupTool` (idempotent) authored 54 new strategy assets (17 DamageEffect, 2 HealEffect, 10 ApplyStatusEffect
+wrappers, 15 TimeBasedTriggers, OnHit/OnBattleStart/OnLowHp, self/ally/current targeting, Closest3/InRange/LowestHp/
+KeepCurrentTarget filters) + reused the 6 existing instances, then composed 32 `Ability_SO` (basic + themed signature
+per class; weapon-gated via `requiredWeaponClasses`) under `Assets/Data/Abilities/Generated/`. Self-verified over the
+bridge: **32/32 fully composed** (trigger+targeting+effects+weapon resolved). **236 green.** Commit 2bff2b4.
+**PART 2 (next):** wire abilities to units — `AbilityController.abilities` is per-prefab but units carry no class yet,
+so this needs class→unit assignment + a spawner that populates each unit's AbilityController. Combat-Play-gated.
+
 ## 2026-06-27 — BTS-G drop loop wired + first-pass loot assets (main)
 **Did:** connected the loot loop end-to-end. `BattleNodeReturn` win path now (non-boss) reads `CurrentNode.Type`,
 picks the serialized combat/elite `LootTable_SO`, `LootGrant.GrantTo` (deterministic per node: `Seed ^ (nodeId*31+17)`)

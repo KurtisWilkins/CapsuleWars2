@@ -33,7 +33,13 @@ Elements ✅ done. Abilities partial (9 strategy classes landed). Remaining slic
       (no conditional-stat layer), DoT/splash, strike-first, double-shot, reposition, pierce, backline-open — extend
       `SynergyEffectKind` + the sink as each lands. HandGunner-T4 −10% Speed defers with its [code] dmg. Retire
       `Class_Warrior` placeholder once units carry roster classes (BTS-F). Heal-in-combat is Play-gated.
-- [ ] **BTS-F — ability move CONTENT [content].** Author `Ability_SO` move sets per class/weapon using the strategy classes.
+- [~] **BTS-F — ability move CONTENT (part 1 done: 32 move kits authored, 2bff2b4, 236 green).** Multi-agent
+      designed + adversarially verified; `AbilitySetupTool` authored 32 `Ability_SO` (basic + signature per class) +
+      54 strategy assets under `Assets/Data/Abilities/Generated/`, weapon-gated via `requiredWeaponClasses`.
+      Self-verified 32/32 fully composed. **PART 2 (the gap):** wire abilities to units — `AbilityController.abilities`
+      is per-prefab, but units carry NO class yet, so this needs (a) class→unit assignment + (b) a spawner step that
+      populates each unit's AbilityController from its class's abilities (or weapon-gates a shared full list). Retire
+      `Class_Warrior` placeholder. Combat-Play-gated. Then per-class move icons (IconGen/Grok) + balance tuning.
 - [~] **BTS-G — equipment + loot system (EditMode foundation done: rarity ×s + generation + storage + grant).**
       Rarity ×s aligned to Docs/07 (1/1.25/1.5/2/3). **Generation core (8394443):** `LootTable_SO` (Data — weighted
       item pool + weighted tier + `EquipmentRollConfig` ref; NO NodeType, that's Run) + deterministic

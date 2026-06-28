@@ -36,6 +36,10 @@ namespace CapsuleWars.Run.Map
         [Tooltip("Loot table rolled on an Elite win (rarity-skewed). None = falls back to the combat table.")]
         [SerializeField] private LootTable_SO eliteLootTable;
 
+        [Header("Evolution (BTS-H)")]
+        [Tooltip("Evolution config — grants XP to the surviving party on any win (drives stat growth at next spawn). None = no XP.")]
+        [SerializeField] private EvolutionConfig_SO evolutionConfig;
+
         private BattleStateManager stateManager;
 
         private void Awake()
@@ -57,6 +61,9 @@ namespace CapsuleWars.Run.Map
             if (result.PlayerWon)
             {
                 state.AddGold(state.IsBossEncounter ? goldOnBossWin : goldOnCombatWin);
+
+                // Evolution XP for the surviving party (BTS-H) — earned on any win; grows stats at next spawn.
+                if (evolutionConfig != null) EvolutionGrant.GrantXp(state, evolutionConfig);
 
                 // Non-boss wins (Combat/Elite): an equipment drop + a roguelike unit recruit.
                 // Boss = gold-only (Docs/07). The drop is rolled deterministically per node, so a

@@ -91,6 +91,8 @@ namespace CapsuleWars.Editor.AssetPipeline
             }
             string concept = ConceptText(r);
             if (!string.IsNullOrWhiteSpace(concept)) sb.AppendLine("Concept: " + concept);
+            // The reviewer's notes are revision feedback — fold them in so a re-roll actually fixes the flaw.
+            if (!string.IsNullOrWhiteSpace(r.notes)) sb.AppendLine("REVISION FEEDBACK (the previous attempt was rejected — apply these corrections): " + r.notes.Trim());
             if (!string.IsNullOrWhiteSpace(profile.finishRules)) sb.AppendLine(profile.finishRules.Trim());
             if (!string.IsNullOrWhiteSpace(profile.avoidList)) sb.AppendLine("Avoid: " + profile.avoidList.Trim());
             return sb.ToString();

@@ -1,8 +1,17 @@
 using System.Collections.Generic;
+using CapsuleWars.Core;
 using UnityEngine;
 
 namespace CapsuleWars.Data.Units
 {
+    /// <summary>One per-part colour override (e.g. a panda's black hand/foot).</summary>
+    [System.Serializable]
+    public class PartTint
+    {
+        public PartSlot slot;
+        public Color color = Color.white;
+    }
+
     /// <summary>
     /// A named "race coat": the body-part set plus the procedural-coat parameters (primary / marking colour,
     /// pattern, eye colour) that turn the shared felid base into a specific big-cat race (Tigerfolk,
@@ -20,6 +29,8 @@ namespace CapsuleWars.Data.Units
         [SerializeField] private List<BodyPart_SO> parts = new List<BodyPart_SO>();
         [Tooltip("Female part set (Torso_F, Head_F, …). If empty, 'parts' is used for both genders.")]
         [SerializeField] private List<BodyPart_SO> partsFemale = new List<BodyPart_SO>();
+        [Tooltip("Per-part colour overrides (e.g. panda's black limbs) — override the primary on those slots.")]
+        [SerializeField] private List<PartTint> partTints = new List<PartTint>();
 
         [Header("Coat")]
         [Tooltip("0 = solid, 1 = stripes, 2 = spots.")]
@@ -35,6 +46,7 @@ namespace CapsuleWars.Data.Units
         public string DisplayName => string.IsNullOrEmpty(displayName) ? raceId : displayName;
         public IReadOnlyList<BodyPart_SO> Parts => parts;
         public IReadOnlyList<BodyPart_SO> PartsFemale => (partsFemale != null && partsFemale.Count > 0) ? partsFemale : parts;
+        public IReadOnlyList<PartTint> PartTints => partTints;
         public int Pattern => pattern;
         public float PatternFrequency => patternFrequency;
         public Color Primary => primary;

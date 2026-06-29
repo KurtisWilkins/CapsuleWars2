@@ -294,6 +294,7 @@ namespace CapsuleWars.UI.Customization
                 partColors[slot] = p.Primary;
                 partSecondary[slot] = p.Secondary;
             }
+            foreach (var t in p.PartTints) partColors[t.slot] = t.color;  // per-part overrides (e.g. panda black limbs)
             partPatterns[PartSlot.Body] = p.Pattern;
             partPatterns[PartSlot.HeadProp] = p.Pattern;
             partEyeColor[PartSlot.HeadProp] = p.EyeColor;

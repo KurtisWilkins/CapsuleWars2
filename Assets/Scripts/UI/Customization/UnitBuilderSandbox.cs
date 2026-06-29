@@ -33,6 +33,9 @@ namespace CapsuleWars.UI.Customization
         private readonly Dictionary<PartSlot, Color> partEyeColor = new();
         private bool markingMode;
         private float patternFreq = 9f;
+        private bool female;
+        private CoatPreset_SO currentPreset;
+        private readonly List<(bool fem, Image bg)> genderBtns = new();
         private readonly List<(bool marking, Image bg)> modeBtns = new();
         private HashSet<string> starterIds;
         private Font font;
@@ -196,6 +199,9 @@ namespace CapsuleWars.UI.Customization
                 Text(panel, "RACE PRESETS — load a big cat", 15, FontStyle.Bold, 22);
                 var presetGrid = PresetGrid(panel);
                 foreach (var p in presets) if (p != null) PresetBtn(presetGrid, p);
+                var genderRow = Bar(panel, 34);
+                GenderBtn(genderRow, "♂ Male", false);
+                GenderBtn(genderRow, "♀ Female", true);
             }
 
             var tabRow = Bar(panel, 44);
@@ -257,11 +263,30 @@ namespace CapsuleWars.UI.Customization
         }
 
         // One-click "become this race": apply the preset's parts + coat (primary, marking, pattern, eye colour).
+        private void GenderBtn(Transform parent, string label, bool fem)
+        {
+            var go = New("Gender", parent);
+            Layout(go, 150, 32);
+            var bg = go.AddComponent<Image>(); bg.color = fem == female ? TabSel : TabBg;
+            var btn = go.AddComponent<Button>(); btn.targetGraphic = bg;
+            btn.onClick.AddListener(() =>
+            {
+                female = fem;
+                foreach (var g in genderBtns) g.bg.color = g.fem == female ? TabSel : TabBg;
+                if (currentPreset != null) LoadPreset(currentPreset);
+            });
+            var t = New("T", go.transform); Stretch((RectTransform)t.transform);
+            var txt = t.AddComponent<Text>();
+            txt.font = font; txt.text = label; txt.fontSize = 14; txt.alignment = TextAnchor.MiddleCenter; txt.color = Color.white;
+            genderBtns.Add((fem, bg));
+        }
+
         private void LoadPreset(CoatPreset_SO p)
         {
             if (p == null || preview == null) return;
+            currentPreset = p;
             loadout.Clear();
-            foreach (var part in p.Parts) if (part != null) loadout[part.Slot] = part;
+            foreach (var part in (female ? p.PartsFemale : p.Parts)) if (part != null) loadout[part.Slot] = part;
             partColors.Clear(); partSecondary.Clear(); partPatterns.Clear(); partEyeColor.Clear();
             patternFreq = p.PatternFrequency > 0f ? p.PatternFrequency : 9f;
             foreach (var slot in preview.MountedSlots.Distinct())

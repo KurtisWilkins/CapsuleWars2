@@ -16,8 +16,10 @@ namespace CapsuleWars.Data.Units
         [SerializeField] private string raceId;
         [Tooltip("Display name shown on the preset button (falls back to raceId).")]
         [SerializeField] private string displayName;
-        [Tooltip("The body parts that make up this race (felid base set, or base + a race-specific head).")]
+        [Tooltip("The body parts that make up this race — MALE set (felid base, or base + a race-specific head).")]
         [SerializeField] private List<BodyPart_SO> parts = new List<BodyPart_SO>();
+        [Tooltip("Female part set (Torso_F, Head_F, …). If empty, 'parts' is used for both genders.")]
+        [SerializeField] private List<BodyPart_SO> partsFemale = new List<BodyPart_SO>();
 
         [Header("Coat")]
         [Tooltip("0 = solid, 1 = stripes, 2 = spots.")]
@@ -32,6 +34,7 @@ namespace CapsuleWars.Data.Units
         public string RaceId => raceId;
         public string DisplayName => string.IsNullOrEmpty(displayName) ? raceId : displayName;
         public IReadOnlyList<BodyPart_SO> Parts => parts;
+        public IReadOnlyList<BodyPart_SO> PartsFemale => (partsFemale != null && partsFemale.Count > 0) ? partsFemale : parts;
         public int Pattern => pattern;
         public float PatternFrequency => patternFrequency;
         public Color Primary => primary;

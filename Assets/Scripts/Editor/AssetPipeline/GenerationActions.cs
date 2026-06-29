@@ -26,6 +26,7 @@ namespace CapsuleWars.Editor.AssetPipeline
         // --- public entry points (called from the window on the main thread) ---
 
         private static readonly Queue<AssetRequest> _imageBatch = new Queue<AssetRequest>();
+        private static readonly Queue<AssetRequest> _modelBatch = new Queue<AssetRequest>();
 
         public static void GenerateImage(AssetRequest r)
         {
@@ -113,7 +114,12 @@ namespace CapsuleWars.Editor.AssetPipeline
                 return;
             }
             if (!Begin("Meshy 3D")) return;
+            StartModel(r);
+        }
 
+        /// <summary>Runs the Meshy call for r (Begin already invoked). Shared by GenerateModel + the model batch pump.</summary>
+        private static void StartModel(AssetRequest r)
+        {
             string imgPath = AssetDatabase.GetAssetPath(r.chosenImage);
             string key = GenerationServices.Secrets.meshyApiKey;
             string aiModel = GenerationServices.MeshyAiModel;
@@ -144,6 +150,25 @@ namespace CapsuleWars.Editor.AssetPipeline
                 }
                 catch (Exception e) { Fail("Meshy 3D", e); }
             }));
+        }
+
+        /// <summary>Queue several requests for 3D generation; they run sequentially (one at a time, auto-pumped).</summary>
+        public static void GenerateModelsBatch(IEnumerable<AssetRequest> requests)
+        {
+            foreach (var r in requests) if (r != null) _modelBatch.Enqueue(r);
+            PumpModelBatch();
+        }
+
+        private static void PumpModelBatch()
+        {
+            while (!Busy && _modelBatch.Count > 0)
+            {
+                var r = _modelBatch.Dequeue();
+                if (r == null || r.lifecycle == Lifecycle.Rejected || r.chosenImage == null) continue; // skip ungeneratable, try next
+                if (!Begin($"Meshy 3D (batch, {_modelBatch.Count} left)")) return;
+                StartModel(r);
+                return;
+            }
         }
 
         public static void GenerateDescription(AssetRequest r)
@@ -244,16 +269,17 @@ namespace CapsuleWars.Editor.AssetPipeline
             Debug.Log("[AssetPipeline] " + s);
             Changed?.Invoke();
             PumpImageBatch();
+            PumpModelBatch();
         }
 
         private static void Fail(string what, Exception e)
         {
             Busy = false;
             Status = what + " failed.";
-            Debug.LogError($"[AssetPipeline] {what} failed: {e.Message}");
-            EditorUtility.DisplayDialog(what + " failed", e.Message, "OK");
+            Debug.LogError($"[AssetPipeline] {what} failed: {e.Message}");   // non-modal: a long unattended batch must not block on a dialog
             Changed?.Invoke();
             PumpImageBatch();   // keep a batch going even if one item fails
+            PumpModelBatch();
         }
     }
 }

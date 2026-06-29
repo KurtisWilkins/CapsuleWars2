@@ -78,6 +78,7 @@ namespace CapsuleWars.Editor.AssetPipeline
                 return await GrokImageService.GenerateAsync(prompt, key, model, endpoint, aspect, resolution);
             }).ContinueWith(t => GenerationHttp.OnMainThread(() =>
             {
+                if (r == null) { Done("Skipped an image — its request was unloaded (domain reload)."); return; }
                 try
                 {
                     if (t.IsFaulted) throw GenerationHttp.Unwrap(t.Exception);
@@ -126,6 +127,7 @@ namespace CapsuleWars.Editor.AssetPipeline
                 return await MeshyModelService.GenerateAsync(png, key, aiModel, endpoint, Progress);
             }).ContinueWith(t => GenerationHttp.OnMainThread(() =>
             {
+                if (r == null) { Done("Skipped a model — its request was unloaded (domain reload)."); return; }
                 try
                 {
                     if (t.IsFaulted) throw GenerationHttp.Unwrap(t.Exception);

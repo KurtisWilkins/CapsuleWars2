@@ -72,6 +72,13 @@ namespace CapsuleWars.Editor.AssetPipeline
                 GUILayout.FlexibleSpace();
                 autoRefresh = GUILayout.Toggle(autoRefresh, "Auto", EditorStyles.toolbarButton);
                 if (GUILayout.Button("Refresh", EditorStyles.toolbarButton)) Refresh();
+                int rejCount = requests.Count(r => r.lifecycle == Lifecycle.Rejected);
+                using (new EditorGUI.DisabledScope(rejCount == 0 || GenerationActions.Busy))
+                {
+                    GUI.backgroundColor = rejCount > 0 ? new Color(1f, 0.82f, 0.4f) : Color.white;
+                    if (GUILayout.Button($"♻ Re-roll Rejected ({rejCount})", EditorStyles.toolbarButton, GUILayout.Width(165))) ReRollRejected();
+                    GUI.backgroundColor = Color.white;
+                }
             }
 
             var shown = requests.Where(Passes).ToList();
@@ -108,7 +115,9 @@ namespace CapsuleWars.Editor.AssetPipeline
                         GUI.backgroundColor = new Color(0.55f, 0.9f, 0.55f);
                         if (GUILayout.Button("✓ Approve")) SetLifecycle(r, Lifecycle.Archived);
                         GUI.backgroundColor = new Color(0.95f, 0.55f, 0.55f);
-                        if (GUILayout.Button("✗ Reject")) SetLifecycle(r, Lifecycle.Rejected);
+                        if (GUILayout.Button("✗ Reject (redo)")) SetLifecycle(r, Lifecycle.Rejected);
+                        GUI.backgroundColor = new Color(0.72f, 0.72f, 0.78f);
+                        if (GUILayout.Button("⊘ Drop")) SetLifecycle(r, Lifecycle.Archived, "disregarded");
                         GUI.backgroundColor = Color.white;
                         if (GUILayout.Button("↺ Reset")) SetLifecycle(r, Lifecycle.Active);
                         if (GUILayout.Button("Ping")) EditorGUIUtility.PingObject(r.chosenImage != null ? (Object)r.chosenImage : r);
@@ -120,13 +129,36 @@ namespace CapsuleWars.Editor.AssetPipeline
         private static string StatusLabel(Lifecycle l) =>
             l == Lifecycle.Archived ? "APPROVED" : l == Lifecycle.Rejected ? "REJECTED" : "pending";
 
-        private void SetLifecycle(AssetRequest r, Lifecycle to)
+        private void SetLifecycle(AssetRequest r, Lifecycle to, string reason = null)
         {
             r.lifecycle = to;
             r.lifecycleDate = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm");
-            if (!string.IsNullOrEmpty(r.notes)) r.lifecycleReason = r.notes;
+            if (reason != null) r.lifecycleReason = reason;
+            else if (!string.IsNullOrEmpty(r.notes)) r.lifecycleReason = r.notes;
             EditorUtility.SetDirty(r);
             AssetDatabase.SaveAssets();
+        }
+
+        // "Reject" means "redo": send every Rejected request back through Grok for a fresh image.
+        // Disregards (mickey/feline) should be ⊘ Drop'd (→ Archived) first so they're not in the Rejected pool.
+        private void ReRollRejected()
+        {
+            var toRoll = AssetDatabase.FindAssets("t:AssetRequest")
+                .Select(g => AssetDatabase.LoadAssetAtPath<AssetRequest>(AssetDatabase.GUIDToAssetPath(g)))
+                .Where(r => r != null && r.lifecycle == Lifecycle.Rejected).ToList();
+            if (toRoll.Count == 0) return;
+            foreach (var r in toRoll)
+            {
+                r.stage = PipelineStage.Requested;
+                r.chosenImage = null;
+                r.imagePath = "";
+                r.lifecycle = Lifecycle.Active;
+                EditorUtility.SetDirty(r);
+            }
+            AssetDatabase.SaveAssets();
+            GenerationActions.GenerateImagesBatch(toRoll);
+            Refresh();
+            Debug.Log($"[AssetReview] Re-rolling {toRoll.Count} rejected request(s) through Grok again.");
         }
     }
 }

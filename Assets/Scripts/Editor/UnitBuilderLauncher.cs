@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using CapsuleWars.Data.Units;
 using CapsuleWars.UI.Customization;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -49,6 +50,12 @@ namespace CapsuleWars.Editor
             so.FindProperty("previewPrefab").objectReferenceValue = prefab;
             so.FindProperty("catalog").objectReferenceValue = catalog;
             so.FindProperty("patternMaterial").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Material>(PatternMat);
+            var presetGuids = AssetDatabase.FindAssets("t:CoatPreset_SO");
+            var presetsProp = so.FindProperty("presets");
+            presetsProp.arraySize = presetGuids.Length;
+            for (int i = 0; i < presetGuids.Length; i++)
+                presetsProp.GetArrayElementAtIndex(i).objectReferenceValue =
+                    AssetDatabase.LoadAssetAtPath<CoatPreset_SO>(AssetDatabase.GUIDToAssetPath(presetGuids[i]));
             so.ApplyModifiedProperties();
 
             Selection.activeObject = go;

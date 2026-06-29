@@ -46,7 +46,7 @@ namespace CapsuleWars.Editor.AssetPipeline
                 case AssetCategory.BodyPart:
                     switch ((PartSlot)slot)
                     {
-                        case PartSlot.HeadProp: return PartType.Helmet;
+                        case PartSlot.HeadProp: return PartType.Head;
                         case PartSlot.Body: return PartType.Torso;
                         case PartSlot.RightHand: return PartType.RightHand;
                         case PartSlot.LeftHand: return PartType.LeftHand;

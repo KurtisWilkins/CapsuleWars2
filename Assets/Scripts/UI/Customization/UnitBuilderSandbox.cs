@@ -22,6 +22,7 @@ namespace CapsuleWars.UI.Customization
         [SerializeField] private GameObject previewPrefab;
         [SerializeField] private PartCatalog_SO catalog;
         [SerializeField] private Material patternMaterial;
+        [SerializeField] private CoatPreset_SO[] presets;
 
         private UnitCustomization preview;
         private Transform previewRoot;
@@ -31,6 +32,7 @@ namespace CapsuleWars.UI.Customization
         private readonly Dictionary<PartSlot, Color> partSecondary = new();
         private readonly Dictionary<PartSlot, Color> partEyeColor = new();
         private bool markingMode;
+        private float patternFreq = 9f;
         private readonly List<(bool marking, Image bg)> modeBtns = new();
         private HashSet<string> starterIds;
         private Font font;
@@ -155,7 +157,7 @@ namespace CapsuleWars.UI.Customization
                     mpb.SetColor(PrimaryId, primary);
                     mpb.SetColor(SecondaryId, sec);
                     mpb.SetFloat(PatternId, pat);
-                    mpb.SetFloat(FreqId, 9f);
+                    mpb.SetFloat(FreqId, patternFreq);
                     if (hasEyes)
                     {
                         Color eye = partEyeColor.TryGetValue(mount.Slot, out var ec) ? ec : part.EyeColor;
@@ -188,6 +190,13 @@ namespace CapsuleWars.UI.Customization
             var panel = Panel(canvas.transform);
             Text(panel, "UNIT BUILDER", 26, FontStyle.Bold, 34);
             Text(panel, "showroom — preview only, nothing here is used in-game until unlocked", 14, FontStyle.Italic, 20);
+
+            if (presets != null && presets.Length > 0)
+            {
+                Text(panel, "RACE PRESETS — load a big cat", 15, FontStyle.Bold, 22);
+                var presetGrid = PresetGrid(panel);
+                foreach (var p in presets) if (p != null) PresetBtn(presetGrid, p);
+            }
 
             var tabRow = Bar(panel, 44);
             if (preview != null)
@@ -224,6 +233,47 @@ namespace CapsuleWars.UI.Customization
             var bg = go.AddComponent<Image>(); bg.color = col;
             var btn = go.AddComponent<Button>(); btn.targetGraphic = bg;
             btn.onClick.AddListener(() => { partEyeColor[currentSlot] = col; Reapply(); });
+        }
+
+        private Transform PresetGrid(Transform parent)
+        {
+            var go = New("PresetGrid", parent);
+            Layout(go, 0, 76);
+            var grid = go.AddComponent<GridLayoutGroup>();
+            grid.cellSize = new Vector2(116, 32); grid.spacing = new Vector2(6, 6);
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount; grid.constraintCount = 6;
+            return go.transform;
+        }
+
+        private void PresetBtn(Transform parent, CoatPreset_SO p)
+        {
+            var go = New("Preset", parent);
+            var bg = go.AddComponent<Image>(); bg.color = TabBg;
+            var btn = go.AddComponent<Button>(); btn.targetGraphic = bg;
+            btn.onClick.AddListener(() => LoadPreset(p));
+            var t = New("T", go.transform); Stretch((RectTransform)t.transform);
+            var txt = t.AddComponent<Text>();
+            txt.font = font; txt.text = p.DisplayName; txt.fontSize = 13; txt.alignment = TextAnchor.MiddleCenter; txt.color = Color.white;
+        }
+
+        // One-click "become this race": apply the preset's parts + coat (primary, marking, pattern, eye colour).
+        private void LoadPreset(CoatPreset_SO p)
+        {
+            if (p == null || preview == null) return;
+            loadout.Clear();
+            foreach (var part in p.Parts) if (part != null) loadout[part.Slot] = part;
+            partColors.Clear(); partSecondary.Clear(); partPatterns.Clear(); partEyeColor.Clear();
+            patternFreq = p.PatternFrequency > 0f ? p.PatternFrequency : 9f;
+            foreach (var slot in preview.MountedSlots.Distinct())
+            {
+                partColors[slot] = p.Primary;
+                partSecondary[slot] = p.Secondary;
+            }
+            partPatterns[PartSlot.Body] = p.Pattern;
+            partPatterns[PartSlot.HeadProp] = p.Pattern;
+            partEyeColor[PartSlot.HeadProp] = p.EyeColor;
+            SelectSlot(currentSlot);
+            Reapply();
         }
 
         private void PatternBtn(Transform parent, string label, int pat)

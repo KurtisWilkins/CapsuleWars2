@@ -15,7 +15,8 @@ namespace CapsuleWars.Editor.AssetPipeline
         Foot = 4,
         Torso = 5,
         Weapon = 6,
-        Armor = 7
+        Armor = 7,
+        Head = 8
     }
 
     /// <summary>
